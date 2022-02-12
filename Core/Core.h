@@ -20,4 +20,17 @@ namespace Core
 		vec3& operator*=(const vec3& v);
 		vec3& operator-=(const vec3& v);
 	};
+
+	struct vertex
+	{
+		vec3 position;
+		vec3 normal;
+		vec3 texcoord;
+	};
+
+	struct triangle
+	{
+		vertex A, B, C;
+	};
+
 }
