@@ -1,3 +1,3 @@
 #pragma once
 
-void prepare_model_data(const char* file_path);
+void prepare_gltf_model_data(const char* file_path);

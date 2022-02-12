@@ -22,7 +22,7 @@ void write_to_file_for_normals(std::vector<Core::vec3>* data);
 void write_to_file_for_texcoords(std::vector<Core::vec3>* data);
 void write_to_file_for_indices(std::vector<unsigned>* data);
 
-void prepare_model_data(const char* file_path)
+void prepare_gltf_model_data(const char* file_path)
 {
 	std::string json_string = extract_file(file_path);
 	if (json_string.empty())
