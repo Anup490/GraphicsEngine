@@ -1,38 +1,34 @@
 #include "json.h"
-#include "FileReader.h"
 #include "Core.h"
+#include "FileReader.h"
 #include <memory>
 #include <fstream>
 #include <sstream>
 #include <iostream>
 
 std::vector<unsigned char>* get_data(nlohmann::json& JSON, const char* file_path);
-void traverse_node(nlohmann::json& JSON, unsigned nextNode, std::vector<unsigned char>* pdata);
-
 std::string extract_file(const char* path);
-void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned char>* pdata);
+void traverse_node(nlohmann::json& JSON, unsigned nextNode, std::vector<unsigned char>* pdata, Core::model* pmodel);
+void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned char>* pdata, Core::model* pmodel);
 std::vector<float>* get_floats(nlohmann::json& accessor, nlohmann::json& JSON, std::vector<unsigned char>* pdata);
 std::vector<Core::vec3>* group_floats_for_vec3(std::vector<float>* pfloatvec);
 std::vector<Core::vec3>* group_floats_for_vec2(std::vector<float>* pfloatvec);
 std::vector<Core::vertex>* get_vertices(std::vector<Core::vec3>* ppositions, std::vector<Core::vec3>* pnormals, std::vector<Core::vec3>* ptextUVs);
 std::vector<unsigned>* get_indices(nlohmann::json& accessor, nlohmann::json& JSON, std::vector<unsigned char>* pdata);
 
-void write_to_file_for_points(std::vector<Core::vec3>* data);
-void write_to_file_for_normals(std::vector<Core::vec3>* data);
-void write_to_file_for_texcoords(std::vector<Core::vec3>* data);
-void write_to_file_for_indices(std::vector<unsigned>* data);
-
-void prepare_gltf_model_data(const char* file_path)
+std::shared_ptr<Core::model> prepare_gltf_model_data(const char* file_path)
 {
 	std::string json_string = extract_file(file_path);
 	if (json_string.empty())
 	{
-		std::cout << "Error reading gltf file" << std::endl;
-		return;
+		throw FileReadException("Error reading gltf file");
 	}
 	nlohmann::json json_data = nlohmann::json::parse(json_string);
 	std::vector<unsigned char>* pdata = get_data(json_data, file_path);
-	traverse_node(json_data, 0, pdata);
+	Core::model* pmodel = new Core::model;
+	traverse_node(json_data, 0, pdata, pmodel);
+	delete pdata;
+	return std::shared_ptr<Core::model>(pmodel);
 }
 
 std::vector<unsigned char>* get_data(nlohmann::json& JSON, const char* file_path)
@@ -67,22 +63,22 @@ std::string extract_file(const char* path)
 	return contents;
 }
 
-void traverse_node(nlohmann::json& JSON, unsigned nextNode, std::vector<unsigned char>* pdata)
+void traverse_node(nlohmann::json& JSON, unsigned nextNode, std::vector<unsigned char>* pdata, Core::model* pmodel)
 {
 	nlohmann::json node = JSON["nodes"][nextNode];
 	bool mesh_not_found = true;
 	if (node.find("mesh") != node.end())
 	{
 		mesh_not_found = false;
-		load_mesh(JSON, node["mesh"], pdata);
+		load_mesh(JSON, node["mesh"], pdata, pmodel);
 	}
 	if (mesh_not_found)
 	{
-		traverse_node(JSON, ++nextNode, pdata);
+		traverse_node(JSON, ++nextNode, pdata, pmodel);
 	}
 }
 
-void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned char>* pdata)
+void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned char>* pdata, Core::model* pmodel)
 {
 	unsigned int pos_acc_ind = JSON["meshes"][indMesh]["primitives"][0]["attributes"]["POSITION"];
 	unsigned int normal_acc_ind = JSON["meshes"][indMesh]["primitives"][0]["attributes"]["NORMAL"];
@@ -93,19 +89,18 @@ void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned 
 	std::vector<Core::vec3>* ppositions = group_floats_for_vec3(pposvec);
 	std::vector<float>* pnormalvec = get_floats(JSON["accessors"][normal_acc_ind], JSON, pdata);
 	std::vector<Core::vec3>* pnormals = group_floats_for_vec3(pnormalvec);
-
 	std::vector<float>* ptexvec = get_floats(JSON["accessors"][tex_acc_ind], JSON, pdata);
 	std::vector<Core::vec3>* ptexUVs = group_floats_for_vec2(ptexvec);
 
-	std::vector<Core::vertex>* pvertices = get_vertices(ppositions, pnormals, ptexUVs);
-	std::vector<unsigned>* pindices = get_indices(JSON["accessors"][ind_acc_ind], JSON, pdata);
-	//ptextures = get_textures(JSON);
+	pmodel->pvertices = get_vertices(ppositions, pnormals, ptexUVs);
+	pmodel->pindices = get_indices(JSON["accessors"][ind_acc_ind], JSON, pdata);
 
-	write_to_file_for_points(ppositions);
-	write_to_file_for_normals(pnormals);
-	write_to_file_for_texcoords(ptexUVs);
-	write_to_file_for_indices(pindices);
-
+	delete pposvec;
+	delete ppositions;
+	delete pnormalvec;
+	delete pnormals;
+	delete ptexvec;
+	delete ptexUVs;
 }
 
 std::vector<float>* get_floats(nlohmann::json& accessor, nlohmann::json& JSON, std::vector<unsigned char>* pdata)
@@ -218,102 +213,4 @@ std::vector<unsigned>* get_indices(nlohmann::json& accessor, nlohmann::json& JSO
 		}
 	}
 	return pindices;
-}
-
-void write_to_file_for_points(std::vector<Core::vec3>* data)
-{
-	std::ofstream f;
-	f.open("test_data/test_vertices.h", std::ios::binary | std::ios::out);
-	f << "#pragma once" << std::endl;
-	f << "unsigned vertices_size = " << data->size() * 3 << ";" << std::endl;
-	f << "double* get_vertices()" << std::endl;
-	f << "{" << std::endl;
-	f << "return new double[] {" << std::endl;
-	for (unsigned i = 0; i < data->size(); i++)
-	{
-		if ((i + 1) == data->size())
-		{
-			f << data->at(i).x << ", " << data->at(i).y << ", " << data->at(i).z << std::endl;
-		}
-		else
-		{
-			f << data->at(i).x << ", " << data->at(i).y << ", " << data->at(i).z << ", " << std::endl;
-		}
-	}
-	f << "};" << std::endl;
-	f << "}" << std::endl;
-}
-
-void write_to_file_for_normals(std::vector<Core::vec3>* data)
-{
-	std::ofstream f;
-	f.open("test_data/test_normals.h", std::ios::binary | std::ios::out);
-	f << "#pragma once" << std::endl;
-	f << "unsigned normals_size = " << data->size() * 3 << ";" << std::endl;
-	f << "double* get_normals()" << std::endl;
-	f << "{" << std::endl;
-	f << "return new double[] {" << std::endl;
-	for (unsigned i = 0; i < data->size(); i++)
-	{
-		if ((i + 1) == data->size())
-		{
-			f << data->at(i).x << ", " << data->at(i).y << ", " << data->at(i).z << std::endl;
-		}
-		else
-		{
-			f << data->at(i).x << ", " << data->at(i).y << ", " << data->at(i).z << ", " << std::endl;
-		}
-	}
-	f << "};" << std::endl;
-	f << "}" << std::endl;
-}
-
-void write_to_file_for_texcoords(std::vector<Core::vec3>* data)
-{
-	std::ofstream f;
-	f.open("test_data/test_texcoords.h", std::ios::binary | std::ios::out);
-	f << "#pragma once" << std::endl;
-	f << "unsigned texcoords_size = " << data->size() * 2 << ";" << std::endl;
-	f << "double* get_texcoords()" << std::endl;
-	f << "{" << std::endl;
-	f << "return new double[] {" << std::endl;
-	for (unsigned i = 0; i < data->size(); i++)
-	{
-		if ((i + 1) == data->size())
-		{
-			f << data->at(i).x << ", " << data->at(i).y << std::endl;
-		}
-		else
-		{
-			f << data->at(i).x << ", " << data->at(i).y << ", " << std::endl;
-		}
-	}
-	f << "};" << std::endl;
-	f << "}" << std::endl;
-}
-
-void write_to_file_for_indices(std::vector<unsigned>* data)
-{
-	std::ofstream f;
-	f.open("test_data/test_indices.h", std::ios::binary | std::ios::out);
-	f << "#pragma once" << std::endl;
-	f << "unsigned indices_size = " << data->size() << ";" << std::endl;
-	f << "unsigned* get_indices()" << std::endl;
-	f << "{" << std::endl;
-	f << "return new unsigned[] {" << std::endl;
-	for (unsigned i = 0; i < data->size();)
-	{
-		f << data->at(i++) << ", ";
-		f << data->at(i++) << ", ";
-		if ((i + 1) == data->size())
-		{
-			f << data->at(i++) << std::endl;
-		}
-		else
-		{
-			f << data->at(i++) << ", " << std::endl;
-		}
-	}
-	f << "};" << std::endl;
-	f << "}" << std::endl;
 }

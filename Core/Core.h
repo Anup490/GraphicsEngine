@@ -1,36 +1,41 @@
 #pragma once
+#include <math.h>
+
+namespace std
+{
+	template <class _Ty>
+	class allocator;
+
+	template <class _Ty, class _Alloc = allocator<_Ty>>
+	class vector;
+}
+
 namespace Core
 {
 	struct vec3
 	{
 		double x, y, z;
 		double length;
-		vec3();
-		vec3(double f);
-		vec3(double x, double y, double z);
-		double dot(const vec3& v) const;
-		vec3 cross(const vec3& v) const;
-		void normalize();
-		vec3 operator*(const double& f) const;
-		vec3 operator+(const vec3& v) const;
-		vec3 operator*(const vec3& v) const;
-		vec3 operator-(const vec3& v) const;
-		vec3 operator-() const;
-		vec3& operator+=(const vec3& v);
-		vec3& operator*=(const vec3& v);
-		vec3& operator-=(const vec3& v);
+		vec3() : x(0.0f), y(0.0f), z(0.0f), length(sqrt(0.0)) {}
+		vec3(double f) : x(f), y(f), z(f), length(sqrt(3.0 * f * f)) {}
+		vec3(double x, double y, double z) : x(x), y(y), z(z), length(sqrt(x* x + y * y + z * z)) {}
 	};
 
 	struct vertex
 	{
-		vec3 position;
-		vec3 normal;
-		vec3 texcoord;
+		vec3 position, normal, texcoord;
 	};
 
 	struct triangle
 	{
-		vertex A, B, C;
+		vertex a, b, c;
 	};
 
+	struct model
+	{
+		std::vector<vertex>* pvertices = 0;
+		std::vector<float>* ptextures = 0;
+		std::vector<unsigned>* pindices = 0;
+		~model() { if (pvertices) delete pvertices; if (ptextures) delete ptextures; if(pindices) delete pindices; }
+	};
 }
