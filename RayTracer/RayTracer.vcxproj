@@ -158,6 +158,8 @@
   <ItemGroup>
     <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="RayTracer.cuh" />
+    <ClInclude Include="Vector.cuh" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">

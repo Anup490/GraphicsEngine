@@ -1,14 +1,13 @@
 #include "pch.h"
 #include "CppUnitTest.h"
-#include "Core.h"
-#include <string>
+#include "Vector.cuh"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
-using namespace Core;
+using namespace RayTracer;
 
-namespace CoreTest
+namespace RayTracerTest
 {
-	TEST_CLASS(CoreTest)
+	TEST_CLASS(RayTracerTest)
 	{
 	public:
 		
@@ -42,7 +41,7 @@ namespace CoreTest
 			e *= b;
 			f -= b;
 			Logger::WriteMessage(to_string("d = ", d).data());
-			Assert::AreEqual(true, equal(a+b, d));
+			Assert::AreEqual(true, equal(a + b, d));
 			Logger::WriteMessage(to_string("e = ", e).data());
 			Assert::AreEqual(true, equal(a * b, e));
 			Logger::WriteMessage(to_string("f = ", f).data());
