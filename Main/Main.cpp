@@ -14,10 +14,12 @@ void main()
 	try
 	{
 		std::unique_ptr<Core::model> pmodel = prepare_gltf_model_data("D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf");
+		Core::model light_model{ Core::vec3{}, Core::vec3{1.0, 1.0, 1.0} };
 		std::cout << "Data extracted" << std::endl;
 		std::cout << "Rendering scene" << std::endl;
 		std::shared_ptr<std::vector<Core::model*>> pmodels(new std::vector<Core::model*>);
 		pmodels->push_back(pmodel.get());
+		pmodels->push_back(&light_model);
 		RayTracer::init(pmodels, 640, 480);
 		init_called = true;
 		std::unique_ptr<Core::vec3> ppixels = RayTracer::render(90.0, RayTracer::Projection::PERSPECTIVE);

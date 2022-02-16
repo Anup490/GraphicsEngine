@@ -142,7 +142,7 @@ std::vector<Core::vec3>* group_floats_for_vec3(std::vector<float>* pfloatvec)
 		float x = pfloatvec->at(i++);
 		float y = pfloatvec->at(i++);
 		float z = pfloatvec->at(i++);
-		pvectors->push_back(Core::vec3{ x, y, z - 5.0 });
+		pvectors->push_back(Core::vec3{ x, y, z - 3.0 });
 	}
 	return pvectors;
 }

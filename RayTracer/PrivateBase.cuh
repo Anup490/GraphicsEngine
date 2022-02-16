@@ -19,13 +19,13 @@ namespace RayTracer
 
 	struct triangle
 	{
-		Core::vec3 a, b, c, ab, bc, ca, a_tex, b_tex, c_tex, emissive_color, normal;
+		Core::vec3 a, b, c, ab, bc, ca, a_tex, b_tex, c_tex, normal;
 		double plane_distance = 0.0, area = 0.0;
 	};
 
 	struct model
 	{
-		Core::vec3 position;
+		Core::vec3 position, emissive_color;
 		triangle* dtriangles = 0;
 		texture texture_data;
 		unsigned triangles_size = 0;

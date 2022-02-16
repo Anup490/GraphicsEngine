@@ -60,14 +60,19 @@ void RayTracer::prepare_data(const std::shared_ptr<std::vector<Core::model*>> pm
 	p_all_triangles = new std::vector<triangle*>;
 	for (unsigned i = 0; i < pmodels->size(); i++)
 	{
+		Core::model* pmodel = (*pmodels)[i];
 		std::vector<triangle> triangles;
-		triangulate((*pmodels)[i], &triangles);
+		triangulate(pmodel, &triangles);
 		RayTracer::triangle* dgputriangles;
 		cudaError_t stat;
 		stat = cudaMalloc(&dgputriangles, sizeof(triangle) * triangles.size());
 		stat = cudaMemcpy(dgputriangles, triangles.data(), sizeof(triangle) * triangles.size(), cudaMemcpyHostToDevice);
 		RayTracer::model dmodel;
 		dmodel.dtriangles = dgputriangles;
+		dmodel.emissive_color = pmodel->emissive_color;
+		dmodel.position = pmodel->emissive_color;
+		dmodel.reflectivity = pmodel->reflectivity;
+		dmodel.transparency = pmodel->transparency;
 		dmodel.triangles_size = triangles.size();
 		dmodels.push_back(dmodel);
 		p_all_triangles->push_back(dgputriangles);
@@ -78,6 +83,7 @@ void RayTracer::triangulate(const Core::model* pmodel, std::vector<RayTracer::tr
 {
 	std::vector<Core::vertex>* pvertices = pmodel->pvertices;
 	std::vector<unsigned>* pindices = pmodel->pindices;
+	if (!pvertices || !pindices) return;
 	for (unsigned i = 0; i < pindices->size();)
 	{
 		Core::vertex a = (*pvertices)[(*pindices)[i++]];
@@ -97,5 +103,5 @@ RayTracer::triangle RayTracer::make_triangle(Core::vertex a, Core::vertex b, Cor
 	Core::vec3 emission{ 0.0, 0.0, 0.0 };
 	normalize(normal);
 	double plane_distance = dot(-normal, a.position);
-	return triangle{ a.position,b.position,c.position,ab,bc,ca,a.texcoord,b.texcoord,c.texcoord,emission, normal,plane_distance,area };
+	return triangle{ a.position,b.position,c.position,ab,bc,ca,a.texcoord,b.texcoord,c.texcoord,normal,plane_distance,area };
 }
