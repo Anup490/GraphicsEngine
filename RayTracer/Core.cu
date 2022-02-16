@@ -19,7 +19,7 @@ namespace RayTracer
 	RUN_ON_GPU Core::vec3 get_refract_dir(const Core::vec3& incident_dir, const Core::vec3& nhit, const bool& inside);
 	RUN_ON_GPU double schlick_approximation(double cosine, double R);
 	RUN_ON_GPU Core::vec3 cast_shadow_ray(const models& models, const ray& ray, const hit& hit);
-	RUN_ON_GPU double get_glow(const models& models, const ray& shadow_ray, const hit& hit);
+	RUN_ON_GPU double get_glow(const unsigned light_index, const models& models, const ray& shadow_ray, const hit& hit);
 	RUN_ON_GPU double max_val(double val1, double val2);
 }
 
@@ -166,7 +166,7 @@ Core::vec3 RayTracer::cast_shadow_ray(const models& models, const ray& rray, con
 			normalize(shadow_dir);
 			Core::vec3 shadow_origin = rray.phit + rray.nhit * bias;
 			ray shadow_ray{ shadow_origin, shadow_dir };
-			glow = get_glow(models, shadow_ray, hit);
+			glow = get_glow(l, models, shadow_ray, hit);
 			//color+= (get_rgb(hit.triangle, ray.phit, hit.model.texture_data) * glow * max_val(0.0, dot(ray.nhit, shadow_dir))) + hit.triangle.emissive_color;
 			color += (Core::vec3{ 0.5294, 0.8078, 0.9216 } * glow * max_val(0.0, dot(rray.nhit, shadow_dir))) + hit.model.emissive_color;
 		}
@@ -174,24 +174,27 @@ Core::vec3 RayTracer::cast_shadow_ray(const models& models, const ray& rray, con
 	return color;
 }
 
-RUN_ON_GPU double RayTracer::get_glow(const models& models, const ray& shadow_ray, const hit& hit)
+RUN_ON_GPU double RayTracer::get_glow(const unsigned light_index, const models& models, const ray& shadow_ray, const hit& hit)
 {
 	double t0 = INFINITY, glow = 1.0;
 	for (unsigned m = 0; m < models.size; m++)
 	{
-		bool is_occluded = false;
-		triangle* triangles = models.models[m].dtriangles;
-		unsigned triangles_count = models.models[m].triangles_size;
-		for (unsigned i = 0; i < triangles_count; i++)
+		if (m != light_index)
 		{
-			if (does_intersect(triangles[i], shadow_ray.origin, shadow_ray.dir, t0))
+			bool is_occluded = false;
+			triangle* triangles = models.models[m].dtriangles;
+			unsigned triangles_count = models.models[m].triangles_size;
+			for (unsigned i = 0; i < triangles_count; i++)
 			{
-				glow = 0.0;
-				is_occluded = true;
-				break;
+				if (does_intersect(triangles[i], shadow_ray.origin, shadow_ray.dir, t0))
+				{
+					glow = 0.0;
+					is_occluded = true;
+					break;
+				}
 			}
+			if (is_occluded) break;
 		}
-		if (is_occluded) break;
 	}
 	return glow;
 }
