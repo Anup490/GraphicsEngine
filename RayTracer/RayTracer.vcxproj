@@ -157,8 +157,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="framework.h" />
+    <ClInclude Include="PrivateBase.cuh" />
+    <ClInclude Include="PublicBase.h" />
+    <ClInclude Include="RayTracer.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="RayTracer.cuh" />
+    <ClInclude Include="Core.cuh" />
+    <ClInclude Include="Triangle.cuh" />
     <ClInclude Include="Vector.cuh" />
   </ItemGroup>
   <ItemGroup>
@@ -168,14 +172,15 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <CudaCompile Include="Vector.cu" />
+    <ClCompile Include="RayTracer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.vcxproj">
       <Project>{82a2dd1a-84f4-40de-ab87-e599ca1c809c}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="Core.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

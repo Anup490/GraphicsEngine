@@ -16,7 +16,7 @@ std::vector<Core::vec3>* group_floats_for_vec2(std::vector<float>* pfloatvec);
 std::vector<Core::vertex>* get_vertices(std::vector<Core::vec3>* ppositions, std::vector<Core::vec3>* pnormals, std::vector<Core::vec3>* ptextUVs);
 std::vector<unsigned>* get_indices(nlohmann::json& accessor, nlohmann::json& JSON, std::vector<unsigned char>* pdata);
 
-std::shared_ptr<Core::model> prepare_gltf_model_data(const char* file_path)
+std::unique_ptr<Core::model> prepare_gltf_model_data(const char* file_path)
 {
 	std::string json_string = extract_file(file_path);
 	if (json_string.empty())
@@ -28,7 +28,7 @@ std::shared_ptr<Core::model> prepare_gltf_model_data(const char* file_path)
 	Core::model* pmodel = new Core::model;
 	traverse_node(json_data, 0, pdata, pmodel);
 	delete pdata;
-	return std::shared_ptr<Core::model>(pmodel);
+	return std::unique_ptr<Core::model>(pmodel);
 }
 
 std::vector<unsigned char>* get_data(nlohmann::json& JSON, const char* file_path)
@@ -142,7 +142,7 @@ std::vector<Core::vec3>* group_floats_for_vec3(std::vector<float>* pfloatvec)
 		float x = pfloatvec->at(i++);
 		float y = pfloatvec->at(i++);
 		float z = pfloatvec->at(i++);
-		pvectors->push_back(Core::vec3(x, y, z));
+		pvectors->push_back(Core::vec3{ x, y, z - 5.0 });
 	}
 	return pvectors;
 }
@@ -154,7 +154,7 @@ std::vector<Core::vec3>* group_floats_for_vec2(std::vector<float>* pfloatvec)
 	{
 		float x = pfloatvec->at(i++);
 		float y = pfloatvec->at(i++);
-		pvectors->push_back(Core::vec3(x, y, 0.0f));
+		pvectors->push_back(Core::vec3{ x, y, 0.0 });
 	}
 	return pvectors;
 }

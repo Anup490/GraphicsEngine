@@ -4,8 +4,8 @@
 
 namespace std
 {
-	template <class _Ty>
-	class shared_ptr;
+	template <class _Ty, class _Dx>
+	class unique_ptr;
 }
 
 struct FileReadException : std::exception
@@ -15,4 +15,4 @@ struct FileReadException : std::exception
 	char const* what() const override { return message; }
 };
 
-std::shared_ptr<Core::model> prepare_gltf_model_data(const char* file_path) throw(FileReadException);
+std::unique_ptr<Core::model> prepare_gltf_model_data(const char* file_path) throw(FileReadException);

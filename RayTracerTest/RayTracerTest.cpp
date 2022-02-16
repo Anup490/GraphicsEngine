@@ -29,9 +29,9 @@ namespace RayTracerTest
 
 		TEST_METHOD(VectorAddition)
 		{
-			Core::vec3 a(1, 2, 3);
-			Core::vec3 b(4, 5, 6);
-			Core::vec3 c(0, 0, 0);
+			Core::vec3 a{ 1, 2, 3 };
+			Core::vec3 b{ 4, 5, 6 };
+			Core::vec3 c{ 0, 0, 0 };
 			c += a;
 			c += b;
 			Logger::WriteMessage(to_string("c = ", c).data());
@@ -40,8 +40,8 @@ namespace RayTracerTest
 
 		TEST_METHOD(VectorSubtraction)
 		{
-			Core::vec3 a(1, 2, 3);
-			Core::vec3 b(4, 5, 6);
+			Core::vec3 a{ 1, 2, 3 };
+			Core::vec3 b{ 4, 5, 6 };
 			Core::vec3 c(a);
 			c -= b;
 			Logger::WriteMessage(to_string("c = ", c).data());
@@ -50,13 +50,21 @@ namespace RayTracerTest
 
 		TEST_METHOD(VectorMultiplication)
 		{
-			Core::vec3 a(1, 2, 3);
-			Core::vec3 b(4, 5, 6);
-			Core::vec3 c(1, 1, 1);
+			Core::vec3 a{ 1, 2, 3 };
+			Core::vec3 b{ 4, 5, 6 };
+			Core::vec3 c{ 1, 1, 1 };
 			c *= a;
 			c *= b;
 			Logger::WriteMessage(to_string("c = ", c).data());
 			Assert::AreEqual(true, equal(a * b, c));
+		}
+
+		TEST_METHOD(VectorNormalization)
+		{
+			Core::vec3 a{ 5, 0, 0 };
+			normalize(a);
+			Logger::WriteMessage(to_string("a = ", a).data());
+			Assert::AreEqual(true, length(a) == 1.0);
 		}
 	};
 }
