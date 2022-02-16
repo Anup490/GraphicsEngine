@@ -38,8 +38,8 @@ void RayTracer::render(RayTracer::pixels pixels, const models models, double fov
 	int ty = blockIdx.y * blockDim.y + threadIdx.y;
 	double near_plane = (proj_type == Projection::PERSPECTIVE) ? 1.0 : 8.0;
 	int index = (ty * pixels.width) + tx;
-	double x = ((2 * ((tx + 0.5f) / pixels.width)) - 1) * aspect_ratio * tan_val * near_plane;
-	double y = (1 - (2 * ((ty + 0.5f) / pixels.height))) * tan_val * near_plane;
+	double x = ((2.0 * ((tx + 0.5) / pixels.width)) - 1) * aspect_ratio * tan_val * near_plane;
+	double y = (1.0 - (2.0 * ((ty + 0.5f) / pixels.height))) * tan_val * near_plane;
 	Core::vec3 dir = (proj_type == Projection::PERSPECTIVE) ? Core::vec3{ x, y, -near_plane } : Core::vec3{ 0.0, 0.0, -near_plane };
 	normalize(dir);
 	Core::vec3 origin = (proj_type == Projection::PERSPECTIVE) ? Core::vec3{} : Core::vec3{ x, y };
@@ -69,8 +69,6 @@ Core::vec3 RayTracer::trace(const models& models, ray ray)
 RUN_ON_GPU
 bool RayTracer::detect_hit(const models& models, ray& ray, hit& hit_item)
 {
-	triangle hit_triangle;
-	model hit_model;
 	double t0 = INFINITY, tnear = INFINITY;
 	bool hit = false;
 	for (unsigned m = 0; m < models.size; m++)
@@ -84,18 +82,16 @@ bool RayTracer::detect_hit(const models& models, ray& ray, hit& hit_item)
 				if (tnear > t0)
 				{
 					tnear = t0;
-					hit_triangle = triangles[i];
-					hit_model = models.models[m];
+					hit_item.triangle = triangles[i];
+					hit_item.model = models.models[m];
 					if (!hit) hit = true;
 				}
 			}
 		}
 	}
 	if (!hit) return hit;
-	hit_item.triangle = hit_triangle;
-	hit_item.model = hit_model;
 	ray.phit = ray.origin + (ray.dir * tnear);
-	ray.nhit = hit_triangle.normal;
+	ray.nhit = hit_item.triangle.normal;
 	normalize(ray.nhit);
 	return hit;
 }
@@ -170,8 +166,7 @@ Core::vec3 RayTracer::get_color(const ColorType type, const models& models, cons
 	bool inside = false;
 	int depth = 0;
 	hit hit_item;
-	Core::vec3 new_phit;
-	Core::vec3 new_nhit = pray.nhit;
+	Core::vec3 new_phit, new_nhit;
 	Core::vec3 new_origin = (type == ColorType::REFRACTION) ? pray.phit - pray.nhit * bias : pray.phit;
 	Core::vec3 new_dir = (type == ColorType::REFRACTION) ? calculate_refraction_dir(pray.dir, pray.nhit, inside) : calculate_reflection_dir(pray.dir, pray.nhit);
 	ray nray{ new_origin, new_dir, new_phit, new_nhit };
@@ -182,6 +177,8 @@ Core::vec3 RayTracer::get_color(const ColorType type, const models& models, cons
 			color = color * get_rgb(hit_item.triangle, nray.phit, hit_item.model.texture_data);
 			new_dir = (type == ColorType::REFRACTION) ? calculate_refraction_dir(new_dir, new_nhit, inside) : calculate_reflection_dir(new_dir, new_nhit);
 			new_origin = (type == ColorType::REFRACTION) ? new_phit - new_nhit * bias : new_phit;
+			nray.dir = new_dir;
+			nray.origin = new_origin;
 			depth++;
 		}
 		else

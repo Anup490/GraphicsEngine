@@ -2,6 +2,7 @@
 #include "RayTracer.h"
 #include "PrivateBase.cuh"
 #include "Core.cuh"
+#include "Vector.h"
 #include <memory>
 #include <vector>
 
@@ -15,19 +16,6 @@ namespace RayTracer
 	void prepare_data(const std::shared_ptr<std::vector<Core::model*>> pmodels, std::vector<model>& dmodels);
 	void triangulate(const Core::model* pmodel, std::vector<RayTracer::triangle>* ptriangles);
 	triangle make_triangle(Core::vertex a, Core::vertex b, Core::vertex c);
-
-	RUN_ON_CPU_AND_GPU double dot(const Core::vec3& v1, const Core::vec3& v2);
-	RUN_ON_CPU_AND_GPU double length(const Core::vec3& v1);
-	RUN_ON_CPU_AND_GPU void normalize(Core::vec3& v1);
-	RUN_ON_CPU_AND_GPU Core::vec3 cross(const Core::vec3& v1, const Core::vec3& v2);
-	RUN_ON_CPU_AND_GPU Core::vec3 operator*(const Core::vec3& v1, const double& f);
-	RUN_ON_CPU_AND_GPU Core::vec3 operator+(const Core::vec3& v1, const Core::vec3& v2);
-	RUN_ON_CPU_AND_GPU Core::vec3 operator*(const Core::vec3& v1, const Core::vec3& v2);
-	RUN_ON_CPU_AND_GPU Core::vec3 operator-(const Core::vec3& v1, const Core::vec3& v2);
-	RUN_ON_CPU_AND_GPU Core::vec3 operator-(const Core::vec3& v1);
-	RUN_ON_CPU_AND_GPU Core::vec3& operator+=(Core::vec3& v1, const Core::vec3& v2);
-	RUN_ON_CPU_AND_GPU Core::vec3& operator*=(Core::vec3& v1, const Core::vec3& v2);
-	RUN_ON_CPU_AND_GPU Core::vec3& operator-=(Core::vec3& v1, const Core::vec3& v2);
 }
 
 void RayTracer::init(std::shared_ptr<std::vector<Core::model*>> pmodels, int width, int height)

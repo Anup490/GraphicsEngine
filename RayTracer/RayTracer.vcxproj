@@ -164,6 +164,7 @@
     <ClInclude Include="Core.cuh" />
     <ClInclude Include="Triangle.cuh" />
     <ClInclude Include="Vector.cuh" />
+    <ClInclude Include="Vector.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
