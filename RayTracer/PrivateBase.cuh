@@ -11,7 +11,7 @@ namespace RayTracer
 {
 	struct texture
 	{
-		float* dtextures = 0;
+		unsigned char* dtextures = 0;
 		int width = 0;
 		int height = 0;
 		int channels = 0;

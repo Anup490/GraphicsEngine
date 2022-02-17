@@ -22,11 +22,10 @@ namespace Core
 
 	struct texture
 	{
-		std::vector<float>* ptextures = 0;
+		unsigned char* ptextures = 0;
 		int width = 0;
 		int height = 0;
 		int channels = 0;
-		~texture() { if (ptextures) delete ptextures; }
 	};
 
 	struct model

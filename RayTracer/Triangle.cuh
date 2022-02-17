@@ -41,6 +41,9 @@ namespace RayTracer
 		unsigned x = texcoords.x * tex.width;
 		unsigned y = texcoords.y * tex.height;
 		unsigned index = (y * tex.width + x) * 3.0;
-		return Core::vec3{ tex.dtextures[index] / 255.0, tex.dtextures[index + 1] / 255.0, tex.dtextures[index + 2] / 255.0 };
+		double r = double(tex.dtextures[index]) / 255.0;
+		double g = double(tex.dtextures[index + 1]) / 255.0;
+		double b = double(tex.dtextures[index + 2]) / 255.0;
+		return (tex.dtextures) ? Core::vec3{ r, g, b } : Core::vec3{};
 	}
 }

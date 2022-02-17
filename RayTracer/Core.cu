@@ -58,7 +58,7 @@ Core::vec3 RayTracer::cast_primary_ray(const models& models, ray ray)
 		Core::vec3 reflection_color = (hit_item.model.reflectivity > 0.0) ? cast_second_ray(ColorType::REFLECTION, models, ray) : background;
 		Core::vec3 refraction_color = (hit_item.model.transparency > 0.0) ? cast_second_ray(ColorType::REFRACTION, models, ray) : background;
 		double fresnel = schlick_approximation(dot(-ray.dir, ray.nhit), 0.1);
-		surface_color = (reflection_color * fresnel + refraction_color * (1 - fresnel) * hit_item.model.transparency) * Core::vec3{ 0.5294, 0.8078, 0.9216 };// get_rgb(hit_item.triangle, ray.phit, hit_item.model.texture_data);
+		surface_color = (reflection_color * fresnel + refraction_color * (1 - fresnel) * hit_item.model.transparency) * get_rgb(hit_item.triangle, ray.phit, hit_item.model.texture_data);
 	}
 	else
 	{
@@ -112,7 +112,7 @@ Core::vec3 RayTracer::cast_second_ray(const ColorType type, const models& models
 	{
 		if ((type == ColorType::REFRACTION) ? (hit_item.model.transparency > 0.0) : (hit_item.model.reflectivity > 0.0))
 		{
-			color *= Core::vec3{ 0.5294, 0.8078, 0.9216 };//get_rgb(hit_item.triangle, nray.phit, hit_item.model.texture_data);
+			color *= get_rgb(hit_item.triangle, nray.phit, hit_item.model.texture_data);
 			nray.dir = (type == ColorType::REFRACTION) ? get_refract_dir(nray.dir, nray.nhit, inside) : get_reflect_dir(nray.dir, nray.nhit);
 			nray.origin = (type == ColorType::REFRACTION) ? nray.phit - nray.nhit * bias : nray.phit;
 			depth++;
@@ -167,8 +167,7 @@ Core::vec3 RayTracer::cast_shadow_ray(const models& models, const ray& rray, con
 			Core::vec3 shadow_origin = rray.phit + rray.nhit * bias;
 			ray shadow_ray{ shadow_origin, shadow_dir };
 			glow = get_glow(l, models, shadow_ray);
-			//color+= (get_rgb(hit.triangle, ray.phit, hit.model.texture_data) * glow * max_val(0.0, dot(ray.nhit, shadow_dir))) + hit.triangle.emissive_color;
-			color += (Core::vec3{ 0.5294, 0.8078, 0.9216 } * glow * max_val(0.0, dot(rray.nhit, shadow_dir))) * light_model.emissive_color;
+			color+= get_rgb(hit.triangle, rray.phit, hit.model.texture_data) * glow * max_val(0.0, dot(rray.nhit, shadow_dir)) * light_model.emissive_color;
 		}
 	}
 	return color + hit.model.emissive_color;

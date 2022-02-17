@@ -12,8 +12,10 @@ namespace RayTracer
 	unsigned models_size = 0;
 	RayTracer::pixels* ppixels = 0;
 	std::vector<triangle*>* p_all_triangles = 0;
+	std::vector<unsigned char*>* p_all_textures = 0;
 
 	void prepare_data(const std::shared_ptr<std::vector<Core::model*>> pmodels, std::vector<model>& dmodels);
+	RayTracer::texture get_texture(Core::texture core_texture);
 	void triangulate(const Core::model* pmodel, std::vector<RayTracer::triangle>* ptriangles);
 	triangle make_triangle(Core::vertex a, Core::vertex b, Core::vertex c);
 }
@@ -49,6 +51,10 @@ void RayTracer::clear()
 	{
 		cudaFree(dtriangle);
 	}
+	for (unsigned char* dtexture : *p_all_textures)
+	{
+		cudaFree(dtexture);
+	}
 	cudaFree(dgpumodels);
 	cudaFree(ppixels->data);
 	delete p_all_triangles;
@@ -58,25 +64,36 @@ void RayTracer::clear()
 void RayTracer::prepare_data(const std::shared_ptr<std::vector<Core::model*>> pmodels, std::vector<model>& dmodels)
 {
 	p_all_triangles = new std::vector<triangle*>;
+	p_all_textures = new std::vector<unsigned char*>();
 	for (unsigned i = 0; i < pmodels->size(); i++)
 	{
 		Core::model* pmodel = (*pmodels)[i];
 		std::vector<triangle> triangles;
 		triangulate(pmodel, &triangles);
-		RayTracer::triangle* dgputriangles;
-		cudaError_t stat;
-		stat = cudaMalloc(&dgputriangles, sizeof(triangle) * triangles.size());
-		stat = cudaMemcpy(dgputriangles, triangles.data(), sizeof(triangle) * triangles.size(), cudaMemcpyHostToDevice);
 		RayTracer::model dmodel;
-		dmodel.dtriangles = dgputriangles;
+		cudaMalloc(&dmodel.dtriangles, sizeof(triangle) * triangles.size());
+		cudaMemcpy(dmodel.dtriangles, triangles.data(), sizeof(triangle) * triangles.size(), cudaMemcpyHostToDevice);
 		dmodel.emissive_color = pmodel->emissive_color;
-		dmodel.position = pmodel->emissive_color;
+		dmodel.position = pmodel->position;
 		dmodel.reflectivity = pmodel->reflectivity;
 		dmodel.transparency = pmodel->transparency;
 		dmodel.triangles_size = triangles.size();
+		dmodel.texture_data = get_texture(pmodel->texture_data);
 		dmodels.push_back(dmodel);
-		p_all_triangles->push_back(dgputriangles);
+		p_all_triangles->push_back(dmodel.dtriangles);
 	}
+}
+
+RayTracer::texture RayTracer::get_texture(Core::texture core_texture)
+{
+	texture texture;
+	cudaMalloc(&texture.dtextures, sizeof(unsigned char) * core_texture.width * core_texture.height);
+	cudaMemcpy(texture.dtextures, core_texture.ptextures, sizeof(unsigned char) * core_texture.width * core_texture.height, cudaMemcpyHostToDevice);
+	texture.width = core_texture.width;
+	texture.height = core_texture.height;
+	texture.channels = core_texture.channels;
+	p_all_textures->push_back(texture.dtextures);
+	return texture;
 }
 
 void RayTracer::triangulate(const Core::model* pmodel, std::vector<RayTracer::triangle>* ptriangles)

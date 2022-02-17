@@ -5,30 +5,35 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include "stb_image.h"
 
 std::vector<unsigned char>* get_data(nlohmann::json& JSON, const char* file_path);
 std::string extract_file(const char* path);
-void traverse_node(nlohmann::json& JSON, unsigned nextNode, std::vector<unsigned char>* pdata, Core::model* pmodel);
-void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned char>* pdata, Core::model* pmodel);
+void traverse_node(nlohmann::json& JSON, unsigned nextNode, std::vector<unsigned char>* pdata, Core::model* pmodel, const char* file);
+void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned char>* pdata, Core::model* pmodel, const char* file);
 std::vector<float>* get_floats(nlohmann::json& accessor, nlohmann::json& JSON, std::vector<unsigned char>* pdata);
 std::vector<Core::vec3>* group_floats_for_vec3(std::vector<float>* pfloatvec);
 std::vector<Core::vec3>* group_floats_for_vec2(std::vector<float>* pfloatvec);
 std::vector<Core::vertex>* get_vertices(std::vector<Core::vec3>* ppositions, std::vector<Core::vec3>* pnormals, std::vector<Core::vec3>* ptextUVs);
 std::vector<unsigned>* get_indices(nlohmann::json& accessor, nlohmann::json& JSON, std::vector<unsigned char>* pdata);
+void set_textures(const char* file, const nlohmann::json& JSON, Core::texture& texture_data);
 
 std::unique_ptr<Core::model> prepare_gltf_model_data(const char* file_path)
 {
 	std::string json_string = extract_file(file_path);
-	if (json_string.empty())
-	{
-		throw FileReadException("Error reading gltf file");
-	}
+	if (json_string.empty()) throw FileReadException("Error reading gltf file");
 	nlohmann::json json_data = nlohmann::json::parse(json_string);
 	std::vector<unsigned char>* pdata = get_data(json_data, file_path);
 	Core::model* pmodel = new Core::model;
-	traverse_node(json_data, 0, pdata, pmodel);
+	traverse_node(json_data, 0, pdata, pmodel, file_path);
 	delete pdata;
+	if(!pmodel->texture_data.ptextures) throw FileReadException("Error finding and loading texture");
 	return std::unique_ptr<Core::model>(pmodel);
+}
+
+void delete_texture(unsigned char* ptexture)
+{
+	if(ptexture) stbi_image_free(ptexture);
 }
 
 std::vector<unsigned char>* get_data(nlohmann::json& JSON, const char* file_path)
@@ -63,22 +68,22 @@ std::string extract_file(const char* path)
 	return contents;
 }
 
-void traverse_node(nlohmann::json& JSON, unsigned nextNode, std::vector<unsigned char>* pdata, Core::model* pmodel)
+void traverse_node(nlohmann::json& JSON, unsigned nextNode, std::vector<unsigned char>* pdata, Core::model* pmodel, const char* file)
 {
 	nlohmann::json node = JSON["nodes"][nextNode];
 	bool mesh_not_found = true;
 	if (node.find("mesh") != node.end())
 	{
 		mesh_not_found = false;
-		load_mesh(JSON, node["mesh"], pdata, pmodel);
+		load_mesh(JSON, node["mesh"], pdata, pmodel, file);
 	}
 	if (mesh_not_found)
 	{
-		traverse_node(JSON, ++nextNode, pdata, pmodel);
+		traverse_node(JSON, ++nextNode, pdata, pmodel, file);
 	}
 }
 
-void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned char>* pdata, Core::model* pmodel)
+void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned char>* pdata, Core::model* pmodel, const char* file)
 {
 	unsigned int pos_acc_ind = JSON["meshes"][indMesh]["primitives"][0]["attributes"]["POSITION"];
 	unsigned int normal_acc_ind = JSON["meshes"][indMesh]["primitives"][0]["attributes"]["NORMAL"];
@@ -94,6 +99,7 @@ void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned 
 
 	pmodel->pvertices = get_vertices(ppositions, pnormals, ptexUVs);
 	pmodel->pindices = get_indices(JSON["accessors"][ind_acc_ind], JSON, pdata);
+	set_textures(file, JSON, pmodel->texture_data);
 
 	delete pposvec;
 	delete ppositions;
@@ -154,7 +160,7 @@ std::vector<Core::vec3>* group_floats_for_vec2(std::vector<float>* pfloatvec)
 	{
 		float x = pfloatvec->at(i++);
 		float y = pfloatvec->at(i++);
-		pvectors->push_back(Core::vec3{ x, y, 0.0 });
+		pvectors->push_back(Core::vec3{ x, -y, 0.0 });
 	}
 	return pvectors;
 }
@@ -213,4 +219,27 @@ std::vector<unsigned>* get_indices(nlohmann::json& accessor, nlohmann::json& JSO
 		}
 	}
 	return pindices;
+}
+
+void set_textures(const char* file, const nlohmann::json& JSON, Core::texture& texture_data)
+{
+	std::vector<float>* ptextures = new std::vector<float>();
+	std::string fileStr = std::string(file);
+	std::string fileDirectory = fileStr.substr(0, fileStr.find_last_of('/') + 1);
+	for (unsigned int i = 0; i < JSON["images"].size(); i++)
+	{
+		std::string tex_name= JSON["images"][i]["uri"];
+		std::string tex_path = fileDirectory + tex_name;
+		if (tex_name.find("baseColor") != std::string::npos || tex_name.find("diffuse") != std::string::npos)
+		{
+			texture_data.ptextures = stbi_load(tex_path.c_str(), &texture_data.width, &texture_data.height, &texture_data.channels, 0);
+		}
+		/*else if (texPath.find("metallicRoughness") != std::string::npos || texPath.find("specular") != std::string::npos)
+		{
+			Texture* pspecular = new Texture((fileDirectory + texPath).c_str(), "specular", GL_TEXTURE0 + ploadedtex->size(), GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
+			ptextures->push_back(pspecular);
+			ploadedtex->push_back(pspecular);
+			ploadedtexname->push_back(texPath);
+		}*/
+	}
 }
