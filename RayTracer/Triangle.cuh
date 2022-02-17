@@ -29,7 +29,7 @@ namespace RayTracer
 	}
 
 	RUN_ON_GPU
-	Core::vec3 get_rgb(const triangle& t, const Core::vec3& p, const texture& tex)
+	Core::vec3 get_texcoord(const triangle& t, const Core::vec3& p)
 	{
 		double cap_area = length(cross(t.ca, p - t.a));
 		double abp_area = length(cross(t.ab, p - t.b));
@@ -37,13 +37,6 @@ namespace RayTracer
 		double u = cap_area / t.area;
 		double v = abp_area / t.area;
 		double w = bcp_area / t.area;
-		Core::vec3 texcoords = t.a_tex * u + t.b_tex * v + t.c_tex * w;
-		unsigned x = texcoords.x * tex.width;
-		unsigned y = texcoords.y * tex.height;
-		unsigned index = (y * tex.width + x) * 3.0;
-		double r = double(tex.dtextures[index]) / 255.0;
-		double g = double(tex.dtextures[index + 1]) / 255.0;
-		double b = double(tex.dtextures[index + 2]) / 255.0;
-		return (tex.dtextures) ? Core::vec3{ r, g, b } : Core::vec3{};
+		return t.a_tex * u + t.b_tex * v + t.c_tex * w;
 	}
 }

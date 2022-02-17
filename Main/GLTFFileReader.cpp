@@ -16,7 +16,8 @@ std::vector<Core::vec3>* group_floats_for_vec3(std::vector<float>* pfloatvec);
 std::vector<Core::vec3>* group_floats_for_vec2(std::vector<float>* pfloatvec);
 std::vector<Core::vertex>* get_vertices(std::vector<Core::vec3>* ppositions, std::vector<Core::vec3>* pnormals, std::vector<Core::vec3>* ptextUVs);
 std::vector<unsigned>* get_indices(nlohmann::json& accessor, nlohmann::json& JSON, std::vector<unsigned char>* pdata);
-void set_textures(const char* file, const nlohmann::json& JSON, Core::texture& texture_data);
+void set_diffuse_texture(const char* file, const nlohmann::json& JSON, Core::texture& texture_data);
+void set_specular_texture(const char* file, const nlohmann::json& JSON, Core::texture& texture_data);
 
 std::unique_ptr<Core::model> prepare_gltf_model_data(const char* file_path)
 {
@@ -27,13 +28,14 @@ std::unique_ptr<Core::model> prepare_gltf_model_data(const char* file_path)
 	Core::model* pmodel = new Core::model;
 	traverse_node(json_data, 0, pdata, pmodel, file_path);
 	delete pdata;
-	if(!pmodel->texture_data.ptextures) throw FileReadException("Error finding and loading texture");
+	if(!pmodel->diffuse.ptextures) throw FileReadException(std::string("Error loading textures at : ").append(file_path));
 	return std::unique_ptr<Core::model>(pmodel);
 }
 
-void delete_texture(unsigned char* ptexture)
+void delete_texture(Core::model* pmodel)
 {
-	if(ptexture) stbi_image_free(ptexture);
+	if(pmodel->diffuse.ptextures) stbi_image_free(pmodel->diffuse.ptextures);
+	if(pmodel->specular.ptextures) stbi_image_free(pmodel->specular.ptextures);
 }
 
 std::vector<unsigned char>* get_data(nlohmann::json& JSON, const char* file_path)
@@ -99,7 +101,8 @@ void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned 
 
 	pmodel->pvertices = get_vertices(ppositions, pnormals, ptexUVs);
 	pmodel->pindices = get_indices(JSON["accessors"][ind_acc_ind], JSON, pdata);
-	set_textures(file, JSON, pmodel->texture_data);
+	set_diffuse_texture(file, JSON, pmodel->diffuse);
+	set_specular_texture(file, JSON, pmodel->specular);
 
 	delete pposvec;
 	delete ppositions;
@@ -221,7 +224,7 @@ std::vector<unsigned>* get_indices(nlohmann::json& accessor, nlohmann::json& JSO
 	return pindices;
 }
 
-void set_textures(const char* file, const nlohmann::json& JSON, Core::texture& texture_data)
+void set_diffuse_texture(const char* file, const nlohmann::json& JSON, Core::texture& texture_data)
 {
 	std::vector<float>* ptextures = new std::vector<float>();
 	std::string fileStr = std::string(file);
@@ -234,12 +237,21 @@ void set_textures(const char* file, const nlohmann::json& JSON, Core::texture& t
 		{
 			texture_data.ptextures = stbi_load(tex_path.c_str(), &texture_data.width, &texture_data.height, &texture_data.channels, 0);
 		}
-		/*else if (texPath.find("metallicRoughness") != std::string::npos || texPath.find("specular") != std::string::npos)
+	}
+}
+
+void set_specular_texture(const char* file, const nlohmann::json& JSON, Core::texture& texture_data)
+{
+	std::vector<float>* ptextures = new std::vector<float>();
+	std::string fileStr = std::string(file);
+	std::string fileDirectory = fileStr.substr(0, fileStr.find_last_of('/') + 1);
+	for (unsigned int i = 0; i < JSON["images"].size(); i++)
+	{
+		std::string tex_name = JSON["images"][i]["uri"];
+		std::string tex_path = fileDirectory + tex_name;
+		if (tex_name.find("metallicRoughness") != std::string::npos || tex_name.find("specular") != std::string::npos)
 		{
-			Texture* pspecular = new Texture((fileDirectory + texPath).c_str(), "specular", GL_TEXTURE0 + ploadedtex->size(), GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
-			ptextures->push_back(pspecular);
-			ploadedtex->push_back(pspecular);
-			ploadedtexname->push_back(texPath);
-		}*/
+			texture_data.ptextures = stbi_load(tex_path.c_str(), &texture_data.width, &texture_data.height, &texture_data.channels, 0);
+		}
 	}
 }

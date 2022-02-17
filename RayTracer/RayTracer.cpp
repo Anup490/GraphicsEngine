@@ -78,7 +78,8 @@ void RayTracer::prepare_data(const std::shared_ptr<std::vector<Core::model*>> pm
 		dmodel.reflectivity = pmodel->reflectivity;
 		dmodel.transparency = pmodel->transparency;
 		dmodel.triangles_size = triangles.size();
-		dmodel.texture_data = get_texture(pmodel->texture_data);
+		dmodel.diffuse = get_texture(pmodel->diffuse);
+		dmodel.specular = get_texture(pmodel->specular);
 		dmodels.push_back(dmodel);
 		p_all_triangles->push_back(dmodel.dtriangles);
 	}

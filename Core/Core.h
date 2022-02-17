@@ -33,7 +33,8 @@ namespace Core
 		Core::vec3 position, emissive_color;;
 		std::vector<vertex>* pvertices = 0;
 		std::vector<unsigned>* pindices = 0;
-		texture texture_data;
+		texture diffuse;
+		texture specular;
 		double reflectivity = 0.0, transparency = 0.0;
 		~model() { if (pvertices) delete pvertices; if(pindices) delete pindices; }
 	};

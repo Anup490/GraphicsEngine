@@ -162,6 +162,7 @@
     <ClInclude Include="RayTracer.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Core.cuh" />
+    <ClInclude Include="Texture.cuh" />
     <ClInclude Include="Triangle.cuh" />
     <ClInclude Include="Vector.cuh" />
     <ClInclude Include="Vector.h" />

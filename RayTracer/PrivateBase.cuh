@@ -27,7 +27,7 @@ namespace RayTracer
 	{
 		Core::vec3 position, emissive_color;
 		triangle* dtriangles = 0;
-		texture texture_data;
+		texture diffuse, specular;
 		unsigned triangles_size = 0;
 		double reflectivity = 0.0, transparency = 0.0;
 	};

@@ -10,10 +10,10 @@ namespace std
 
 struct FileReadException : std::exception
 {
-	const char* message;
-	FileReadException(const char* message) : message(message) {}
-	char const* what() const override { return message; }
+	std::string message;
+	FileReadException(std::string message) : message(message) {}
+	char const* what() const override { return message.c_str(); }
 };
 
 std::unique_ptr<Core::model> prepare_gltf_model_data(const char* file_path) throw(FileReadException);
-void delete_texture(unsigned char* ptexture);
+void delete_texture(Core::model* pmodel);

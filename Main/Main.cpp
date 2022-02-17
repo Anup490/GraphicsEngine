@@ -25,7 +25,7 @@ void main()
 		std::unique_ptr<Core::vec3> ppixels = RayTracer::render(90.0, RayTracer::Projection::PERSPECTIVE);
 		write_to_file(ppixels.get(), 640, 480);
 		std::cout << "Scene rendered" << std::endl;
-		delete_texture(pmodel->texture_data.ptextures);
+		delete_texture(pmodel.get());
 	}
 	catch (std::exception& e)
 	{
