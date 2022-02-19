@@ -8,7 +8,6 @@
 #include "stb_image.h"
 
 std::vector<unsigned char>* get_data(nlohmann::json& JSON, const char* file_path);
-std::string extract_file(const char* path);
 void traverse_node(nlohmann::json& JSON, unsigned nextNode, std::vector<unsigned char>* pdata, Core::model* pmodel, const char* file);
 void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned char>* pdata, Core::model* pmodel, const char* file);
 std::vector<float>* get_floats(nlohmann::json& accessor, nlohmann::json& JSON, std::vector<unsigned char>* pdata);
@@ -32,23 +31,6 @@ std::unique_ptr<Core::model> prepare_gltf_model_data(const char* file_path)
 	return std::unique_ptr<Core::model>(pmodel);
 }
 
-void delete_texture(Core::model* pmodel)
-{
-	if(pmodel->diffuse.ptextures) stbi_image_free(pmodel->diffuse.ptextures);
-	if(pmodel->specular.ptextures) stbi_image_free(pmodel->specular.ptextures);
-}
-
-std::vector<unsigned char>* get_data(nlohmann::json& JSON, const char* file_path)
-{
-	std::string bytesText;
-	std::string uri = JSON["buffers"][0]["uri"];
-	std::string fileStr = std::string(file_path);
-	std::string fileDirectory = fileStr.substr(0, fileStr.find_last_of('/') + 1);
-	bytesText = extract_file((fileDirectory + uri).c_str());
-	std::vector<unsigned char>* pdata = new std::vector<unsigned char>(bytesText.begin(), bytesText.end());
-	return pdata;
-}
-
 std::string extract_file(const char* path)
 {
 	std::string contents = "";
@@ -68,6 +50,23 @@ std::string extract_file(const char* path)
 		std::cout << "Error :: " << f.what() << std::endl;
 	}
 	return contents;
+}
+
+void delete_texture(Core::model* pmodel)
+{
+	if(pmodel->diffuse.ptextures) stbi_image_free(pmodel->diffuse.ptextures);
+	if(pmodel->specular.ptextures) stbi_image_free(pmodel->specular.ptextures);
+}
+
+std::vector<unsigned char>* get_data(nlohmann::json& JSON, const char* file_path)
+{
+	std::string bytesText;
+	std::string uri = JSON["buffers"][0]["uri"];
+	std::string fileStr = std::string(file_path);
+	std::string fileDirectory = fileStr.substr(0, fileStr.find_last_of('/') + 1);
+	bytesText = extract_file((fileDirectory + uri).c_str());
+	std::vector<unsigned char>* pdata = new std::vector<unsigned char>(bytesText.begin(), bytesText.end());
+	return pdata;
 }
 
 void traverse_node(nlohmann::json& JSON, unsigned nextNode, std::vector<unsigned char>* pdata, Core::model* pmodel, const char* file)

@@ -17,3 +17,4 @@ struct FileReadException : std::exception
 
 std::unique_ptr<Core::model> prepare_gltf_model_data(const char* file_path) throw(FileReadException);
 void delete_texture(Core::model* pmodel);
+std::string extract_file(const char* path);
