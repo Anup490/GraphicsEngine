@@ -5,52 +5,43 @@
 #include "RayTracer.h"
 #include <glad/glad.h>
 #include <glfw3.h>
-#include <fstream>
 
-#include "stb_image.h"
-
-void write_to_file(Core::vec3* pixels, int width, int height);
 void check_btn_press(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xpos, double ypos);
 
 void main()
 {
-	std::cout << "Preparing model data" << std::endl;
+	std::cout << "Loading..." << std::endl;
 	int window_width = 640, window_height = 480;
 	const char* window_title = "GraphicsEngine";
-	bool init_called = false, no_issue = true;
+	bool init_called = false;
+	std::unique_ptr<Core::model> pmodel;
 	try
 	{
-		std::unique_ptr<Core::model> pmodel = prepare_gltf_model_data("D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf");
+		pmodel = prepare_gltf_model_data("D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf");
 		Core::model light_model{ Core::vec3{}, Core::vec3{1.0, 1.0, 1.0} };
-		std::cout << "Data extracted" << std::endl;
-		std::cout << "Rendering scene" << std::endl;
 		std::shared_ptr<std::vector<Core::model*>> pmodels(new std::vector<Core::model*>);
 		pmodels->push_back(pmodel.get());
 		pmodels->push_back(&light_model);
 		RayTracer::init(pmodels, 640, 480);
 		init_called = true;
-		std::unique_ptr<Core::vec3> ppixels = RayTracer::render(90.0, RayTracer::Projection::PERSPECTIVE);
-		write_to_file(ppixels.get(), 640, 480);
-		std::cout << "Scene rendered" << std::endl;
-		delete_texture(pmodel.get());
-		no_issue = true;
 	}
 	catch (std::exception& e)
 	{
 		std::cout << "Exception thrown :: "<< e.what() << std::endl;
 	}
-	if (no_issue)
+	std::cout << "Opening window" << std::endl;
+	if (init_called)
 	{
-		const char* window_title = "OpenGLExercise3EasyProblem";
+		const char* window_title = "GraphicsEngine";
 
 		GLfloat square_vertices[] =
 		{
-			-1.0f, -1.0f, 0.0f,   0.0f, 0.0f,
-			 1.0f, -1.0f, 0.0f,   1.0f, 0.0f,
-			-1.0f,  1.0f, 0.0f,   0.0f, 1.0f,
-			 1.0f,  1.0f, 0.0f,   1.0f, 1.0f
+			-1.0f, -1.0f, 0.0f,   1.0f, 1.0f,
+			 1.0f, -1.0f, 0.0f,   0.0f, 1.0f,
+			-1.0f,  1.0f, 0.0f,   1.0f, 0.0f,
+			 1.0f,  1.0f, 0.0f,   0.0f, 0.0f
 		};
 
 		GLuint square_indices[] =
@@ -129,54 +120,29 @@ void main()
 		GLuint texture;
 		glGenTextures(1, &texture);
 		glBindTexture(GL_TEXTURE_2D, texture);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		int width_container, height_container, color_channels_container;
-		stbi_set_flip_vertically_on_load(true);
-		unsigned char* container = stbi_load("D:/Projects/C++/OpenGLExercise/container.png", &width_container, &height_container, &color_channels_container, 0);
-		if (container)
-		{
-			std::cout << "container face texture found" << std::endl;
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width_container, height_container, 0, GL_RGB, GL_UNSIGNED_BYTE, container);
-		}
-
-		int width_happy, height_happy, color_channels_happy;
-		stbi_set_flip_vertically_on_load(true);
-		unsigned char* happy = stbi_load("D:/Projects/C++/OpenGLExercise/happy.png", &width_happy, &height_happy, &color_channels_happy, 0);
-		if (happy)
-		{
-			std::cout << "happy face texture found" << std::endl;
-		}
-
-		double crnt_time = 0, prev_time = glfwGetTime(), time_diff = 0;
-		bool show_happy = true;
 
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		glfwSetCursorPosCallback(window, mouse_callback);
 		glfwSetScrollCallback(window, scroll_callback);
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
 		while (!glfwWindowShouldClose(window))
 		{
 			glClearColor(0.23f, 0.11f, 0.32f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT);
-			crnt_time = glfwGetTime();
-			time_diff = crnt_time - prev_time;
-			if (time_diff > 1.0)
+			try
 			{
-				if (show_happy)
-				{
-					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width_container, height_container, 0, GL_RGB, GL_UNSIGNED_BYTE, container);
-					show_happy = false;
-				}
-				else
-				{
-					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width_happy, height_happy, 0, GL_RGBA, GL_UNSIGNED_BYTE, happy);
-					show_happy = true;
-				}
-				prev_time = crnt_time;
+				std::unique_ptr<RayTracer::rgb> ppixels = RayTracer::render(90.0, RayTracer::Projection::PERSPECTIVE);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, ppixels.get());
+			}
+			catch (RayTracer::RayTraceException& e)
+			{
+				std::cout << "Exception caught :: " << e.what() << std::endl;
+				break;
 			}
 			glUseProgram(shader_program);
 			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -189,24 +155,9 @@ void main()
 		glDeleteProgram(shader_program);
 		glfwDestroyWindow(window);
 		glfwTerminate();
-
-		if(happy) stbi_image_free(happy);
-		if(container) stbi_image_free(container);
 	}
-
+	delete_texture(pmodel.get());
 	if(init_called) RayTracer::clear();
-}
-
-void write_to_file(Core::vec3* pixels, int width, int height)
-{
-	std::ofstream ofs("gengine.ppm", std::ios::out | std::ios::binary);
-	ofs << "P6\n" << width << " " << height << "\n255\n";
-	for (unsigned i = 0; i < width * height; ++i) {
-		ofs << (unsigned char)(std::min(double(1), pixels[i].x) * 255) <<
-			(unsigned char)(std::min(double(1), pixels[i].y) * 255) <<
-			(unsigned char)(std::min(double(1), pixels[i].z) * 255);
-	}
-	ofs.close();
 }
 
 void check_btn_press(GLFWwindow* window)

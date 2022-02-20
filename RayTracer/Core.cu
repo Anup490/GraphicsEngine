@@ -9,10 +9,10 @@ namespace RayTracer
 {
 	enum class ColorType { REFLECTION, REFRACTION };
 	struct ray { Core::vec3 origin, dir, phit, nhit; };
-	struct hit { triangle triangle; model model; };
+	struct hit { triangle triangle; model* pmodel; };
 
 	RUN_ON_GPU_CALL_FROM_CPU void render(pixels pixels, models models, double fov, Projection proj_type);
-	RUN_ON_GPU Core::vec3 cast_primary_ray(const models& models, ray ray);
+	RUN_ON_GPU Core::vec3 cast_primary_ray(const models& models, ray& ray);
 	RUN_ON_GPU bool detect_hit(const models& models, ray& ray, hit& hit_item);
 	RUN_ON_GPU Core::vec3 cast_second_ray(const ColorType type, const models& models, const ray& ray);
 	RUN_ON_GPU Core::vec3 get_reflect_dir(const Core::vec3& incident_dir, const Core::vec3& nhit);
@@ -44,23 +44,25 @@ void RayTracer::render(RayTracer::pixels pixels, const models models, double fov
 	Core::vec3 dir = (proj_type == Projection::PERSPECTIVE) ? Core::vec3{ x, y, -near_plane } : Core::vec3{ 0.0, 0.0, -near_plane };
 	normalize(dir);
 	Core::vec3 origin = (proj_type == Projection::PERSPECTIVE) ? Core::vec3{} : Core::vec3{ x, y };
-	pixels.data[index] = cast_primary_ray(models, ray{ origin, dir });
+	ray pray{ origin, dir };
+	Core::vec3 color = cast_primary_ray(models, pray);
+	pixels.data[index] = rgb{ unsigned char(color.x * 255.0), unsigned char(color.y * 255.0), unsigned char(color.z * 255.0) };
 }
 
 RUN_ON_GPU
-Core::vec3 RayTracer::cast_primary_ray(const models& models, ray ray)
+Core::vec3 RayTracer::cast_primary_ray(const models& models, ray& ray)
 {
 	Core::vec3 surface_color, background{ 1.0, 1.0, 1.0 };
 	hit hit_item;
 	if (!detect_hit(models, ray, hit_item)) return background;
-	if (hit_item.model.reflectivity > 0.0 || hit_item.model.transparency > 0.0)
+	if (hit_item.pmodel->reflectivity > 0.0 || hit_item.pmodel->transparency > 0.0)
 	{
-		Core::vec3 reflection_color = (hit_item.model.reflectivity > 0.0) ? cast_second_ray(ColorType::REFLECTION, models, ray) : background;
-		Core::vec3 refraction_color = (hit_item.model.transparency > 0.0) ? cast_second_ray(ColorType::REFRACTION, models, ray) : background;
+		Core::vec3 reflection_color = (hit_item.pmodel->reflectivity > 0.0) ? cast_second_ray(ColorType::REFLECTION, models, ray) : background;
+		Core::vec3 refraction_color = (hit_item.pmodel->transparency > 0.0) ? cast_second_ray(ColorType::REFRACTION, models, ray) : background;
 		double fresnel = schlick_approximation(dot(-ray.dir, ray.nhit), 0.1);
 		Core::vec3 texcoord = get_texcoord(hit_item.triangle, ray.phit);
-		Core::vec3 diffuse_color = get_color(texcoord, hit_item.model.diffuse);
-		surface_color = (reflection_color * fresnel + refraction_color * (1 - fresnel) * hit_item.model.transparency) * diffuse_color;
+		Core::vec3 diffuse_color = get_color(texcoord, hit_item.pmodel->diffuse);
+		surface_color = (reflection_color * fresnel + refraction_color * (1 - fresnel) * hit_item.pmodel->transparency) * diffuse_color;
 	}
 	else
 	{
@@ -86,7 +88,7 @@ bool RayTracer::detect_hit(const models& models, ray& ray, hit& hit_item)
 				{
 					tnear = t0;
 					hit_item.triangle = triangles[i];
-					hit_item.model = models.models[m];
+					hit_item.pmodel = &models.models[m];
 					if (!hit) hit = true;
 				}
 			}
@@ -112,10 +114,10 @@ Core::vec3 RayTracer::cast_second_ray(const ColorType type, const models& models
 	nray.dir = (type == ColorType::REFRACTION) ? get_refract_dir(pray.dir, pray.nhit, inside) : get_reflect_dir(pray.dir, pray.nhit);
 	while ((depth < RECURSION_DEPTH) && detect_hit(models, nray, hit_item))
 	{
-		if ((type == ColorType::REFRACTION) ? (hit_item.model.transparency > 0.0) : (hit_item.model.reflectivity > 0.0))
+		if ((type == ColorType::REFRACTION) ? (hit_item.pmodel->transparency > 0.0) : (hit_item.pmodel->reflectivity > 0.0))
 		{
 			Core::vec3 texcoord = get_texcoord(hit_item.triangle, nray.phit);
-			color *= get_color(texcoord, hit_item.model.diffuse);
+			color *= get_color(texcoord, hit_item.pmodel->diffuse);
 			nray.dir = (type == ColorType::REFRACTION) ? get_refract_dir(nray.dir, nray.nhit, inside) : get_reflect_dir(nray.dir, nray.nhit);
 			nray.origin = (type == ColorType::REFRACTION) ? nray.phit - nray.nhit * bias : nray.phit;
 			depth++;
@@ -163,28 +165,28 @@ Core::vec3 RayTracer::cast_shadow_ray(const models& models, const ray& rray, con
 	Core::vec3 color;
 	for (unsigned l = 0; l < models.size; l++)
 	{
-		model light_model = models.models[l];
-		if (light_model.emissive_color.x > 0.0)
+		model* light_model = &models.models[l];
+		if (light_model->emissive_color.x > 0.0)
 		{
-			Core::vec3 shadow_dir = light_model.position - rray.phit;
+			Core::vec3 shadow_dir = light_model->position - rray.phit;
 			normalize(shadow_dir);
 			Core::vec3 shadow_origin = rray.phit + rray.nhit * bias;
 			ray shadow_ray{ shadow_origin, shadow_dir };
 			glow = get_glow(l, models, shadow_ray);
 			Core::vec3 texcoord = get_texcoord(hit.triangle, rray.phit);
 
-			Core::vec3 diffuse = get_color(texcoord, hit.model.diffuse) * max_val(0.0, dot(rray.nhit, shadow_dir));
+			Core::vec3 diffuse = get_color(texcoord, hit.pmodel->diffuse) * max_val(0.0, dot(rray.nhit, shadow_dir));
 
 			Core::vec3 reflect_dir = get_reflect_dir(-shadow_dir, rray.nhit);
 			normalize(reflect_dir);
 			Core::vec3 view_dir = camera - rray.phit;
 			double spec = pow(max_val(0.0, dot(view_dir, reflect_dir)), 32);
-			Core::vec3 specular = get_color(texcoord, hit.model.specular) * spec;
+			Core::vec3 specular = get_color(texcoord, hit.pmodel->specular) * spec;
 
-			color+= (diffuse + specular) * glow * light_model.emissive_color;
+			color+= (diffuse + specular) * glow * light_model->emissive_color;
 		}
 	}
-	return color + hit.model.emissive_color;
+	return color + hit.pmodel->emissive_color;
 }
 
 RUN_ON_GPU double RayTracer::get_glow(const unsigned light_index, const models& models, const ray& shadow_ray)

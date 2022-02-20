@@ -3,9 +3,15 @@
 
 namespace RayTracer
 {
+	struct rgb
+	{
+		unsigned char r = 0, g = 0, b = 0;
+	};
+
+
 	struct pixels
 	{
-		Core::vec3* data = 0;
+		rgb* data = 0;
 		int width = 0, height = 0;
 		pixels(int width, int height) : width(width), height(height) {}
 	};

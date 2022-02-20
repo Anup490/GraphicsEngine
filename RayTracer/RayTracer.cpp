@@ -29,20 +29,21 @@ void RayTracer::init(std::shared_ptr<std::vector<Core::model*>> pmodels, int wid
 	cudaMalloc(&dgpumodels, sizeof(model) * dmodels.size());
 	cudaMemcpy(dgpumodels, dmodels.data(), sizeof(model) * dmodels.size(), cudaMemcpyHostToDevice);
 	models_size = dmodels.size();
-	Core::vec3* drgbs;
-	cudaMalloc(&drgbs, sizeof(Core::vec3) * width * height);
+	rgb* drgbs;
+	cudaMalloc(&drgbs, sizeof(rgb) * width * height);
 	ppixels = new pixels(width, height);
 	ppixels->data = drgbs;
 }
 
-std::unique_ptr<Core::vec3> RayTracer::render(double fov, Projection proj_type) throw(RayTraceException)
+std::unique_ptr<RayTracer::rgb> RayTracer::render(double fov, Projection proj_type) throw(RayTraceException)
 {
 	if (!dgpumodels || !ppixels) throw RayTraceException("init function not called");
 	draw_frame(*ppixels, models{ dgpumodels, models_size }, fov, proj_type);
 	cudaDeviceSynchronize();
-	Core::vec3* prgbs = new Core::vec3[ppixels->width * ppixels->height];
-	cudaMemcpy(prgbs, ppixels->data, sizeof(Core::vec3) * ppixels->width * ppixels->height, cudaMemcpyDeviceToHost);
-	return std::unique_ptr<Core::vec3>(prgbs);
+	int size = (ppixels->width) * (ppixels->height);
+	rgb* prgbs = new rgb[size];
+	cudaMemcpy(prgbs, ppixels->data, sizeof(rgb) * size, cudaMemcpyDeviceToHost);
+	return std::unique_ptr<rgb>(prgbs);
 }
 
 void RayTracer::clear()
