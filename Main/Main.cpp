@@ -163,13 +163,17 @@ void main()
 void check_btn_press(GLFWwindow* window)
 {
 	if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		std::cout << "Presses button W" << std::endl;
+		std::cout << "Pressed button W" << std::endl;
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		std::cout << "Presses button A" << std::endl;
+		std::cout << "Pressed button A" << std::endl;
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		std::cout << "Presses button S" << std::endl;
+		std::cout << "Pressed button S" << std::endl;
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		std::cout << "Presses button D" << std::endl;
+		std::cout << "Pressed button D" << std::endl;
+	if (glfwGetKey(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+		std::cout << "Pressed left mouse button" << std::endl;
+	if (glfwGetKey(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
+		std::cout << "Released left mouse button" << std::endl;
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)

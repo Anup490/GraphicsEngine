@@ -8,7 +8,6 @@
 namespace RayTracer
 {
 	enum class ColorType { REFLECTION, REFRACTION };
-	struct ray { Core::vec3 origin, dir, phit, nhit; };
 	struct hit { triangle triangle; model* pmodel; };
 
 	RUN_ON_GPU_CALL_FROM_CPU void render(pixels pixels, models models, double fov, Projection proj_type);

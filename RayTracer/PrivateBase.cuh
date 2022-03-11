@@ -25,7 +25,7 @@ namespace RayTracer
 
 	struct model
 	{
-		Core::vec3 position, emissive_color;
+		Core::vec3 position, emissive_color, min_coord, max_coord;
 		triangle* dtriangles = 0;
 		texture diffuse, specular;
 		unsigned triangles_size = 0;
@@ -36,5 +36,10 @@ namespace RayTracer
 	{
 		model* models;
 		unsigned size = 0;
+	};
+
+	struct ray 
+	{ 
+		Core::vec3 origin, dir, phit, nhit; 
 	};
 }

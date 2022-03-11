@@ -30,7 +30,7 @@ namespace Core
 
 	struct model
 	{
-		Core::vec3 position, emissive_color;;
+		Core::vec3 position, emissive_color;
 		std::vector<vertex>* pvertices = 0;
 		std::vector<unsigned>* pindices = 0;
 		texture diffuse;
