@@ -157,11 +157,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="framework.h" />
+    <ClInclude Include="Interface.cuh" />
+    <ClInclude Include="Math.cuh" />
     <ClInclude Include="PrivateBase.cuh" />
     <ClInclude Include="PublicBase.h" />
     <ClInclude Include="RayTracer.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Core.cuh" />
+    <ClInclude Include="Sphere.cuh" />
     <ClInclude Include="Texture.cuh" />
     <ClInclude Include="Triangle.cuh" />
     <ClInclude Include="Vector.cuh" />

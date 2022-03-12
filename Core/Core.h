@@ -10,6 +10,8 @@ namespace std
 }
 namespace Core
 {
+	enum class shape_type { TRIANGLE, SPHERE };
+
 	struct vec3
 	{
 		double x = 0.0, y = 0.0, z = 0.0;
@@ -30,13 +32,14 @@ namespace Core
 
 	struct model
 	{
-		Core::vec3 position, emissive_color;
-		std::vector<vertex>* pvertices = 0;
-		std::vector<unsigned>* pindices = 0;
+		Core::vec3 position, emissive_color, surface_color;
+		void* pshapes = 0;
+		unsigned shapes_size = 0;
 		texture diffuse;
 		texture specular;
 		double reflectivity = 0.0, transparency = 0.0;
-		~model() { if (pvertices) delete pvertices; if(pindices) delete pindices; }
+		shape_type shape;
+		~model() { if (pshapes) delete[] pshapes; }
 	};
 
 	struct triangle

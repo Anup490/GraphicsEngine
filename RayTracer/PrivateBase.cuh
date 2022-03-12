@@ -23,13 +23,20 @@ namespace RayTracer
 		double plane_distance = 0.0, area = 0.0;
 	};
 
+	struct sphere
+	{
+		float radius_square;
+		Core::vec3 center;
+	};
+
 	struct model
 	{
-		Core::vec3 position, emissive_color, min_coord, max_coord;
-		triangle* dtriangles = 0;
-		texture diffuse, specular;
-		unsigned triangles_size = 0;
+		Core::vec3 position, emissive_color, min_coord, max_coord, surface_color;
 		double reflectivity = 0.0, transparency = 0.0;
+		texture diffuse, specular;
+		void* dshapes = 0;
+		unsigned shapes_size = 0;
+		Core::shape_type shape;
 	};
 
 	struct models
@@ -40,6 +47,8 @@ namespace RayTracer
 
 	struct ray 
 	{ 
-		Core::vec3 origin, dir, phit, nhit; 
+		Core::vec3 origin, dir, phit, nhit, texcoord;
 	};
+
+	struct hit { void* shape; model* pmodel; };
 }

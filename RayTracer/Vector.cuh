@@ -1,9 +1,10 @@
 #pragma once
 #include "PrivateBase.cuh"
-#include <math.h>
 
 namespace RayTracer
 {
+	double square_root(double num);
+
 	RUN_ON_CPU_AND_GPU
 	double dot(const Core::vec3& v1, const Core::vec3& v2)
 	{
@@ -13,7 +14,7 @@ namespace RayTracer
 	RUN_ON_CPU_AND_GPU
 	double length(const Core::vec3& v1)
 	{
-		return sqrt(dot(v1, v1));
+		return square_root(dot(v1, v1));
 	}
 
 	RUN_ON_CPU_AND_GPU

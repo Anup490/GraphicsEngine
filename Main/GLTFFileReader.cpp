@@ -17,6 +17,7 @@ std::vector<Core::vertex>* get_vertices(std::vector<Core::vec3>* ppositions, std
 std::vector<unsigned>* get_indices(nlohmann::json& accessor, nlohmann::json& JSON, std::vector<unsigned char>* pdata);
 void set_diffuse_texture(const char* file, const nlohmann::json& JSON, Core::texture& texture_data);
 void set_specular_texture(const char* file, const nlohmann::json& JSON, Core::texture& texture_data);
+void triangulate(Core::model* pmodel, std::vector<Core::vertex>* pvertices, std::vector<unsigned>* pindices);
 
 std::unique_ptr<Core::model> prepare_gltf_model_data(const char* file_path)
 {
@@ -98,8 +99,9 @@ void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned 
 	std::vector<float>* ptexvec = get_floats(JSON["accessors"][tex_acc_ind], JSON, pdata);
 	std::vector<Core::vec3>* ptexUVs = group_floats_for_vec2(ptexvec);
 
-	pmodel->pvertices = get_vertices(ppositions, pnormals, ptexUVs);
-	pmodel->pindices = get_indices(JSON["accessors"][ind_acc_ind], JSON, pdata);
+	std::vector<Core::vertex>* pvertices = get_vertices(ppositions, pnormals, ptexUVs);
+	std::vector<unsigned>* pindices = get_indices(JSON["accessors"][ind_acc_ind], JSON, pdata);
+	triangulate(pmodel, pvertices, pindices);
 	set_diffuse_texture(file, JSON, pmodel->diffuse);
 	set_specular_texture(file, JSON, pmodel->specular);
 
@@ -252,5 +254,23 @@ void set_specular_texture(const char* file, const nlohmann::json& JSON, Core::te
 		{
 			texture_data.ptextures = stbi_load(tex_path.c_str(), &texture_data.width, &texture_data.height, &texture_data.channels, 0);
 		}
+	}
+}
+
+void triangulate(Core::model* pmodel, std::vector<Core::vertex>* pvertices, std::vector<unsigned>* pindices)
+{
+	if (!pvertices || !pindices) return;
+	pmodel->shapes_size = pindices->size() / 3;
+	pmodel->pshapes = new Core::triangle[pmodel->shapes_size];
+	pmodel->shape = Core::shape_type::TRIANGLE;
+	pmodel->surface_color = Core::vec3{ 1.0, 1.0, 1.0 };
+	unsigned t = 0;
+	for (unsigned i = 0; i < pindices->size();)
+	{
+		Core::vertex a = (*pvertices)[(*pindices)[i++]];
+		Core::vertex b = (*pvertices)[(*pindices)[i++]];
+		Core::vertex c = (*pvertices)[(*pindices)[i++]];
+		Core::triangle* ptriangles = (Core::triangle*)(pmodel->pshapes);
+		ptriangles[t++] = Core::triangle{ a, b, c };
 	}
 }

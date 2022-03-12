@@ -1,23 +1,21 @@
 #include "pch.h"
 #include <device_launch_parameters.h>
-#include "Texture.cuh"
 #include "Core.cuh"
+#include "Interface.cuh"
 
 #define RECURSION_DEPTH 5
 
 namespace RayTracer
 {
 	enum class ColorType { REFLECTION, REFRACTION };
-	struct hit { triangle triangle; model* pmodel; };
 
 	RUN_ON_GPU_CALL_FROM_CPU void render(pixels pixels, models models, double fov, Projection proj_type);
 	RUN_ON_GPU Core::vec3 cast_primary_ray(const models& models, ray& ray);
-	RUN_ON_GPU bool detect_hit(const models& models, ray& ray, hit& hit_item);
-	RUN_ON_GPU Core::vec3 cast_second_ray(const ColorType type, const models& models, const ray& ray);
+	RUN_ON_GPU Core::vec3 cast_second_ray(const ColorType type, const models& models, ray& ray);
 	RUN_ON_GPU Core::vec3 get_reflect_dir(const Core::vec3& incident_dir, const Core::vec3& nhit);
 	RUN_ON_GPU Core::vec3 get_refract_dir(const Core::vec3& incident_dir, const Core::vec3& nhit, const bool& inside);
 	RUN_ON_GPU double schlick_approximation(double cosine, double R);
-	RUN_ON_GPU Core::vec3 cast_shadow_ray(const models& models, const ray& ray, const hit& hit);
+	RUN_ON_GPU Core::vec3 cast_shadow_ray(const models& models, ray& ray, const hit& hit);
 	RUN_ON_GPU double get_glow(const unsigned light_index, const models& models, const ray& shadow_ray);
 	RUN_ON_GPU double max_val(double val1, double val2);
 }
@@ -59,8 +57,7 @@ Core::vec3 RayTracer::cast_primary_ray(const models& models, ray& ray)
 		Core::vec3 reflection_color = (hit_item.pmodel->reflectivity > 0.0) ? cast_second_ray(ColorType::REFLECTION, models, ray) : background;
 		Core::vec3 refraction_color = (hit_item.pmodel->transparency > 0.0) ? cast_second_ray(ColorType::REFRACTION, models, ray) : background;
 		double fresnel = schlick_approximation(dot(-ray.dir, ray.nhit), 0.1);
-		Core::vec3 texcoord = get_texcoord(hit_item.triangle, ray.phit);
-		Core::vec3 diffuse_color = get_color(texcoord, hit_item.pmodel->diffuse);
+		Core::vec3 diffuse_color = get_color(hit_item, ray, hit_item.pmodel->diffuse);
 		surface_color = (reflection_color * fresnel + refraction_color * (1 - fresnel) * hit_item.pmodel->transparency) * diffuse_color;
 	}
 	else
@@ -71,37 +68,7 @@ Core::vec3 RayTracer::cast_primary_ray(const models& models, ray& ray)
 }
 
 RUN_ON_GPU
-bool RayTracer::detect_hit(const models& models, ray& ray, hit& hit_item)
-{
-	double t0 = INFINITY, tnear = INFINITY;
-	bool hit = false;
-	for (unsigned m = 0; m < models.size; m++)
-	{
-		triangle* triangles = models.models[m].dtriangles;
-		unsigned triangles_count = models.models[m].triangles_size;
-		for (unsigned i = 0; i < triangles_count; i++)
-		{
-			if (does_intersect(triangles[i], ray.origin, ray.dir, t0))
-			{
-				if (tnear > t0)
-				{
-					tnear = t0;
-					hit_item.triangle = triangles[i];
-					hit_item.pmodel = &models.models[m];
-					if (!hit) hit = true;
-				}
-			}
-		}
-	}
-	if (!hit) return hit;
-	ray.phit = ray.origin + (ray.dir * tnear);
-	ray.nhit = hit_item.triangle.normal;
-	normalize(ray.nhit);
-	return hit;
-}
-
-RUN_ON_GPU
-Core::vec3 RayTracer::cast_second_ray(const ColorType type, const models& models, const ray& pray)
+Core::vec3 RayTracer::cast_second_ray(const ColorType type, const models& models, ray& pray)
 {
 	Core::vec3 color { 1.0, 1.0, 1.0 };
 	double bias = 1e-4;
@@ -115,8 +82,7 @@ Core::vec3 RayTracer::cast_second_ray(const ColorType type, const models& models
 	{
 		if ((type == ColorType::REFRACTION) ? (hit_item.pmodel->transparency > 0.0) : (hit_item.pmodel->reflectivity > 0.0))
 		{
-			Core::vec3 texcoord = get_texcoord(hit_item.triangle, nray.phit);
-			color *= get_color(texcoord, hit_item.pmodel->diffuse);
+			color *= get_color(hit_item, nray, hit_item.pmodel->diffuse);
 			nray.dir = (type == ColorType::REFRACTION) ? get_refract_dir(nray.dir, nray.nhit, inside) : get_reflect_dir(nray.dir, nray.nhit);
 			nray.origin = (type == ColorType::REFRACTION) ? nray.phit - nray.nhit * bias : nray.phit;
 			depth++;
@@ -157,7 +123,7 @@ double RayTracer::schlick_approximation(double cosine, double R)
 }
 
 RUN_ON_GPU
-Core::vec3 RayTracer::cast_shadow_ray(const models& models, const ray& rray, const hit& hit)
+Core::vec3 RayTracer::cast_shadow_ray(const models& models, ray& rray, const hit& hit)
 {
 	Core::vec3 camera;
 	double bias = 1e-4, glow = 1.0;
@@ -172,42 +138,28 @@ Core::vec3 RayTracer::cast_shadow_ray(const models& models, const ray& rray, con
 			Core::vec3 shadow_origin = rray.phit + rray.nhit * bias;
 			ray shadow_ray{ shadow_origin, shadow_dir };
 			glow = get_glow(l, models, shadow_ray);
-			Core::vec3 texcoord = get_texcoord(hit.triangle, rray.phit);
-
-			Core::vec3 diffuse = get_color(texcoord, hit.pmodel->diffuse) * max_val(0.0, dot(rray.nhit, shadow_dir));
-
+			Core::vec3 diffuse = get_color(hit, rray, hit.pmodel->diffuse) * max_val(0.0, dot(rray.nhit, shadow_dir));
 			Core::vec3 reflect_dir = get_reflect_dir(-shadow_dir, rray.nhit);
 			normalize(reflect_dir);
 			Core::vec3 view_dir = camera - rray.phit;
 			double spec = pow(max_val(0.0, dot(view_dir, reflect_dir)), 32);
-			Core::vec3 specular = get_color(texcoord, hit.pmodel->specular) * spec;
-
+			Core::vec3 specular = get_color(hit, rray, hit.pmodel->specular) * spec;
 			color+= (diffuse + specular) * glow * light_model->emissive_color;
 		}
 	}
 	return color + hit.pmodel->emissive_color;
 }
 
-RUN_ON_GPU double RayTracer::get_glow(const unsigned light_index, const models& models, const ray& shadow_ray)
+RUN_ON_GPU 
+double RayTracer::get_glow(const unsigned light_index, const models& models, const ray& shadow_ray)
 {
 	double t0 = INFINITY, glow = 1.0;
 	for (unsigned m = 0; m < models.size; m++)
 	{
 		if (m != light_index)
 		{
-			bool is_occluded = false;
-			triangle* triangles = models.models[m].dtriangles;
-			unsigned triangles_count = models.models[m].triangles_size;
-			for (unsigned i = 0; i < triangles_count; i++)
-			{
-				if (does_intersect(triangles[i], shadow_ray.origin, shadow_ray.dir, t0))
-				{
-					glow = 0.0;
-					is_occluded = true;
-					break;
-				}
-			}
-			if (is_occluded) break;
+			glow = get_glow_val(models.models[m], shadow_ray, t0);
+			if (glow == 0.0) break;
 		}
 	}
 	return glow;

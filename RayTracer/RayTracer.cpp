@@ -11,7 +11,7 @@ namespace RayTracer
 	model* dgpumodels = 0;
 	unsigned models_size = 0;
 	RayTracer::pixels* ppixels = 0;
-	std::vector<triangle*>* p_all_triangles = 0;
+	std::vector<void*>* p_all_shapes = 0;
 	std::vector<unsigned char*>* p_all_textures = 0;
 
 	void prepare_data(const std::shared_ptr<std::vector<Core::model*>> pmodels, std::vector<model>& dmodels);
@@ -25,6 +25,8 @@ void RayTracer::init(std::shared_ptr<std::vector<Core::model*>> pmodels, int wid
 	if (((width % 32) != 0) || ((height % 32) != 0)) throw RayTraceException("width or height is not a multiple of 32");
 	if (((width < 640) != 0) || ((height < 480) != 0)) throw RayTraceException("minimum acceptable resolution is 640x480");
 	std::vector<model> dmodels;
+	p_all_shapes = new std::vector<void*>;
+	p_all_textures = new std::vector<unsigned char*>();
 	prepare_data(pmodels, dmodels);
 	cudaMalloc(&dgpumodels, sizeof(model) * dmodels.size());
 	cudaMemcpy(dgpumodels, dmodels.data(), sizeof(model) * dmodels.size(), cudaMemcpyHostToDevice);
@@ -48,9 +50,9 @@ std::unique_ptr<RayTracer::rgb> RayTracer::render(double fov, Projection proj_ty
 
 void RayTracer::clear()
 {
-	for (triangle* dtriangle : *p_all_triangles)
+	for (void* dshape : *p_all_shapes)
 	{
-		cudaFree(dtriangle);
+		cudaFree(dshape);
 	}
 	for (unsigned char* dtexture : *p_all_textures)
 	{
@@ -58,31 +60,34 @@ void RayTracer::clear()
 	}
 	cudaFree(dgpumodels);
 	cudaFree(ppixels->data);
-	delete p_all_triangles;
+	delete p_all_shapes;
 	delete ppixels;
 }
 
 void RayTracer::prepare_data(const std::shared_ptr<std::vector<Core::model*>> pmodels, std::vector<model>& dmodels)
 {
-	p_all_triangles = new std::vector<triangle*>;
-	p_all_textures = new std::vector<unsigned char*>();
 	for (unsigned i = 0; i < pmodels->size(); i++)
 	{
 		Core::model* pmodel = (*pmodels)[i];
-		std::vector<triangle> triangles;
-		triangulate(pmodel, &triangles);
-		RayTracer::model dmodel;
-		cudaMalloc(&dmodel.dtriangles, sizeof(triangle) * triangles.size());
-		cudaMemcpy(dmodel.dtriangles, triangles.data(), sizeof(triangle) * triangles.size(), cudaMemcpyHostToDevice);
-		dmodel.emissive_color = pmodel->emissive_color;
-		dmodel.position = pmodel->position;
-		dmodel.reflectivity = pmodel->reflectivity;
-		dmodel.transparency = pmodel->transparency;
-		dmodel.triangles_size = triangles.size();
-		dmodel.diffuse = get_texture(pmodel->diffuse);
-		dmodel.specular = get_texture(pmodel->specular);
-		dmodels.push_back(dmodel);
-		p_all_triangles->push_back(dmodel.dtriangles);
+		if (pmodel->shape == Core::shape_type::TRIANGLE)
+		{
+			std::vector<triangle> triangles;
+			triangulate(pmodel, &triangles);
+			RayTracer::model dmodel;
+			cudaMalloc(&dmodel.dshapes, sizeof(triangle) * pmodel->shapes_size);
+			cudaMemcpy(dmodel.dshapes, triangles.data(), sizeof(triangle) * pmodel->shapes_size, cudaMemcpyHostToDevice);
+			dmodel.emissive_color = pmodel->emissive_color;
+			dmodel.position = pmodel->position;
+			dmodel.reflectivity = pmodel->reflectivity;
+			dmodel.transparency = pmodel->transparency;
+			dmodel.shapes_size = pmodel->shapes_size;
+			dmodel.shape = pmodel->shape;
+			dmodel.diffuse = get_texture(pmodel->diffuse);
+			dmodel.specular = get_texture(pmodel->specular);
+			dmodel.surface_color = pmodel->surface_color;
+			dmodels.push_back(dmodel);
+			p_all_shapes->push_back(dmodel.dshapes);
+		}
 	}
 }
 
@@ -100,15 +105,11 @@ RayTracer::texture RayTracer::get_texture(Core::texture core_texture)
 
 void RayTracer::triangulate(const Core::model* pmodel, std::vector<RayTracer::triangle>* ptriangles)
 {
-	std::vector<Core::vertex>* pvertices = pmodel->pvertices;
-	std::vector<unsigned>* pindices = pmodel->pindices;
-	if (!pvertices || !pindices) return;
-	for (unsigned i = 0; i < pindices->size();)
+	if (!ptriangles) return;
+	for (unsigned i = 0; i < pmodel->shapes_size; i++)
 	{
-		Core::vertex a = (*pvertices)[(*pindices)[i++]];
-		Core::vertex b = (*pvertices)[(*pindices)[i++]];
-		Core::vertex c = (*pvertices)[(*pindices)[i++]];
-		ptriangles->push_back(make_triangle(a, b, c));
+		Core::triangle* c_triangle = (Core::triangle*)pmodel->pshapes;
+		ptriangles->push_back(make_triangle(c_triangle[i].a, c_triangle[i].b, c_triangle[i].c));
 	}
 }
 

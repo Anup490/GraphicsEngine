@@ -51,6 +51,15 @@
     <ClInclude Include="Texture.cuh">
       <Filter>Header Files\Private</Filter>
     </ClInclude>
+    <ClInclude Include="Sphere.cuh">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="Math.cuh">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface.cuh">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
