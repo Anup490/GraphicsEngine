@@ -16,7 +16,8 @@ namespace RayTracer
 
 	void prepare_data(const std::shared_ptr<std::vector<Core::model*>> pmodels, std::vector<model>& dmodels);
 	RayTracer::texture get_texture(Core::texture core_texture);
-	void triangulate(const Core::model* pmodel, std::vector<RayTracer::triangle>* ptriangles);
+	void prepare_triangles(const Core::model* pmodel, std::vector<RayTracer::triangle>* ptriangles);
+	void prepare_spheres(const Core::model* pmodel, std::vector<RayTracer::sphere>* pspheres);
 	triangle make_triangle(Core::vertex a, Core::vertex b, Core::vertex c);
 }
 
@@ -69,25 +70,32 @@ void RayTracer::prepare_data(const std::shared_ptr<std::vector<Core::model*>> pm
 	for (unsigned i = 0; i < pmodels->size(); i++)
 	{
 		Core::model* pmodel = (*pmodels)[i];
-		if (pmodel->shape == Core::shape_type::TRIANGLE)
+		RayTracer::model dmodel;
+		if (pmodel->type == Core::shape_type::TRIANGLE)
 		{
 			std::vector<triangle> triangles;
-			triangulate(pmodel, &triangles);
-			RayTracer::model dmodel;
+			prepare_triangles(pmodel, &triangles);
 			cudaMalloc(&dmodel.dshapes, sizeof(triangle) * pmodel->shapes_size);
 			cudaMemcpy(dmodel.dshapes, triangles.data(), sizeof(triangle) * pmodel->shapes_size, cudaMemcpyHostToDevice);
-			dmodel.emissive_color = pmodel->emissive_color;
-			dmodel.position = pmodel->position;
-			dmodel.reflectivity = pmodel->reflectivity;
-			dmodel.transparency = pmodel->transparency;
-			dmodel.shapes_size = pmodel->shapes_size;
-			dmodel.shape = pmodel->shape;
-			dmodel.diffuse = get_texture(pmodel->diffuse);
-			dmodel.specular = get_texture(pmodel->specular);
-			dmodel.surface_color = pmodel->surface_color;
-			dmodels.push_back(dmodel);
-			p_all_shapes->push_back(dmodel.dshapes);
 		}
+		else if (pmodel->type == Core::shape_type::SPHERE)
+		{
+			std::vector<sphere> spheres;
+			prepare_spheres(pmodel, &spheres);
+			cudaMalloc(&dmodel.dshapes, sizeof(sphere) * pmodel->shapes_size);
+			cudaMemcpy(dmodel.dshapes, spheres.data(), sizeof(sphere) * pmodel->shapes_size, cudaMemcpyHostToDevice);
+		}
+		dmodel.emissive_color = pmodel->emissive_color;
+		dmodel.position = pmodel->position;
+		dmodel.reflectivity = pmodel->reflectivity;
+		dmodel.transparency = pmodel->transparency;
+		dmodel.shapes_size = pmodel->shapes_size;
+		dmodel.type = pmodel->type;
+		dmodel.diffuse = get_texture(pmodel->diffuse);
+		dmodel.specular = get_texture(pmodel->specular);
+		dmodel.surface_color = pmodel->surface_color;
+		dmodels.push_back(dmodel);
+		p_all_shapes->push_back(dmodel.dshapes);
 	}
 }
 
@@ -103,13 +111,22 @@ RayTracer::texture RayTracer::get_texture(Core::texture core_texture)
 	return texture;
 }
 
-void RayTracer::triangulate(const Core::model* pmodel, std::vector<RayTracer::triangle>* ptriangles)
+void RayTracer::prepare_triangles(const Core::model* pmodel, std::vector<RayTracer::triangle>* ptriangles)
 {
 	if (!ptriangles) return;
 	for (unsigned i = 0; i < pmodel->shapes_size; i++)
 	{
-		Core::triangle* c_triangle = (Core::triangle*)pmodel->pshapes;
-		ptriangles->push_back(make_triangle(c_triangle[i].a, c_triangle[i].b, c_triangle[i].c));
+		Core::triangle* c_triangles = (Core::triangle*)pmodel->pshapes;
+		ptriangles->push_back(make_triangle(c_triangles[i].a, c_triangles[i].b, c_triangles[i].c));
+	}
+}
+
+void RayTracer::prepare_spheres(const Core::model* pmodel, std::vector<RayTracer::sphere>* pspheres)
+{
+	for (unsigned i = 0; i < pmodel->shapes_size; i++)
+	{
+		Core::sphere* c_spheres = (Core::sphere*)pmodel->pshapes;
+		pspheres->push_back(sphere{ c_spheres[i].radius * c_spheres[i].radius, c_spheres[i].center });
 	}
 }
 

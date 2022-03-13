@@ -262,7 +262,7 @@ void triangulate(Core::model* pmodel, std::vector<Core::vertex>* pvertices, std:
 	if (!pvertices || !pindices) return;
 	pmodel->shapes_size = pindices->size() / 3;
 	pmodel->pshapes = new Core::triangle[pmodel->shapes_size];
-	pmodel->shape = Core::shape_type::TRIANGLE;
+	pmodel->type = Core::shape_type::TRIANGLE;
 	pmodel->surface_color = Core::vec3{ 1.0, 1.0, 1.0 };
 	unsigned t = 0;
 	for (unsigned i = 0; i < pindices->size();)

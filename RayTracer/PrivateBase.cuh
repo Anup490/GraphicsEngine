@@ -25,7 +25,7 @@ namespace RayTracer
 
 	struct sphere
 	{
-		float radius_square;
+		double radius_square;
 		Core::vec3 center;
 	};
 
@@ -36,7 +36,7 @@ namespace RayTracer
 		texture diffuse, specular;
 		void* dshapes = 0;
 		unsigned shapes_size = 0;
-		Core::shape_type shape;
+		Core::shape_type type;
 	};
 
 	struct models

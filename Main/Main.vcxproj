@@ -156,6 +156,7 @@
     <ClCompile Include="Libraries\lib\glad.cpp" />
     <ClCompile Include="Libraries\lib\stb_image.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Spheredata.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.vcxproj">

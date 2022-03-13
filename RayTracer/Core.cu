@@ -14,10 +14,8 @@ namespace RayTracer
 	RUN_ON_GPU Core::vec3 cast_second_ray(const ColorType type, const models& models, ray& ray);
 	RUN_ON_GPU Core::vec3 get_reflect_dir(const Core::vec3& incident_dir, const Core::vec3& nhit);
 	RUN_ON_GPU Core::vec3 get_refract_dir(const Core::vec3& incident_dir, const Core::vec3& nhit, const bool& inside);
-	RUN_ON_GPU double schlick_approximation(double cosine, double R);
 	RUN_ON_GPU Core::vec3 cast_shadow_ray(const models& models, ray& ray, const hit& hit);
 	RUN_ON_GPU double get_glow(const unsigned light_index, const models& models, const ray& shadow_ray);
-	RUN_ON_GPU double max_val(double val1, double val2);
 }
 
 void RayTracer::draw_frame(RayTracer::pixels pixels, models models, double fov, Projection proj_type)
@@ -117,17 +115,10 @@ Core::vec3 RayTracer::get_refract_dir(const Core::vec3& incident_dir, const Core
 }
 
 RUN_ON_GPU
-double RayTracer::schlick_approximation(double cosine, double R)
-{
-	return R + ((1 - R) * pow(1 - cosine, 3));
-}
-
-RUN_ON_GPU
 Core::vec3 RayTracer::cast_shadow_ray(const models& models, ray& rray, const hit& hit)
 {
-	Core::vec3 camera;
-	double bias = 1e-4, glow = 1.0;
-	Core::vec3 color;
+	Core::vec3 camera, color;
+	double bias = 1e-4;
 	for (unsigned l = 0; l < models.size; l++)
 	{
 		model* light_model = &models.models[l];
@@ -137,14 +128,13 @@ Core::vec3 RayTracer::cast_shadow_ray(const models& models, ray& rray, const hit
 			normalize(shadow_dir);
 			Core::vec3 shadow_origin = rray.phit + rray.nhit * bias;
 			ray shadow_ray{ shadow_origin, shadow_dir };
-			glow = get_glow(l, models, shadow_ray);
 			Core::vec3 diffuse = get_color(hit, rray, hit.pmodel->diffuse) * max_val(0.0, dot(rray.nhit, shadow_dir));
 			Core::vec3 reflect_dir = get_reflect_dir(-shadow_dir, rray.nhit);
 			normalize(reflect_dir);
 			Core::vec3 view_dir = camera - rray.phit;
-			double spec = pow(max_val(0.0, dot(view_dir, reflect_dir)), 32);
-			Core::vec3 specular = get_color(hit, rray, hit.pmodel->specular) * spec;
-			color+= (diffuse + specular) * glow * light_model->emissive_color;
+			normalize(view_dir);
+			Core::vec3 specular = get_color(hit, rray, hit.pmodel->specular) * pow(max_val(0.0, dot(view_dir, reflect_dir)), 32);
+			color += get_clamped(diffuse + specular) * get_glow(l, models, shadow_ray) * light_model->emissive_color;
 		}
 	}
 	return color + hit.pmodel->emissive_color;
@@ -163,10 +153,4 @@ double RayTracer::get_glow(const unsigned light_index, const models& models, con
 		}
 	}
 	return glow;
-}
-
-RUN_ON_GPU
-double RayTracer::max_val(double val1, double val2)
-{
-	return (val1 > val2) ? val1 : val2;
 }

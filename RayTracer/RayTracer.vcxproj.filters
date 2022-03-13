@@ -54,10 +54,13 @@
     <ClInclude Include="Sphere.cuh">
       <Filter>Header Files\Private</Filter>
     </ClInclude>
-    <ClInclude Include="Math.cuh">
+    <ClInclude Include="Interface.cuh">
       <Filter>Header Files\Private</Filter>
     </ClInclude>
-    <ClInclude Include="Interface.cuh">
+    <ClInclude Include="Maths.cuh">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="Maths.h">
       <Filter>Header Files\Private</Filter>
     </ClInclude>
   </ItemGroup>

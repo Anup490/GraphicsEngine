@@ -1,5 +1,4 @@
 #pragma once
-#include "Triangle.cuh"
 
 namespace RayTracer
 {

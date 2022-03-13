@@ -158,7 +158,8 @@
   <ItemGroup>
     <ClInclude Include="framework.h" />
     <ClInclude Include="Interface.cuh" />
-    <ClInclude Include="Math.cuh" />
+    <ClInclude Include="Maths.cuh" />
+    <ClInclude Include="Maths.h" />
     <ClInclude Include="PrivateBase.cuh" />
     <ClInclude Include="PublicBase.h" />
     <ClInclude Include="RayTracer.h" />

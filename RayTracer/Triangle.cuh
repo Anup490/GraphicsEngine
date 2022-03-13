@@ -44,13 +44,12 @@ namespace RayTracer
 		}
 
 		RUN_ON_GPU
-		bool detect_hit(model& model, ray& ray, hit& hit_item, double& tnear/*, bool& hit*/)
+		bool detect_hit(model& model, ray& ray, hit& hit_item, double& tnear)
 		{
 			double t0 = INFINITY;
 			triangle* triangles = (triangle*)model.dshapes;
-			unsigned triangles_count = model.shapes_size;
 			bool hit = false;
-			for (unsigned i = 0; i < triangles_count; i++)
+			for (unsigned i = 0; i < model.shapes_size; i++)
 			{
 				if (does_intersect(triangles[i], ray, t0))
 				{

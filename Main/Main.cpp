@@ -19,8 +19,9 @@ void main()
 	std::unique_ptr<Core::model> pmodel;
 	try
 	{
-		pmodel = prepare_gltf_model_data("D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf");
-		Core::model light_model{ Core::vec3{}, Core::vec3{1.0, 1.0, 1.0} };
+		//pmodel = prepare_gltf_model_data("D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf");
+		pmodel = prepare_spheres();
+		Core::model light_model{ Core::vec3{}, Core::vec3{ 1.0, 1.0, 1.0 } };
 		std::shared_ptr<std::vector<Core::model*>> pmodels(new std::vector<Core::model*>);
 		pmodels->push_back(pmodel.get());
 		pmodels->push_back(&light_model);
@@ -150,6 +151,7 @@ void main()
 			glfwSwapBuffers(window);
 			glfwPollEvents();
 		}
+
 		glDeleteBuffers(1, &VBO);
 		glDeleteVertexArrays(1, &VAO);
 		glDeleteProgram(shader_program);
@@ -162,7 +164,7 @@ void main()
 
 void check_btn_press(GLFWwindow* window)
 {
-	if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		std::cout << "Pressed button W" << std::endl;
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 		std::cout << "Pressed button A" << std::endl;

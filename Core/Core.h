@@ -38,12 +38,18 @@ namespace Core
 		texture diffuse;
 		texture specular;
 		double reflectivity = 0.0, transparency = 0.0;
-		shape_type shape;
+		shape_type type;
 		~model() { if (pshapes) delete[] pshapes; }
 	};
 
 	struct triangle
 	{
 		vertex a, b, c;
+	};
+
+	struct sphere
+	{
+		double radius = 0.0;
+		Core::vec3 center;
 	};
 }
