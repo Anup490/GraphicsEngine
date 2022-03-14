@@ -13,7 +13,8 @@ std::unique_ptr<Core::model> prepare_spheres()
 	pmodel->surface_color = Core::vec3{ 1.00, 0.32, 0.36 };
 	pmodel->pshapes = pspheres;
 	pmodel->shapes_size = sphere_count;
-	pmodel->type = Core::shape_type::SPHERE;
+	pmodel->s_type = Core::shape_type::SPHERE;
+	pmodel->m_type = Core::model_type::OBJECT;
 
 
 	/*

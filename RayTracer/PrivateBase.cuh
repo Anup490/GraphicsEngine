@@ -36,7 +36,8 @@ namespace RayTracer
 		texture diffuse, specular;
 		void* dshapes = 0;
 		unsigned shapes_size = 0;
-		Core::shape_type type;
+		Core::shape_type s_type;
+		Core::model_type m_type;
 	};
 
 	struct models

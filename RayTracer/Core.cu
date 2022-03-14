@@ -15,6 +15,7 @@ namespace RayTracer
 	RUN_ON_GPU Core::vec3 get_reflect_dir(const Core::vec3& incident_dir, const Core::vec3& nhit);
 	RUN_ON_GPU Core::vec3 get_refract_dir(const Core::vec3& incident_dir, const Core::vec3& nhit, const bool& inside);
 	RUN_ON_GPU Core::vec3 cast_shadow_ray(const models& models, ray& ray, const hit& hit);
+	RUN_ON_GPU model* get_camera(const models& models);
 	RUN_ON_GPU double get_glow(const unsigned light_index, const models& models, const ray& shadow_ray);
 }
 
@@ -117,12 +118,13 @@ Core::vec3 RayTracer::get_refract_dir(const Core::vec3& incident_dir, const Core
 RUN_ON_GPU
 Core::vec3 RayTracer::cast_shadow_ray(const models& models, ray& rray, const hit& hit)
 {
-	Core::vec3 camera, color;
+	Core::vec3 color;
 	double bias = 1e-4;
+	model* pcamera = get_camera(models);
 	for (unsigned l = 0; l < models.size; l++)
 	{
 		model* light_model = &models.models[l];
-		if (light_model->emissive_color.x > 0.0)
+		if (light_model->m_type == Core::model_type::LIGHT)
 		{
 			Core::vec3 shadow_dir = light_model->position - rray.phit;
 			normalize(shadow_dir);
@@ -131,13 +133,29 @@ Core::vec3 RayTracer::cast_shadow_ray(const models& models, ray& rray, const hit
 			Core::vec3 diffuse = get_color(hit, rray, hit.pmodel->diffuse) * max_val(0.0, dot(rray.nhit, shadow_dir));
 			Core::vec3 reflect_dir = get_reflect_dir(-shadow_dir, rray.nhit);
 			normalize(reflect_dir);
-			Core::vec3 view_dir = camera - rray.phit;
+			Core::vec3 view_dir = pcamera->position - rray.phit;
 			normalize(view_dir);
 			Core::vec3 specular = get_color(hit, rray, hit.pmodel->specular) * pow(max_val(0.0, dot(view_dir, reflect_dir)), 32);
 			color += get_clamped(diffuse + specular) * get_glow(l, models, shadow_ray) * light_model->emissive_color;
 		}
 	}
 	return color + hit.pmodel->emissive_color;
+}
+
+RUN_ON_GPU 
+RayTracer::model* RayTracer::get_camera(const models& models)
+{
+	model* pcamera;
+	for (unsigned i=0; i<models.size; i++)
+	{
+		model* pmodel = &models.models[i];
+		if (pmodel->m_type == Core::model_type::CAMERA)
+		{
+			pcamera = pmodel;
+			break;
+		}
+	}
+	return pcamera;
 }
 
 RUN_ON_GPU 

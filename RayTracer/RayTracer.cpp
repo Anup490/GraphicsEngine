@@ -71,14 +71,14 @@ void RayTracer::prepare_data(const std::shared_ptr<std::vector<Core::model*>> pm
 	{
 		Core::model* pmodel = (*pmodels)[i];
 		RayTracer::model dmodel;
-		if (pmodel->type == Core::shape_type::TRIANGLE)
+		if (pmodel->s_type == Core::shape_type::TRIANGLE)
 		{
 			std::vector<triangle> triangles;
 			prepare_triangles(pmodel, &triangles);
 			cudaMalloc(&dmodel.dshapes, sizeof(triangle) * pmodel->shapes_size);
 			cudaMemcpy(dmodel.dshapes, triangles.data(), sizeof(triangle) * pmodel->shapes_size, cudaMemcpyHostToDevice);
 		}
-		else if (pmodel->type == Core::shape_type::SPHERE)
+		else if (pmodel->s_type == Core::shape_type::SPHERE)
 		{
 			std::vector<sphere> spheres;
 			prepare_spheres(pmodel, &spheres);
@@ -90,10 +90,11 @@ void RayTracer::prepare_data(const std::shared_ptr<std::vector<Core::model*>> pm
 		dmodel.reflectivity = pmodel->reflectivity;
 		dmodel.transparency = pmodel->transparency;
 		dmodel.shapes_size = pmodel->shapes_size;
-		dmodel.type = pmodel->type;
+		dmodel.s_type = pmodel->s_type;
 		dmodel.diffuse = get_texture(pmodel->diffuse);
 		dmodel.specular = get_texture(pmodel->specular);
 		dmodel.surface_color = pmodel->surface_color;
+		dmodel.m_type = pmodel->m_type;
 		dmodels.push_back(dmodel);
 		p_all_shapes->push_back(dmodel.dshapes);
 	}

@@ -21,10 +21,14 @@ void main()
 	{
 		//pmodel = prepare_gltf_model_data("D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf");
 		pmodel = prepare_spheres();
-		Core::model light_model{ Core::vec3{}, Core::vec3{ 1.0, 1.0, 1.0 } };
+		Core::model light{ Core::vec3{}, Core::vec3{ 1.0, 1.0, 1.0 } };
+		light.m_type = Core::model_type::LIGHT;
+		Core::model camera{ Core::vec3{} };
+		camera.m_type = Core::model_type::CAMERA;
 		std::shared_ptr<std::vector<Core::model*>> pmodels(new std::vector<Core::model*>);
 		pmodels->push_back(pmodel.get());
-		pmodels->push_back(&light_model);
+		pmodels->push_back(&light);
+		pmodels->push_back(&camera);
 		RayTracer::init(pmodels, 640, 480);
 		init_called = true;
 	}

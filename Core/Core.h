@@ -11,6 +11,7 @@ namespace std
 namespace Core
 {
 	enum class shape_type { TRIANGLE, SPHERE };
+	enum class model_type { LIGHT, CAMERA, OBJECT };
 
 	struct vec3
 	{
@@ -38,7 +39,8 @@ namespace Core
 		texture diffuse;
 		texture specular;
 		double reflectivity = 0.0, transparency = 0.0;
-		shape_type type;
+		shape_type s_type;
+		model_type m_type;
 		~model() { if (pshapes) delete[] pshapes; }
 	};
 
