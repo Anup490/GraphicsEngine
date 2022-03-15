@@ -18,6 +18,11 @@ namespace Core
 		double x = 0.0, y = 0.0, z = 0.0;
 	};
 
+	struct mat3
+	{
+		double matrix[9];
+	};
+
 	struct vertex
 	{
 		vec3 position, normal, texcoord;
@@ -33,7 +38,7 @@ namespace Core
 
 	struct model
 	{
-		Core::vec3 position, emissive_color, surface_color;
+		Core::vec3 position, emissive_color, surface_color, front, right, up;
 		void* pshapes = 0;
 		unsigned shapes_size = 0;
 		texture diffuse;

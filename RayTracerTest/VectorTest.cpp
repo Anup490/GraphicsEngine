@@ -9,8 +9,6 @@ namespace RayTracerTest
 {
 	TEST_CLASS(VectorTest)
 	{
-	public:
-		
 		bool equal(const Core::vec3& v1, const Core::vec3& v2)
 		{
 			return (v1.x == v2.x) && (v1.y == v2.y) && (v1.z == v2.z);

@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "CppUnitTest.h"
-#include "Triangle.cuh"
+#include "Vector.h"
+#include "Triangle.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 using namespace RayTracer;
@@ -30,7 +31,7 @@ namespace RayTracerTest
 			s.append(std::to_string(v.y));
 			s.append(", ");
 			s.append(std::to_string(v.z));
-			s.append(" )fuck");
+			s.append(" )");
 			return s;
 		}
 
@@ -59,7 +60,6 @@ namespace RayTracerTest
 			return s;
 		}
 
-	public:
 		TEST_METHOD(BaryCentricTest)
 		{
 			Core::vec3 a_pos{ 2.0, 1.0, -4.0 };
@@ -79,9 +79,9 @@ namespace RayTracerTest
 			Core::vec3 dir{ 5.0, 4.0, -4.0 };
 			normalize(dir);
 			double t = 0.0;
-			does_intersect(triangle, origin, dir, t);
+			Triangle::does_intersect(triangle, ray{ origin, dir }, t);
 			Core::vec3 v = origin + (dir * t);
-			Logger::WriteMessage(to_string(get_texcoord(triangle, v)).data());
+			Logger::WriteMessage(to_string(Triangle::get_texcoord(triangle, v)).data());
 		}
 	};
 }
