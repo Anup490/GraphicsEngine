@@ -19,8 +19,8 @@ void main()
 	std::unique_ptr<Core::model> pmodel;
 	try
 	{
-		//pmodel = prepare_gltf_model_data("D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf");
-		pmodel = prepare_spheres();
+		pmodel = prepare_gltf_model_data("D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf");
+		//pmodel = prepare_spheres();
 		Core::model light{ Core::vec3{}, Core::vec3{ 1.0, 1.0, 1.0 } };
 		light.m_type = Core::model_type::LIGHT;
 		Core::model camera{ Core::vec3{} };

@@ -181,7 +181,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Triangle.h" />
+    <ClInclude Include="RayTracer.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RayTracer\RayTracer.vcxproj">

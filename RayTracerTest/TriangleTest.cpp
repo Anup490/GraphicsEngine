@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "CppUnitTest.h"
 #include "Vector.h"
-#include "Triangle.h"
+#include "RayTracer.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 using namespace RayTracer;

@@ -18,9 +18,9 @@ namespace Core
 		double x = 0.0, y = 0.0, z = 0.0;
 	};
 
-	struct mat3
+	struct mat4
 	{
-		double matrix[9];
+		double matrix[16];
 	};
 
 	struct vertex

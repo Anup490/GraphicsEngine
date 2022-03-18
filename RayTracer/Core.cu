@@ -2,6 +2,7 @@
 #include <device_launch_parameters.h>
 #include "Core.cuh"
 #include "Interface.cuh"
+#include "Matrix.cuh"
 
 #define RECURSION_DEPTH 5
 
@@ -40,6 +41,20 @@ void RayTracer::render(RayTracer::pixels pixels, const models models, double fov
 	Core::vec3 dir = (proj_type == Projection::PERSPECTIVE) ? Core::vec3{ x, y, -near_plane } : Core::vec3{ 0.0, 0.0, -near_plane };
 	normalize(dir);
 	Core::vec3 origin = (proj_type == Projection::PERSPECTIVE) ? Core::vec3{} : Core::vec3{ x, y };
+
+	/*Core::mat4 translation;
+	translation.matrix[0] = 1;
+	translation.matrix[1] = 0;
+	translation.matrix[2] = 0.5;
+	translation.matrix[3] = 0;
+	translation.matrix[4] = 1;
+	translation.matrix[5] = 0.5;
+	translation.matrix[6] = 0;
+	translation.matrix[7] = 0;
+	translation.matrix[8] = 1;
+	dir = translation * dir;
+	origin = translation * origin;*/
+
 	ray pray{ origin, dir };
 	Core::vec3 color = cast_primary_ray(models, pray);
 	pixels.data[index] = rgb{ unsigned char(color.x * 255.0), unsigned char(color.y * 255.0), unsigned char(color.z * 255.0) };
