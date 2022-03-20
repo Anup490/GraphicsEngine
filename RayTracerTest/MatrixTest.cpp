@@ -22,10 +22,17 @@ namespace RayTracerTest
 			m.matrix[6] = 7;
 			m.matrix[7] = 8;
 			m.matrix[8] = 9;
+			m.matrix[9] = 10;
+			m.matrix[10] = 11;
+			m.matrix[11] = 12;
+			m.matrix[12] = 13;
+			m.matrix[13] = 14;
+			m.matrix[14] = 15;
+			m.matrix[15] = 16;
 			Core::vec3 v2 = m * v1;
-			Assert::AreEqual(v2.x, 14.0);
-			Assert::AreEqual(v2.y, 32.0);
-			Assert::AreEqual(v2.z, 50.0);
+			Assert::AreEqual(v2.x, 18.0);
+			Assert::AreEqual(v2.y, 46.0);
+			Assert::AreEqual(v2.z, 74.0);
 		}
 
 		TEST_METHOD(MatrixMatrixMultiplication)

@@ -40,20 +40,26 @@ void RayTracer::render(RayTracer::pixels pixels, const models models, double fov
 	double y = (1.0 - (2.0 * ((ty + 0.5f) / pixels.height))) * tan_val * near_plane;
 	Core::vec3 dir = (proj_type == Projection::PERSPECTIVE) ? Core::vec3{ x, y, -near_plane } : Core::vec3{ 0.0, 0.0, -near_plane };
 	normalize(dir);
-	Core::vec3 origin = (proj_type == Projection::PERSPECTIVE) ? Core::vec3{} : Core::vec3{ x, y };
+	Core::vec3 origin = (proj_type == Projection::PERSPECTIVE) ? Core::vec3{ 0, 0, 0 } : Core::vec3{ x, y };
 
-	/*Core::mat4 translation;
+	Core::mat4 translation;
 	translation.matrix[0] = 1;
 	translation.matrix[1] = 0;
-	translation.matrix[2] = 0.5;
-	translation.matrix[3] = 0;
-	translation.matrix[4] = 1;
-	translation.matrix[5] = 0.5;
+	translation.matrix[2] = 0;
+	translation.matrix[3] = 2;
+	translation.matrix[4] = 0;
+	translation.matrix[5] = 1;
 	translation.matrix[6] = 0;
 	translation.matrix[7] = 0;
-	translation.matrix[8] = 1;
-	dir = translation * dir;
-	origin = translation * origin;*/
+	translation.matrix[8] = 0;
+	translation.matrix[9] = 0;
+	translation.matrix[10] = 1;
+	translation.matrix[11] = 0;
+	translation.matrix[12] = 0;
+	translation.matrix[13] = 0;
+	translation.matrix[14] = 0;
+	translation.matrix[15] = 1;
+	origin = translation * origin;
 
 	ray pray{ origin, dir };
 	Core::vec3 color = cast_primary_ray(models, pray);

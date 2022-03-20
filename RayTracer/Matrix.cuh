@@ -5,9 +5,9 @@ namespace RayTracer
 	RUN_ON_CPU_AND_GPU
 	Core::vec3 operator*(const Core::mat4& m, const Core::vec3& v)
 	{
-		double x = m.matrix[0] * v.x + m.matrix[1] * v.y + m.matrix[2] * v.z;
-		double y = m.matrix[3] * v.x + m.matrix[4] * v.y + m.matrix[5] * v.z;
-		double z = m.matrix[6] * v.x + m.matrix[7] * v.y + m.matrix[8] * v.z;
+		double x = m.matrix[0] * v.x + m.matrix[1] * v.y + m.matrix[2] * v.z + m.matrix[3];
+		double y = m.matrix[4] * v.x + m.matrix[5] * v.y + m.matrix[6] * v.z + m.matrix[7];
+		double z = m.matrix[8] * v.x + m.matrix[9] * v.y + m.matrix[10] * v.z + m.matrix[11];
 		return Core::vec3{ x, y, z };
 	}
 
