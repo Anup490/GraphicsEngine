@@ -10,64 +10,49 @@ namespace RayTracer
 {
 	enum class ColorType { REFLECTION, REFRACTION };
 
-	RUN_ON_GPU_CALL_FROM_CPU void render(pixels pixels, models models, double fov, Projection proj_type);
-	RUN_ON_GPU Core::vec3 cast_primary_ray(const models& models, ray& ray);
-	RUN_ON_GPU Core::vec3 cast_second_ray(const ColorType type, const models& models, ray& ray);
+	RUN_ON_GPU_CALL_FROM_CPU void render(pixels pixels, const input* dinput, Projection proj_type);
+	RUN_ON_GPU Core::vec3 cast_primary_ray(const world& models, ray& ray);
+	RUN_ON_GPU Core::vec3 cast_second_ray(const ColorType type, const world& models, ray& ray);
 	RUN_ON_GPU Core::vec3 get_reflect_dir(const Core::vec3& incident_dir, const Core::vec3& nhit);
 	RUN_ON_GPU Core::vec3 get_refract_dir(const Core::vec3& incident_dir, const Core::vec3& nhit, const bool& inside);
-	RUN_ON_GPU Core::vec3 cast_shadow_ray(const models& models, ray& ray, const hit& hit);
-	RUN_ON_GPU model* get_camera(const models& models);
-	RUN_ON_GPU double get_glow(const unsigned light_index, const models& models, const ray& shadow_ray);
+	RUN_ON_GPU Core::vec3 cast_shadow_ray(const world& models, ray& ray, const hit& hit);
+	RUN_ON_GPU model* get_camera(const world& models);
+	RUN_ON_GPU double get_glow(const unsigned light_index, const world& models, const ray& shadow_ray);
 }
 
-void RayTracer::draw_frame(RayTracer::pixels pixels, models models, double fov, Projection proj_type)
+void RayTracer::draw_frame(RayTracer::pixels pixels, input* dinput, Projection proj_type)
 {
 	dim3 block_size(32, 32, 1);
 	dim3 grid_size(pixels.width / 32, pixels.height / 32, 1);
-	render << < grid_size, block_size >> > (pixels, models, fov, proj_type);
+	render << < grid_size, block_size >> > (pixels, dinput, proj_type);
 }
 
 RUN_ON_GPU_CALL_FROM_CPU
-void RayTracer::render(RayTracer::pixels pixels, const models models, double fov, Projection proj_type)
+void RayTracer::render(RayTracer::pixels pixels, const input* dinput, Projection proj_type)
 {
 	double aspect_ratio = pixels.width / pixels.height;
-	double tan_val = tan((fov * 3.141592653589793) / 360.0);
+	double tan_val = tangent(dinput->fov/ 2.0);
 	int tx = blockIdx.x * blockDim.x + threadIdx.x;
 	int ty = blockIdx.y * blockDim.y + threadIdx.y;
 	double near_plane = (proj_type == Projection::PERSPECTIVE) ? 1.0 : 8.0;
 	int index = (ty * pixels.width) + tx;
-	double x = ((2.0 * ((tx + 0.5) / pixels.width)) - 1) * aspect_ratio * tan_val * near_plane;
-	double y = (1.0 - (2.0 * ((ty + 0.5f) / pixels.height))) * tan_val * near_plane;
+	double x = ((2.0 * ((tx + 0.5) / pixels.width)) - 1.0) * aspect_ratio * tan_val * near_plane;
+	double y = (1.0 - (2.0 * ((ty + 0.5) / pixels.height))) * tan_val * near_plane;
+	world* dworld = (world*)(dinput->dworld);
+	Core::vec3 camera_pos = get_camera(*dworld)->position;
 	Core::vec3 dir = (proj_type == Projection::PERSPECTIVE) ? Core::vec3{ x, y, -near_plane } : Core::vec3{ 0.0, 0.0, -near_plane };
 	normalize(dir);
 	Core::vec3 origin = (proj_type == Projection::PERSPECTIVE) ? Core::vec3{ 0, 0, 0 } : Core::vec3{ x, y };
-
-	Core::mat4 translation;
-	translation.matrix[0] = 1;
-	translation.matrix[1] = 0;
-	translation.matrix[2] = 0;
-	translation.matrix[3] = 2;
-	translation.matrix[4] = 0;
-	translation.matrix[5] = 1;
-	translation.matrix[6] = 0;
-	translation.matrix[7] = 0;
-	translation.matrix[8] = 0;
-	translation.matrix[9] = 0;
-	translation.matrix[10] = 1;
-	translation.matrix[11] = 0;
-	translation.matrix[12] = 0;
-	translation.matrix[13] = 0;
-	translation.matrix[14] = 0;
-	translation.matrix[15] = 1;
-	origin = translation * origin;
-
+	origin += camera_pos;
+	dir = dinput->rotator * dir;
+	origin = dinput->translator * origin;
 	ray pray{ origin, dir };
-	Core::vec3 color = cast_primary_ray(models, pray);
+	Core::vec3 color = cast_primary_ray(*dworld, pray);
 	pixels.data[index] = rgb{ unsigned char(color.x * 255.0), unsigned char(color.y * 255.0), unsigned char(color.z * 255.0) };
 }
 
 RUN_ON_GPU
-Core::vec3 RayTracer::cast_primary_ray(const models& models, ray& ray)
+Core::vec3 RayTracer::cast_primary_ray(const world& models, ray& ray)
 {
 	Core::vec3 surface_color, background{ 1.0, 1.0, 1.0 };
 	hit hit_item;
@@ -88,7 +73,7 @@ Core::vec3 RayTracer::cast_primary_ray(const models& models, ray& ray)
 }
 
 RUN_ON_GPU
-Core::vec3 RayTracer::cast_second_ray(const ColorType type, const models& models, ray& pray)
+Core::vec3 RayTracer::cast_second_ray(const ColorType type, const world& models, ray& pray)
 {
 	Core::vec3 color { 1.0, 1.0, 1.0 };
 	double bias = 1e-4;
@@ -137,7 +122,7 @@ Core::vec3 RayTracer::get_refract_dir(const Core::vec3& incident_dir, const Core
 }
 
 RUN_ON_GPU
-Core::vec3 RayTracer::cast_shadow_ray(const models& models, ray& rray, const hit& hit)
+Core::vec3 RayTracer::cast_shadow_ray(const world& models, ray& rray, const hit& hit)
 {
 	Core::vec3 color;
 	double bias = 1e-4;
@@ -164,7 +149,7 @@ Core::vec3 RayTracer::cast_shadow_ray(const models& models, ray& rray, const hit
 }
 
 RUN_ON_GPU 
-RayTracer::model* RayTracer::get_camera(const models& models)
+RayTracer::model* RayTracer::get_camera(const world& models)
 {
 	model* pcamera;
 	for (unsigned i=0; i<models.size; i++)
@@ -180,7 +165,7 @@ RayTracer::model* RayTracer::get_camera(const models& models)
 }
 
 RUN_ON_GPU 
-double RayTracer::get_glow(const unsigned light_index, const models& models, const ray& shadow_ray)
+double RayTracer::get_glow(const unsigned light_index, const world& models, const ray& shadow_ray)
 {
 	double t0 = INFINITY, glow = 1.0;
 	for (unsigned m = 0; m < models.size; m++)

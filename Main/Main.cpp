@@ -5,10 +5,12 @@
 #include "RayTracer.h"
 #include <glad/glad.h>
 #include <glfw3.h>
+#include <math.h>
 
 void check_btn_press(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xpos, double ypos);
+RayTracer::input prepare_input();
 
 void main()
 {
@@ -17,10 +19,11 @@ void main()
 	const char* window_title = "GraphicsEngine";
 	bool init_called = false;
 	std::unique_ptr<Core::model> pmodel;
+	RayTracer::input i = prepare_input();
 	try
 	{
-		pmodel = prepare_gltf_model_data("D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf");
-		//pmodel = prepare_spheres();
+		//pmodel = prepare_gltf_model_data("D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf");
+		pmodel = prepare_spheres();
 		Core::model light{ Core::vec3{}, Core::vec3{ 1.0, 1.0, 1.0 } };
 		light.m_type = Core::model_type::LIGHT;
 		Core::model camera{ Core::vec3{} };
@@ -141,7 +144,7 @@ void main()
 			glClear(GL_COLOR_BUFFER_BIT);
 			try
 			{
-				std::unique_ptr<RayTracer::rgb> ppixels = RayTracer::render(90.0, RayTracer::Projection::PERSPECTIVE);
+				std::unique_ptr<RayTracer::rgb> ppixels = RayTracer::render(i, RayTracer::Projection::PERSPECTIVE);
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, ppixels.get());
 			}
 			catch (RayTracer::RayTraceException& e)
@@ -164,6 +167,9 @@ void main()
 	}
 	delete_texture(pmodel.get());
 	if(init_called) RayTracer::clear();
+	
+	delete[] i.rotator.pmatrix;
+	delete[] i.translator.pmatrix;
 }
 
 void check_btn_press(GLFWwindow* window)
@@ -193,4 +199,48 @@ void scroll_callback(GLFWwindow* window, double xpos, double ypos)
 		std::cout << "Zoom in" << std::endl;
 	if (ypos < 0.0)
 		std::cout << "Zoom out" << std::endl;
+}
+
+RayTracer::input prepare_input()
+{
+	Core::mat4 translation;
+	translation.pmatrix = new double[16];
+	translation.pmatrix[0] = 1;
+	translation.pmatrix[1] = 0;
+	translation.pmatrix[2] = 0;
+	translation.pmatrix[3] = -2;
+	translation.pmatrix[4] = 0;
+	translation.pmatrix[5] = 1;
+	translation.pmatrix[6] = 0;
+	translation.pmatrix[7] = 0;
+	translation.pmatrix[8] = 0;
+	translation.pmatrix[9] = 0;
+	translation.pmatrix[10] = 1;
+	translation.pmatrix[11] = 0;
+	translation.pmatrix[12] = 0;
+	translation.pmatrix[13] = 0;
+	translation.pmatrix[14] = 0;
+	translation.pmatrix[15] = 1;
+
+	const double angle_in_radian = (2.0 * 3.141592653589793) / 180.0;;
+	Core::mat4 rotation;
+	rotation.pmatrix = new double[16];
+	rotation.pmatrix[0] = cos(angle_in_radian);
+	rotation.pmatrix[1] = 0;
+	rotation.pmatrix[2] = sin(angle_in_radian);
+	rotation.pmatrix[3] = 0;
+	rotation.pmatrix[4] = 0;
+	rotation.pmatrix[5] = 1;
+	rotation.pmatrix[6] = 0;
+	rotation.pmatrix[7] = 0;
+	rotation.pmatrix[8] = sin(angle_in_radian);
+	rotation.pmatrix[9] = 0;
+	rotation.pmatrix[10] = cos(angle_in_radian);
+	rotation.pmatrix[11] = 0;
+	rotation.pmatrix[12] = 0;
+	rotation.pmatrix[13] = 0;
+	rotation.pmatrix[14] = 0;
+	rotation.pmatrix[15] = 1;
+
+	return RayTracer::input{ 0, 90.0, translation, rotation };
 }

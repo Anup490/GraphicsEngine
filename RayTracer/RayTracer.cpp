@@ -8,6 +8,7 @@
 
 namespace RayTracer
 {
+	world* dworld = 0;
 	model* dgpumodels = 0;
 	unsigned models_size = 0;
 	RayTracer::pixels* ppixels = 0;
@@ -19,6 +20,7 @@ namespace RayTracer
 	void prepare_triangles(const Core::model* pmodel, std::vector<RayTracer::triangle>* ptriangles);
 	void prepare_spheres(const Core::model* pmodel, std::vector<RayTracer::sphere>* pspheres);
 	triangle make_triangle(Core::vertex a, Core::vertex b, Core::vertex c);
+	input* prepare_inputs(input& i);
 }
 
 void RayTracer::init(std::shared_ptr<std::vector<Core::model*>> pmodels, int width, int height)
@@ -32,20 +34,26 @@ void RayTracer::init(std::shared_ptr<std::vector<Core::model*>> pmodels, int wid
 	cudaMalloc(&dgpumodels, sizeof(model) * dmodels.size());
 	cudaMemcpy(dgpumodels, dmodels.data(), sizeof(model) * dmodels.size(), cudaMemcpyHostToDevice);
 	models_size = dmodels.size();
+	world w{ dgpumodels, models_size };
+	cudaMalloc(&dworld, sizeof(world));
+	cudaMemcpy(dworld, &w, sizeof(world), cudaMemcpyHostToDevice);
 	rgb* drgbs;
 	cudaMalloc(&drgbs, sizeof(rgb) * width * height);
 	ppixels = new pixels(width, height);
 	ppixels->data = drgbs;
 }
 
-std::unique_ptr<RayTracer::rgb> RayTracer::render(double fov, Projection proj_type) throw(RayTraceException)
+std::unique_ptr<RayTracer::rgb> RayTracer::render(input i, Projection proj_type) throw(RayTraceException)
 {
 	if (!dgpumodels || !ppixels) throw RayTraceException("init function not called");
-	draw_frame(*ppixels, models{ dgpumodels, models_size }, fov, proj_type);
+	i.dworld = dworld;
+	input* dinput = prepare_inputs(i);
+	draw_frame(*ppixels, dinput, proj_type);
 	cudaDeviceSynchronize();
 	int size = (ppixels->width) * (ppixels->height);
 	rgb* prgbs = new rgb[size];
 	cudaMemcpy(prgbs, ppixels->data, sizeof(rgb) * size, cudaMemcpyDeviceToHost);
+	cudaFree(dinput);
 	return std::unique_ptr<rgb>(prgbs);
 }
 
@@ -60,6 +68,7 @@ void RayTracer::clear()
 		cudaFree(dtexture);
 	}
 	cudaFree(dgpumodels);
+	cudaFree(dworld);
 	cudaFree(ppixels->data);
 	delete p_all_shapes;
 	delete ppixels;
@@ -142,4 +151,20 @@ RayTracer::triangle RayTracer::make_triangle(Core::vertex a, Core::vertex b, Cor
 	normalize(normal);
 	double plane_distance = dot(-normal, a.position);
 	return triangle{ a.position,b.position,c.position,ab,bc,ca,a.texcoord,b.texcoord,c.texcoord,normal,plane_distance,area };
+}
+
+RayTracer::input* RayTracer::prepare_inputs(input& i)
+{
+	input* dinput;
+	double* dtranslator;
+	double* drotator;
+	cudaMalloc(&dtranslator, sizeof(double) * i.translator.size);
+	cudaMalloc(&drotator, sizeof(double) * i.rotator.size);
+	cudaMemcpy(dtranslator, i.translator.pmatrix, sizeof(double) * i.translator.size, cudaMemcpyHostToDevice);
+	cudaMemcpy(drotator, i.rotator.pmatrix, sizeof(double) * i.rotator.size, cudaMemcpyHostToDevice);
+	i.translator.pmatrix = dtranslator;
+	i.rotator.pmatrix = drotator;
+	cudaMalloc(&dinput, sizeof(input));
+	cudaMemcpy(dinput, &i, sizeof(input), cudaMemcpyHostToDevice);
+	return dinput;
 }

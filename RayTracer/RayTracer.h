@@ -19,11 +19,10 @@ namespace RayTracer
 	class RayTraceException : std::exception {
 		const char* message;
 	public:
-		RayTraceException(const char* message) :message(message) {}
+		RayTraceException(const char* message) : message(message) {}
 		char const* what() const override { return message; }
 	};
 	void init(std::shared_ptr<std::vector<Core::model*>> pmodels, int width, int height) throw(RayTraceException);
-	std::unique_ptr<rgb> render(double fov, Projection proj_type) throw(RayTraceException);
+	std::unique_ptr<rgb> render(input i, Projection proj_type) throw(RayTraceException);
 	void clear();
 }
-

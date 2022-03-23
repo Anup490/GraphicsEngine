@@ -17,6 +17,12 @@ namespace RayTracer
 	}
 
 	RUN_ON_CPU_AND_GPU
+	double get_pie()
+	{
+		return 3.141592653589793;
+	}
+
+	RUN_ON_CPU_AND_GPU
 	double max_val(double val1, double val2)
 	{
 		return (val1 > val2) ? val1 : val2;
@@ -36,6 +42,30 @@ namespace RayTracer
 		clamped.y = (unclamped.y > 1.0) ? 1.0 : unclamped.y;
 		clamped.z = (unclamped.z > 1.0) ? 1.0 : unclamped.z;
 		return clamped;
+	}
+
+	RUN_ON_CPU_AND_GPU
+	double to_radian(const double& d)
+	{
+		return (d * get_pie()) / 180.0;
+	}
+
+	RUN_ON_CPU_AND_GPU
+	double sine(double angle)
+	{
+		return sin(to_radian(angle));
+	}
+
+	RUN_ON_CPU_AND_GPU
+	double cosine(double angle)
+	{
+		return cos(to_radian(angle));
+	}
+
+	RUN_ON_CPU_AND_GPU
+	double tangent(double angle)
+	{
+		return tan(to_radian(angle));
 	}
 }
 

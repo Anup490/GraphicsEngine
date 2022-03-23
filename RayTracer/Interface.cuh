@@ -29,7 +29,7 @@ namespace RayTracer
 	}
 
 	RUN_ON_GPU
-	bool detect_hit(const models& models, ray& ray, hit& hit_item)
+	bool detect_hit(const world& models, ray& ray, hit& hit_item)
 	{
 		double t0 = INFINITY, tnear = INFINITY;
 		bool hit = false;

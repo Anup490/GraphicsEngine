@@ -20,7 +20,8 @@ namespace Core
 
 	struct mat4
 	{
-		double matrix[16];
+		double* pmatrix;
+		const unsigned size = 16;
 	};
 
 	struct vertex
@@ -38,7 +39,7 @@ namespace Core
 
 	struct model
 	{
-		Core::vec3 position, emissive_color, surface_color, front, right, up;
+		vec3 position, emissive_color, surface_color;
 		void* pshapes = 0;
 		unsigned shapes_size = 0;
 		texture diffuse;
