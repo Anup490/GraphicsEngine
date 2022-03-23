@@ -152,7 +152,7 @@ std::vector<Core::vec3>* group_floats_for_vec3(std::vector<float>* pfloatvec)
 		float x = pfloatvec->at(i++);
 		float y = pfloatvec->at(i++);
 		float z = pfloatvec->at(i++);
-		pvectors->push_back(Core::vec3{ x, y, z - 3.0 });
+		pvectors->push_back(Core::vec3{ x, y, z });
 	}
 	return pvectors;
 }
@@ -265,6 +265,7 @@ void triangulate(Core::model* pmodel, std::vector<Core::vertex>* pvertices, std:
 	pmodel->s_type = Core::shape_type::TRIANGLE;
 	pmodel->m_type = Core::model_type::OBJECT;
 	pmodel->surface_color = Core::vec3{ 1.0, 1.0, 1.0 };
+	pmodel->position = Core::vec3{ 0.0, 0.0, -3.0 };
 	unsigned t = 0;
 	for (unsigned i = 0; i < pindices->size();)
 	{

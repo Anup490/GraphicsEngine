@@ -127,7 +127,13 @@ void RayTracer::prepare_triangles(const Core::model* pmodel, std::vector<RayTrac
 	for (unsigned i = 0; i < pmodel->shapes_size; i++)
 	{
 		Core::triangle* c_triangles = (Core::triangle*)pmodel->pshapes;
-		ptriangles->push_back(make_triangle(c_triangles[i].a, c_triangles[i].b, c_triangles[i].c));
+		Core::vertex* p_vertex_a = &c_triangles[i].a;
+		p_vertex_a->position += pmodel->position;
+		Core::vertex* p_vertex_b = &c_triangles[i].b;
+		p_vertex_b->position += pmodel->position;
+		Core::vertex* p_vertex_c = &c_triangles[i].c;
+		p_vertex_c->position += pmodel->position;
+		ptriangles->push_back(make_triangle(*p_vertex_a, *p_vertex_b, *p_vertex_c));
 	}
 }
 
