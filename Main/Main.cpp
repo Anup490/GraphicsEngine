@@ -7,11 +7,15 @@
 #include <glfw3.h>
 #include <math.h>
 
+#define DISABLE_FOV
+
+double fov = 90.0;
+Core::vec3 translation_vec{};
+
 void check_btn_press(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xpos, double ypos);
 void prepare_input(RayTracer::input& i);
-Core::vec3 translation_vec{};
 
 void main()
 {
@@ -212,10 +216,18 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 void scroll_callback(GLFWwindow* window, double xpos, double ypos)
 {
+#ifndef DISABLE_FOV
 	if (ypos > 0.0)
+	{
+		fov -= 1.0;
 		std::cout << "Zoom in" << std::endl;
+	}
 	if (ypos < 0.0)
+	{
+		fov += 1.0;
 		std::cout << "Zoom out" << std::endl;
+	}
+#endif
 }
 
 void prepare_input(RayTracer::input& i)
@@ -261,7 +273,7 @@ void prepare_input(RayTracer::input& i)
 	rotation.pmatrix[15] = 1;
 	*/
 
-	i.fov = 90.0;
+	i.fov = fov;
 
 	i.translator.pmatrix = new double[16];
 	i.translator.pmatrix[0] = 1;
