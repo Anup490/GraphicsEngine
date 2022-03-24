@@ -42,7 +42,7 @@ void RayTracer::render(RayTracer::pixels pixels, const input* dinput, Projection
 	Core::vec3 camera_pos = get_camera(*dworld)->position;
 	Core::vec3 dir = (proj_type == Projection::PERSPECTIVE) ? Core::vec3{ x, y, -near_plane } : Core::vec3{ 0.0, 0.0, -near_plane };
 	normalize(dir);
-	Core::vec3 origin = (proj_type == Projection::PERSPECTIVE) ? Core::vec3{ 0, 0, 0 } : Core::vec3{ x, y };
+	Core::vec3 origin = (proj_type == Projection::PERSPECTIVE) ? Core::vec3{} : Core::vec3{ x, y };
 	origin += camera_pos;
 	dir = dinput->rotator * dir;
 	origin = dinput->translator * origin;

@@ -39,7 +39,7 @@ namespace Core
 
 	struct model
 	{
-		vec3 position, emissive_color, surface_color;
+		vec3 position, emissive_color, surface_color, front{ 0,0,1 }, right{ 1,0,0 }, up{ 0,1,0 };
 		void* pshapes = 0;
 		unsigned shapes_size = 0;
 		texture diffuse;

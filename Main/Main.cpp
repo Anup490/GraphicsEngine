@@ -7,10 +7,11 @@
 #include <glfw3.h>
 #include <math.h>
 
-#define DISABLE_FOV
-
 double fov = 90.0;
-Core::vec3 translation_vec{};
+double last_x = 0.0;
+double yaw = 0.0;
+Core::model* pcamera = 0;
+RayTracer::Projection proj_type = RayTracer::Projection::ORTHOGRAPHIC;
 
 void check_btn_press(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -33,6 +34,7 @@ void main()
 		light.m_type = Core::model_type::LIGHT;
 		Core::model camera{ Core::vec3{} };
 		camera.m_type = Core::model_type::CAMERA;
+		pcamera = &camera;
 		std::shared_ptr<std::vector<Core::model*>> pmodels(new std::vector<Core::model*>);
 		pmodels->push_back(pmodel.get());
 		pmodels->push_back(&light);
@@ -150,7 +152,7 @@ void main()
 			try
 			{
 				prepare_input(i);
-				std::unique_ptr<RayTracer::rgb> ppixels = RayTracer::render(i, RayTracer::Projection::PERSPECTIVE);
+				std::unique_ptr<RayTracer::rgb> ppixels = RayTracer::render(i, proj_type);
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, ppixels.get());
 			}
 			catch (RayTracer::RayTraceException& e)
@@ -181,23 +183,33 @@ void check_btn_press(GLFWwindow* window)
 {
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 	{
-		translation_vec.z -= 1.0;
-		std::cout << "Pressed button W" << std::endl;
+		if (proj_type == RayTracer::Projection::PERSPECTIVE)
+		{
+			pcamera->position.x -= pcamera->front.x;
+			pcamera->position.y -= pcamera->front.y;
+			pcamera->position.z -= pcamera->front.z;
+		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 	{
-		translation_vec.x += 1.0;
-		std::cout << "Pressed button A" << std::endl;
+		pcamera->position.x += pcamera->right.x;
+		pcamera->position.y += pcamera->right.y;
+		pcamera->position.z += pcamera->right.z;
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 	{
-		translation_vec.z += 1.0;
-		std::cout << "Pressed button S" << std::endl;
+		if (proj_type == RayTracer::Projection::PERSPECTIVE)
+		{
+			pcamera->position.x += pcamera->front.x;
+			pcamera->position.y += pcamera->front.y;
+			pcamera->position.z += pcamera->front.z;
+		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 	{
-		translation_vec.x -= 1.0;
-		std::cout << "Pressed button D" << std::endl;
+		pcamera->position.x -= pcamera->right.x;
+		pcamera->position.y -= pcamera->right.y;
+		pcamera->position.z -= pcamera->right.z;
 	}
 	if (glfwGetKey(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
 	{
@@ -216,100 +228,47 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 void scroll_callback(GLFWwindow* window, double xpos, double ypos)
 {
-#ifndef DISABLE_FOV
-	if (ypos > 0.0)
-	{
-		fov -= 1.0;
-		std::cout << "Zoom in" << std::endl;
-	}
-	if (ypos < 0.0)
-	{
-		fov += 1.0;
-		std::cout << "Zoom out" << std::endl;
-	}
-#endif
+	if (ypos > 0.0) if (fov <= 0.0) fov += 1.0; else fov -= 1.0;
+	if (ypos < 0.0) if (fov >= 180.0) fov -= 1.0; else fov += 1.0;
 }
 
 void prepare_input(RayTracer::input& i)
 {
-	/*
-	Core::mat4 translation;
-	translation.pmatrix = new double[16];
-	translation.pmatrix[0] = 1;
-	translation.pmatrix[1] = 0;
-	translation.pmatrix[2] = 0;
-	translation.pmatrix[3] = translation_vec.x;
-	translation.pmatrix[4] = 0;
-	translation.pmatrix[5] = 1;
-	translation.pmatrix[6] = 0;
-	translation.pmatrix[7] = translation_vec.y;
-	translation.pmatrix[8] = 0;
-	translation.pmatrix[9] = 0;
-	translation.pmatrix[10] = 1;
-	translation.pmatrix[11] = translation_vec.z;
-	translation.pmatrix[12] = 0;
-	translation.pmatrix[13] = 0;
-	translation.pmatrix[14] = 0;
-	translation.pmatrix[15] = 1;
-
-	const double angle_in_radian = (2.0 * 3.141592653589793) / 180.0;;
-	Core::mat4 rotation;
-	rotation.pmatrix = new double[16];
-	rotation.pmatrix[0] = 1;// cos(angle_in_radian);
-	rotation.pmatrix[1] = 0;
-	rotation.pmatrix[2] = 0;// sin(angle_in_radian);
-	rotation.pmatrix[3] = 0;
-	rotation.pmatrix[4] = 0;
-	rotation.pmatrix[5] = 1;
-	rotation.pmatrix[6] = 0;
-	rotation.pmatrix[7] = 0;
-	rotation.pmatrix[8] = 0;// sin(angle_in_radian);
-	rotation.pmatrix[9] = 0;
-	rotation.pmatrix[10] = 1;// cos(angle_in_radian);
-	rotation.pmatrix[11] = 0;
-	rotation.pmatrix[12] = 0;
-	rotation.pmatrix[13] = 0;
-	rotation.pmatrix[14] = 0;
-	rotation.pmatrix[15] = 1;
-	*/
-
 	i.fov = fov;
 
 	i.translator.pmatrix = new double[16];
 	i.translator.pmatrix[0] = 1;
 	i.translator.pmatrix[1] = 0;
 	i.translator.pmatrix[2] = 0;
-	i.translator.pmatrix[3] = translation_vec.x;
+	i.translator.pmatrix[3] = pcamera->position.x;
 	i.translator.pmatrix[4] = 0;
 	i.translator.pmatrix[5] = 1;
 	i.translator.pmatrix[6] = 0;
-	i.translator.pmatrix[7] = translation_vec.y;
+	i.translator.pmatrix[7] = pcamera->position.y;
 	i.translator.pmatrix[8] = 0;
 	i.translator.pmatrix[9] = 0;
 	i.translator.pmatrix[10] = 1;
-	i.translator.pmatrix[11] = translation_vec.z;
+	i.translator.pmatrix[11] = pcamera->position.z;
 	i.translator.pmatrix[12] = 0;
 	i.translator.pmatrix[13] = 0;
 	i.translator.pmatrix[14] = 0;
 	i.translator.pmatrix[15] = 1;
 
 	i.rotator.pmatrix = new double[16];
-	i.rotator.pmatrix[0] = 1;// cos(angle_in_radian);
-	i.rotator.pmatrix[1] = 0;
-	i.rotator.pmatrix[2] = 0;// sin(angle_in_radian);
+	i.rotator.pmatrix[0] = pcamera->right.x;
+	i.rotator.pmatrix[1] = pcamera->up.x;
+	i.rotator.pmatrix[2] = pcamera->front.x;
 	i.rotator.pmatrix[3] = 0;
-	i.rotator.pmatrix[4] = 0;
-	i.rotator.pmatrix[5] = 1;
-	i.rotator.pmatrix[6] = 0;
+	i.rotator.pmatrix[4] = pcamera->right.y;
+	i.rotator.pmatrix[5] = pcamera->up.y;
+	i.rotator.pmatrix[6] = pcamera->front.y;
 	i.rotator.pmatrix[7] = 0;
-	i.rotator.pmatrix[8] = 0;// sin(angle_in_radian);
-	i.rotator.pmatrix[9] = 0;
-	i.rotator.pmatrix[10] = 1;// cos(angle_in_radian);
+	i.rotator.pmatrix[8] = pcamera->right.z;
+	i.rotator.pmatrix[9] = pcamera->up.z;
+	i.rotator.pmatrix[10] = pcamera->front.z;
 	i.rotator.pmatrix[11] = 0;
 	i.rotator.pmatrix[12] = 0;
 	i.rotator.pmatrix[13] = 0;
 	i.rotator.pmatrix[14] = 0;
 	i.rotator.pmatrix[15] = 1;
-	
-	//return RayTracer::input{ 0, 90.0, translation, rotation };
 }
