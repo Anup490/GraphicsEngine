@@ -240,7 +240,7 @@ void check_btn_press(GLFWwindow* window)
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-	if (lmb_hold)
+	if (lmb_hold && proj_type == RayTracer::Projection::PERSPECTIVE)
 	{
 		if (first_lmb)
 		{
