@@ -9,7 +9,9 @@
 
 double fov = 90.0;
 double last_x = 0.0;
+double last_y = 0.0;
 double yaw = 0.0;
+double pitch = 0.0;
 Core::model* pcamera = 0;
 RayTracer::Projection proj_type = RayTracer::Projection::PERSPECTIVE;
 
@@ -228,21 +230,33 @@ void check_btn_press(GLFWwindow* window)
 	}
 	if (glfwGetKey(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
 	{
-		//std::cout << "Released left mouse button" << std::endl;
+		std::cout << "Released left mouse button" << std::endl;
 	}
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
 	double xdiff = xpos - last_x;
-	std::cout << "xdiff :: " << xdiff << std::endl;
 	last_x = xpos;
 	yaw += xdiff;
 	double yaw_in_rad = (yaw * 3.141592653589793) / 180.0;
+
+	double ydiff = last_y - ypos;
+	last_y = ypos;
+	pitch += ydiff;
+	double pitch_in_rad = (pitch * 3.141592653589793) / 180.0;
+
 	pcamera->right.x = cos(yaw_in_rad);
-	pcamera->front.x = sin(yaw_in_rad);
+	pcamera->right.y = 0;
 	pcamera->right.z = -sin(yaw_in_rad);
-	pcamera->front.z = cos(yaw_in_rad);
+
+	pcamera->up.x = sin(yaw_in_rad) * sin(pitch_in_rad);
+	pcamera->up.y = cos(pitch_in_rad);
+	pcamera->up.z = cos(yaw_in_rad) * sin(pitch_in_rad);
+
+	pcamera->front.x = sin(yaw_in_rad) * cos(pitch_in_rad);
+	pcamera->front.y = -sin(pitch_in_rad);
+	pcamera->front.z = cos(yaw_in_rad) * cos(pitch_in_rad);
 }
 
 void scroll_callback(GLFWwindow* window, double xpos, double ypos)
