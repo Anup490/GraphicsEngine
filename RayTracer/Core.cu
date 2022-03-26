@@ -34,7 +34,7 @@ void RayTracer::render(RayTracer::pixels pixels, const input* dinput, Projection
 	double tan_val = tangent(dinput->fov/ 2.0);
 	int tx = blockIdx.x * blockDim.x + threadIdx.x;
 	int ty = blockIdx.y * blockDim.y + threadIdx.y;
-	double near_plane = (proj_type == Projection::PERSPECTIVE) ? 1.0 : 8.0;
+	double near_plane = (proj_type == Projection::PERSPECTIVE) ? 1.0 : 20.0;
 	int index = (ty * pixels.width) + tx;
 	double x = ((2.0 * ((tx + 0.5) / pixels.width)) - 1.0) * aspect_ratio * tan_val * near_plane;
 	double y = (1.0 - (2.0 * ((ty + 0.5) / pixels.height))) * tan_val * near_plane;
@@ -44,7 +44,7 @@ void RayTracer::render(RayTracer::pixels pixels, const input* dinput, Projection
 	normalize(dir);
 	Core::vec3 origin = (proj_type == Projection::PERSPECTIVE) ? Core::vec3{} : Core::vec3{ x, y };
 	origin += camera_pos;
-	dir = dinput->rotator * dir;
+	if(proj_type == Projection::PERSPECTIVE) dir = dinput->rotator * dir;
 	origin = dinput->translator * origin;
 	ray pray{ origin, dir };
 	Core::vec3 color = cast_primary_ray(*dworld, pray);
