@@ -12,6 +12,10 @@ double last_x = 0.0;
 double last_y = 0.0;
 double yaw = 0.0;
 double pitch = 0.0;
+bool lmb_hold = false;
+bool first_lmb = true;
+int window_width = 640, window_height = 480;
+
 Core::model* pcamera = 0;
 RayTracer::Projection proj_type = RayTracer::Projection::PERSPECTIVE;
 
@@ -23,7 +27,6 @@ void prepare_input(RayTracer::input& i);
 void main()
 {
 	std::cout << "Loading..." << std::endl;
-	int window_width = 640, window_height = 480;
 	const char* window_title = "GraphicsEngine";
 	bool init_called = false;
 	std::unique_ptr<Core::model> pmodel;
@@ -224,39 +227,58 @@ void check_btn_press(GLFWwindow* window)
 		pcamera->position.y -= pcamera->right.y;
 		pcamera->position.z -= pcamera->right.z;
 	}
-	if (glfwGetKey(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
 	{
 		std::cout << "Pressed left mouse button" << std::endl;
+		lmb_hold = true;
 	}
-	if (glfwGetKey(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
 	{
 		std::cout << "Released left mouse button" << std::endl;
+		lmb_hold = false;
+		first_lmb = true;
 	}
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-	double xdiff = xpos - last_x;
-	last_x = xpos;
-	yaw += xdiff;
-	double yaw_in_rad = (yaw * 3.141592653589793) / 180.0;
+	if (lmb_hold)
+	{
+		if (first_lmb)
+		{
+			last_x = window_width / 2;
+			last_y = window_height / 2;
+			glfwSetCursorPos(window, last_x, last_y);
+			first_lmb = false;
+		}
+		else
+		{
+			double xdiff = xpos - last_x;
+			last_x = xpos;
+			yaw += xdiff;
+			double yaw_in_rad = (yaw * 3.141592653589793) / 180.0;
 
-	double ydiff = last_y - ypos;
-	last_y = ypos;
-	pitch += ydiff;
-	double pitch_in_rad = (pitch * 3.141592653589793) / 180.0;
+			double ydiff = last_y - ypos;
+			last_y = ypos;
+			pitch += ydiff;
+			if (pitch > 89.0) pitch = 89.0;
+			if (pitch < -89.0) pitch = -89.0;
 
-	pcamera->right.x = cos(yaw_in_rad);
-	pcamera->right.y = 0;
-	pcamera->right.z = -sin(yaw_in_rad);
+			double pitch_in_rad = (pitch * 3.141592653589793) / 180.0;
 
-	pcamera->up.x = sin(yaw_in_rad) * sin(pitch_in_rad);
-	pcamera->up.y = cos(pitch_in_rad);
-	pcamera->up.z = cos(yaw_in_rad) * sin(pitch_in_rad);
+			pcamera->right.x = cos(yaw_in_rad);
+			pcamera->right.y = 0;
+			pcamera->right.z = -sin(yaw_in_rad);
 
-	pcamera->front.x = sin(yaw_in_rad) * cos(pitch_in_rad);
-	pcamera->front.y = -sin(pitch_in_rad);
-	pcamera->front.z = cos(yaw_in_rad) * cos(pitch_in_rad);
+			pcamera->up.x = sin(yaw_in_rad) * sin(pitch_in_rad);
+			pcamera->up.y = cos(pitch_in_rad);
+			pcamera->up.z = cos(yaw_in_rad) * sin(pitch_in_rad);
+
+			pcamera->front.x = sin(yaw_in_rad) * cos(pitch_in_rad);
+			pcamera->front.y = -sin(pitch_in_rad);
+			pcamera->front.z = cos(yaw_in_rad) * cos(pitch_in_rad);
+		}
+	}
 }
 
 void scroll_callback(GLFWwindow* window, double xpos, double ypos)
