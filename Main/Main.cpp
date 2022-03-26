@@ -229,12 +229,10 @@ void check_btn_press(GLFWwindow* window)
 	}
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
 	{
-		std::cout << "Pressed left mouse button" << std::endl;
 		lmb_hold = true;
 	}
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
 	{
-		std::cout << "Released left mouse button" << std::endl;
 		lmb_hold = false;
 		first_lmb = true;
 	}
