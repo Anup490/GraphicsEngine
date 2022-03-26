@@ -130,7 +130,7 @@ Core::vec3 RayTracer::cast_shadow_ray(const world& models, ray& rray, const hit&
 	for (unsigned l = 0; l < models.size; l++)
 	{
 		model* light_model = &models.models[l];
-		if (light_model->m_type == Core::model_type::LIGHT)
+		if ((light_model->m_type == Core::model_type::LIGHT) && (hit.pmodel->m_type == Core::model_type::OBJECT))
 		{
 			Core::vec3 shadow_dir = light_model->position - rray.phit;
 			normalize(shadow_dir);

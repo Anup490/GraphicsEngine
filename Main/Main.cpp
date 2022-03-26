@@ -11,7 +11,7 @@ double fov = 90.0;
 double last_x = 0.0;
 double yaw = 0.0;
 Core::model* pcamera = 0;
-RayTracer::Projection proj_type = RayTracer::Projection::ORTHOGRAPHIC;
+RayTracer::Projection proj_type = RayTracer::Projection::PERSPECTIVE;
 
 void check_btn_press(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -30,8 +30,19 @@ void main()
 	{
 		//pmodel = prepare_gltf_model_data("D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf");
 		pmodel = prepare_spheres();
-		Core::model light{ Core::vec3{}, Core::vec3{ 1.0, 1.0, 1.0 } };
+
+		Core::model light;
+		Core::sphere* pspheres = new Core::sphere[1];
+		pspheres[0] = Core::sphere{ 2.0, Core::vec3{ -5.0, 5.0, 0.0  } };
+		light.position = pspheres[0].center;
+		light.surface_color = Core::vec3{ 1.0, 1.0, 0.0 };
+		light.emissive_color = Core::vec3{ 0.8, 0.8, 0.8 };
+		light.pshapes = pspheres;
+		light.shapes_size = 1;
+		light.s_type = Core::shape_type::SPHERE;
 		light.m_type = Core::model_type::LIGHT;
+
+
 		Core::model camera{ Core::vec3{} };
 		camera.m_type = Core::model_type::CAMERA;
 		pcamera = &camera;
@@ -217,13 +228,21 @@ void check_btn_press(GLFWwindow* window)
 	}
 	if (glfwGetKey(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
 	{
-		std::cout << "Released left mouse button" << std::endl;
+		//std::cout << "Released left mouse button" << std::endl;
 	}
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-	std::cout << "Mouse movement detected" << std::endl;
+	double xdiff = xpos - last_x;
+	std::cout << "xdiff :: " << xdiff << std::endl;
+	last_x = xpos;
+	yaw += xdiff;
+	double yaw_in_rad = (yaw * 3.141592653589793) / 180.0;
+	pcamera->right.x = cos(yaw_in_rad);
+	pcamera->front.x = sin(yaw_in_rad);
+	pcamera->right.z = -sin(yaw_in_rad);
+	pcamera->front.z = cos(yaw_in_rad);
 }
 
 void scroll_callback(GLFWwindow* window, double xpos, double ypos)
