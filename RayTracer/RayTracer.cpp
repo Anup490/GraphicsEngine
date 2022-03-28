@@ -94,6 +94,11 @@ void RayTracer::prepare_data(const std::shared_ptr<std::vector<Core::model*>> pm
 			cudaMalloc(&dmodel.dshapes, sizeof(sphere) * pmodel->shapes_size);
 			cudaMemcpy(dmodel.dshapes, spheres.data(), sizeof(sphere) * pmodel->shapes_size, cudaMemcpyHostToDevice);
 		}
+		else if (pmodel->s_type == Core::shape_type::BOX)
+		{
+			cudaMalloc(&dmodel.dshapes, sizeof(Core::box) * pmodel->shapes_size);
+			cudaMemcpy(dmodel.dshapes, pmodel->pshapes, sizeof(Core::box) * pmodel->shapes_size, cudaMemcpyHostToDevice);
+		}
 		dmodel.emissive_color = pmodel->emissive_color;
 		dmodel.position = pmodel->position;
 		dmodel.reflectivity = pmodel->reflectivity;

@@ -10,7 +10,7 @@ namespace std
 }
 namespace Core
 {
-	enum class shape_type { TRIANGLE, SPHERE };
+	enum class shape_type { TRIANGLE, SPHERE, BOX };
 	enum class model_type { LIGHT, CAMERA, OBJECT };
 
 	struct vec3
@@ -59,5 +59,10 @@ namespace Core
 	{
 		double radius = 0.0;
 		Core::vec3 center;
+	};
+
+	struct box
+	{
+		Core::vec3 min, max;
 	};
 }

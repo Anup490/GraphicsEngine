@@ -3,6 +3,7 @@
 #include "Texture.cuh"
 #include "Triangle.cuh"
 #include "Sphere.cuh"
+#include "Box.cuh"
 
 namespace RayTracer
 {
@@ -44,6 +45,10 @@ namespace RayTracer
 			{
 				has_hit = Sphere::detect_hit(models.models[m], ray, hit_item, tnear);
 			}
+			else if (models.models[m].s_type == Core::shape_type::BOX)
+			{
+				has_hit = Box::detect_hit(models.models[m], ray, hit_item, tnear);
+			}
 			if (has_hit) hit = has_hit;
 		}
 		if (!hit) return hit;
@@ -61,6 +66,11 @@ namespace RayTracer
 			{
 				ray.nhit = -ray.nhit;
 			}
+		}
+		else if (hit_item.pmodel->s_type == Core::shape_type::BOX)
+		{
+			Core::box* pbox = (Core::box*)hit_item.shape;
+			ray.nhit = Box::calculate_normal(pbox, ray.phit);
 		}
 		normalize(ray.nhit);
 		return hit;

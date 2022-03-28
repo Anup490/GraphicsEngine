@@ -28,3 +28,19 @@ std::unique_ptr<Core::model> prepare_spheres()
 
 	return std::unique_ptr<Core::model>(pmodel);
 }
+
+std::unique_ptr<Core::model> prepare_boxes()
+{
+	Core::model* pmodel = new Core::model;
+	const unsigned sphere_count = 1;
+	Core::box* pboxes = new Core::box[sphere_count];
+	pboxes[0] = Core::box{ Core::vec3{ 0.0, 0.0, -20.0 }, Core::vec3{ 10.0, 10.0, -30.0 } };
+	pmodel->position = Core::vec3{ 5.0, 5.0, -25.0 };
+	pmodel->emissive_color = Core::vec3{};
+	pmodel->surface_color = Core::vec3{ 1.00, 0.32, 0.36 };
+	pmodel->pshapes = pboxes;
+	pmodel->shapes_size = sphere_count;
+	pmodel->s_type = Core::shape_type::BOX;
+	pmodel->m_type = Core::model_type::OBJECT;
+	return std::unique_ptr<Core::model>(pmodel);
+}

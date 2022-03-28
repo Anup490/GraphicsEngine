@@ -2,13 +2,13 @@
 #include "PrivateBase.cuh"
 #include "Vector.h"
 #include "Maths.h"
-#include <stdio.h>
+
 namespace RayTracer
 {
 	namespace Sphere
 	{
 		RUN_ON_GPU
-		bool does_intersect(const sphere& s, const ray& r, double& t0)
+		bool does_intersect(const sphere& s, const ray& r, double& distance)
 		{
 			Core::vec3 l = s.center - r.origin;
 			double tca = dot(l, r.dir);
@@ -18,7 +18,7 @@ namespace RayTracer
 			double thc = square_root(s.radius_square - d_square);
 			double tfirst = tca - thc;
 			double tlast = tca + thc;
-			t0 = (tfirst < 0.0) ? tlast : tfirst;
+			distance = (tfirst < 0.0) ? tlast : tfirst;
 			return true;
 		}
 

@@ -67,5 +67,27 @@ namespace RayTracer
 	{
 		return tan(to_radian(angle));
 	}
+
+	RUN_ON_CPU_AND_GPU
+	double minimum(double& a, double& b, double& c)
+	{
+		double m = (a < b) ? a : b;
+		return (m < c) ? m : c;
+	}
+
+	RUN_ON_CPU_AND_GPU
+	double maximum(double& a, double& b, double& c)
+	{
+		double m = (a > b) ? a : b;
+		return (m > c) ? m : c;
+	}
+
+	RUN_ON_CPU_AND_GPU
+	void swap(double& a, double& b)
+	{
+		double temp = a;
+		a = b;
+		b = temp;
+	}
 }
 
