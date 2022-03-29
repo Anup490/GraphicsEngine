@@ -70,7 +70,7 @@ namespace RayTracer
 		else if (hit_item.pmodel->s_type == Core::shape_type::BOX)
 		{
 			Core::box* pbox = (Core::box*)hit_item.shape;
-			ray.nhit = Box::calculate_normal(pbox, ray.phit);
+			ray.nhit = ray.phit - pbox->center;
 		}
 		normalize(ray.nhit);
 		return hit;
@@ -98,6 +98,18 @@ namespace RayTracer
 			for (unsigned i = 0; i < model.shapes_size; i++)
 			{
 				if (Sphere::does_intersect(spheres[i], shadow_ray, t0))
+				{
+					glow = 0.0;
+					break;
+				}
+			}
+		}
+		else if (model.s_type == Core::shape_type::BOX)
+		{
+			Core::box* boxes = (Core::box*)model.dshapes;
+			for (unsigned i = 0; i < model.shapes_size; i++)
+			{
+				if (Box::does_intersect(boxes[i], shadow_ray, t0))
 				{
 					glow = 0.0;
 					break;

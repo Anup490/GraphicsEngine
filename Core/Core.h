@@ -63,6 +63,6 @@ namespace Core
 
 	struct box
 	{
-		Core::vec3 min, max;
+		Core::vec3 min, max, center{ (min.x + max.x)/2.0, (min.y + max.y) / 2.0, (min.z + max.z) / 2.0 };
 	};
 }

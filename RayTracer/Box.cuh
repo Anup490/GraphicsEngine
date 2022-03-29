@@ -20,45 +20,7 @@ namespace RayTracer
 		}
 
 		RUN_ON_GPU
-		Core::vec3 calculate_normal(Core::box* pbox, Core::vec3& phit)
-		{
-			face hit_face = get_face(pbox, phit);
-			Core::vec3 v1, v2;
-			if (hit_face == face::LEFT)
-			{
-				v1 = phit - Core::vec3{ pbox->min.x, pbox->max.y, pbox->max.z };
-				v2 = Core::vec3{ pbox->min.x, pbox->max.y, pbox->min.z } - phit;
-			}
-			else if (hit_face == face::RIGHT)
-			{
-				v1 = phit - Core::vec3{ pbox->max.x, pbox->max.y, pbox->min.z };
-				v2 = Core::vec3{ pbox->max.x, pbox->max.y, pbox->max.z } - phit;
-			}
-			else if (hit_face == face::BOTTOM)
-			{
-				v1 = phit - Core::vec3{ pbox->min.x, pbox->min.y, pbox->min.z };
-				v2 = Core::vec3{ pbox->max.x, pbox->min.y, pbox->min.z } - phit;
-			}
-			else if (hit_face == face::TOP)
-			{
-				v1 = phit - Core::vec3{ pbox->min.x, pbox->max.y, pbox->max.z };
-				v2 = Core::vec3{ pbox->max.x, pbox->max.y, pbox->max.z } - phit;
-			}
-			else if (hit_face == face::FRONT)
-			{
-				v1 = phit - Core::vec3{ pbox->min.x, pbox->max.y, pbox->min.z };
-				v2 = Core::vec3{ pbox->max.x, pbox->max.y, pbox->min.z } - phit;
-			}
-			else
-			{
-				v1 = phit - Core::vec3{ pbox->max.x, pbox->max.y, pbox->max.z };
-				v2 = Core::vec3{ pbox->min.x, pbox->max.y, pbox->max.z } - phit;
-			}
-			return cross(v1, v2);
-		}
-
-		RUN_ON_GPU
-		bool does_intersect(const Core::box& b, ray& r, double& distance)
+		bool does_intersect(const Core::box& b, const ray& r, double& distance)
 		{
 			double txmin = (b.min.x - r.origin.x) / r.dir.x;
 			double txmax = (b.max.x - r.origin.x) / r.dir.x;

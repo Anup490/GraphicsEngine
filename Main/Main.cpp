@@ -33,7 +33,7 @@ void main()
 	RayTracer::input i;
 	try
 	{
-		//pmodel = prepare_gltf_model_data("D:/Projects/C++/3DImporter/Assets/jupiter/scene.gltf");
+		//pmodel = prepare_gltf_model_data("D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf");
 		//pmodel = prepare_spheres();
 		pmodel = prepare_boxes();
 
