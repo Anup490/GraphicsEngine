@@ -7,7 +7,7 @@ std::unique_ptr<Core::model> prepare_spheres()
 	Core::model* pmodel = new Core::model;
 	const unsigned sphere_count = 1;
 	Core::sphere* pspheres = new Core::sphere[sphere_count];
-	pspheres[0] = Core::sphere{ 4.0, Core::vec3{ 0.0, 0.0, -20.0 }};
+	pspheres[0] = Core::sphere{ 4.0, Core::vec3{ 0.0, 10.0, -20.0 }};
 	pmodel->position = pspheres[0].center;
 	pmodel->emissive_color = Core::vec3{};
 	pmodel->surface_color = Core::vec3{ 1.00, 0.32, 0.36 };
@@ -34,10 +34,10 @@ std::unique_ptr<Core::model> prepare_boxes()
 	Core::model* pmodel = new Core::model;
 	const unsigned sphere_count = 1;
 	Core::box* pboxes = new Core::box[sphere_count];
-	pboxes[0] = Core::box{ Core::vec3{ 0.0, 0.0, -20.0 }, Core::vec3{ 10.0, 10.0, -30.0 } };
+	pboxes[0] = Core::box{ Core::vec3{ 0.0, 0.0, -30.0 }, Core::vec3{ 10.0, 10.0, -40.0 } };
 	pmodel->position = pboxes[0].center;
 	pmodel->emissive_color = Core::vec3{};
-	pmodel->surface_color = Core::vec3{ 1.00, 0.32, 0.36 };
+	pmodel->surface_color = Core::vec3{ 0.32, 0.36, 1.0 };
 	pmodel->pshapes = pboxes;
 	pmodel->shapes_size = sphere_count;
 	pmodel->s_type = Core::shape_type::BOX;

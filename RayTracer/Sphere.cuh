@@ -12,12 +12,12 @@ namespace RayTracer
 		{
 			Core::vec3 l = s.center - r.origin;
 			double tca = dot(l, r.dir);
-			if (tca < 0.0) return false;
 			double d_square = dot(l, l) - (tca * tca);
 			if (d_square > s.radius_square) return false;
 			double thc = square_root(s.radius_square - d_square);
 			double tfirst = tca - thc;
 			double tlast = tca + thc;
+			if ((tfirst < 0.0) && (tlast < 0.0)) return false;
 			distance = (tfirst < 0.0) ? tlast : tfirst;
 			return true;
 		}

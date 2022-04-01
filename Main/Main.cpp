@@ -34,8 +34,8 @@ void main()
 	try
 	{
 		//pmodel = prepare_gltf_model_data({ "D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf", Core::vec3{0.0,0.0,-3.0} });
-		//pmodel = prepare_spheres();
-		pmodel = prepare_boxes();
+		std::unique_ptr<Core::model> psphere = prepare_spheres();
+		std::unique_ptr<Core::model> pbox = prepare_boxes();
 
 		Core::model light;
 		Core::sphere* pspheres = new Core::sphere[1];
@@ -52,7 +52,9 @@ void main()
 		camera.m_type = Core::model_type::CAMERA;
 		pcamera = &camera;
 		std::shared_ptr<std::vector<Core::model*>> pmodels(new std::vector<Core::model*>);
-		pmodels->push_back(pmodel.get());
+		//pmodels->push_back(pmodel.get());
+		//pmodels->push_back(psphere.get());
+		pmodels->push_back(pbox.get());
 		pmodels->push_back(&light);
 		pmodels->push_back(&camera);
 		std::unique_ptr<Core::cubemap> p = prepare_cubemap("D:/Projects/C++/3DImporter/Assets/skybox");
@@ -190,7 +192,7 @@ void main()
 		glfwDestroyWindow(window);
 		glfwTerminate();
 	}
-	delete_texture(pmodel.get());
+	if(pmodel) delete_texture(pmodel.get());
 	if(init_called) RayTracer::clear();
 	if(i.rotator.pmatrix) delete[] i.rotator.pmatrix;
 	if(i.translator.pmatrix) delete[] i.translator.pmatrix;

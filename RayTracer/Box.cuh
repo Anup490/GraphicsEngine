@@ -7,6 +7,31 @@ namespace RayTracer
 	namespace Box
 	{
 		RUN_ON_GPU
+		face get_face(const Core::box* pbox, const Core::vec3& phit)
+		{
+			if (pbox->max.x == phit.x) return face::LEFT;
+			else if (pbox->min.x == phit.x) return face::RIGHT;
+			else if (pbox->max.y == phit.y) return face::TOP;
+			else if (pbox->min.y == phit.y) return face::BOTTOM;
+			else if (pbox->max.z == phit.z) return face::BACK;
+			else if (pbox->min.z == phit.z) return face::FRONT;
+			return face::NONE;
+		}
+
+		RUN_ON_GPU
+		Core::vec3 calculate_normal(const Core::box* pbox, const Core::vec3& phit)
+		{
+			face f = get_face(pbox, phit);
+			if (f == face::LEFT) return Core::vec3{ pbox->max.x, pbox->center.y, pbox->center.z } - pbox->center;
+			if (f == face::RIGHT) return Core::vec3{ pbox->min.x, pbox->center.y, pbox->center.z } - pbox->center;
+			if (f == face::BOTTOM) return Core::vec3{ pbox->center.x, pbox->min.y, pbox->center.z } - pbox->center;
+			if (f == face::TOP) return Core::vec3{ pbox->center.x, pbox->max.y, pbox->center.z } - pbox->center;
+			if (f == face::FRONT) return Core::vec3{ pbox->center.x, pbox->center.y, pbox->max.z } - pbox->center;
+			if (f == face::BACK) Core::vec3{ pbox->center.x, pbox->center.y, pbox->min.z } - pbox->center;
+			return Core::vec3{};
+		}
+
+		RUN_ON_GPU
 		bool does_intersect(const Core::box& b, const ray& r, double& distance)
 		{
 			double txmin = (b.min.x - r.origin.x) / r.dir.x;

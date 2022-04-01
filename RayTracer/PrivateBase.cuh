@@ -45,4 +45,6 @@ namespace RayTracer
 	};
 
 	struct hit { void* shape; model* pmodel; };
+
+	enum class face { LEFT, RIGHT, TOP, BOTTOM, FRONT, BACK, NONE };
 }

@@ -32,7 +32,7 @@ namespace RayTracer
 	RUN_ON_GPU
 	bool detect_hit(const world& models, ray& ray, hit& hit_item)
 	{
-		double t0 = INFINITY, tnear = INFINITY;
+		double tnear = INFINITY;
 		bool hit = false;
 		for (unsigned m = 0; m < models.size; m++)
 		{	
@@ -62,15 +62,13 @@ namespace RayTracer
 		{
 			sphere* psphere = (sphere*)hit_item.shape;
 			ray.nhit = ray.phit - psphere->center;
-			if (dot(ray.nhit, ray.dir) > 0.0)
-			{
-				ray.nhit = -ray.nhit;
-			}
+			if (dot(ray.nhit, ray.dir) > 0.0) ray.nhit = -ray.nhit;
 		}
 		else if (hit_item.pmodel->s_type == Core::shape_type::BOX)
 		{
 			Core::box* pbox = (Core::box*)hit_item.shape;
-			ray.nhit = ray.phit - pbox->center;
+			ray.nhit = Box::calculate_normal(pbox, ray.phit);
+			if (dot(ray.nhit, ray.dir) > 0.0) ray.nhit = -ray.nhit;
 		}
 		normalize(ray.nhit);
 		return hit;
