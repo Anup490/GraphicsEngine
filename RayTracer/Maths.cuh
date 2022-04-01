@@ -92,5 +92,12 @@ namespace RayTracer
 		a = b;
 		b = temp;
 	}
+
+	RUN_ON_CPU_AND_GPU
+	bool equal(const double& d1, const double& d2)
+	{
+		double diff = (d1 > d2) ? d1 - d2 : d2 - d1;
+		return diff < 0.000001;
+	}
 }
 

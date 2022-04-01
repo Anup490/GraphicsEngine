@@ -39,7 +39,7 @@ void main()
 
 		Core::model light;
 		Core::sphere* pspheres = new Core::sphere[1];
-		pspheres[0] = Core::sphere{ 2.0, Core::vec3{ -100.0, 100.0, 100.0  } };
+		pspheres[0] = Core::sphere{ 2.0, Core::vec3{ 100.0, 100.0, -100.0  } };
 		light.position = pspheres[0].center;
 		light.surface_color = Core::vec3{ 1.0, 1.0, 0.0 };
 		light.emissive_color = Core::vec3{ 1.0, 1.0, 1.0 };

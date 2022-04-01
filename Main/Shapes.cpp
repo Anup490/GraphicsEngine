@@ -34,7 +34,7 @@ std::unique_ptr<Core::model> prepare_boxes()
 	Core::model* pmodel = new Core::model;
 	const unsigned sphere_count = 1;
 	Core::box* pboxes = new Core::box[sphere_count];
-	pboxes[0] = Core::box{ Core::vec3{ 0.0, 0.0, -30.0 }, Core::vec3{ 10.0, 10.0, -40.0 } };
+	pboxes[0] = Core::box{ Core::vec3{ 0.0, 0.0, -40.0 }, Core::vec3{ 10.0, 10.0, -30.0 } };
 	pmodel->position = pboxes[0].center;
 	pmodel->emissive_color = Core::vec3{};
 	pmodel->surface_color = Core::vec3{ 0.32, 0.36, 1.0 };

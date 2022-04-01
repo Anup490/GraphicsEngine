@@ -10,6 +10,7 @@ namespace RayTracer
 {
 	world* dworld = 0;
 	model* dgpumodels = 0;
+	Core::cubemap* dcubemap = 0;
 	unsigned models_size = 0;
 	RayTracer::pixels* ppixels = 0;
 	std::vector<void*>* p_all_shapes = 0;
@@ -70,6 +71,7 @@ void RayTracer::clear()
 		cudaFree(dtexture);
 	}
 	cudaFree(dgpumodels);
+	cudaFree(dcubemap);
 	cudaFree(dworld);
 	cudaFree(ppixels->data);
 	delete p_all_shapes;
@@ -191,7 +193,6 @@ Core::cubemap* RayTracer::prepare_cubemap(Core::cubemap* pcubemap)
 	cubemap.top = get_texture(pcubemap->top);
 	cubemap.front = get_texture(pcubemap->front);
 	cubemap.back = get_texture(pcubemap->back);
-	Core::cubemap* dcubemap;
 	cudaMalloc(&dcubemap, sizeof(Core::cubemap));
 	cudaMemcpy(dcubemap, &cubemap, sizeof(Core::cubemap), cudaMemcpyHostToDevice);
 	return dcubemap;

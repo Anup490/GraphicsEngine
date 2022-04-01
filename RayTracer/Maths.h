@@ -7,4 +7,5 @@ namespace RayTracer
 	double minimum(double& a, double& b, double& c);
 	double maximum(double& a, double& b, double& c);
 	void swap(double& a, double& b);
+	bool equal(const double& d1, const double& d2);
 }

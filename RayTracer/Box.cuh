@@ -9,12 +9,12 @@ namespace RayTracer
 		RUN_ON_GPU
 		face get_face(const Core::box* pbox, const Core::vec3& phit)
 		{
-			if (pbox->max.x == phit.x) return face::LEFT;
-			else if (pbox->min.x == phit.x) return face::RIGHT;
-			else if (pbox->max.y == phit.y) return face::TOP;
-			else if (pbox->min.y == phit.y) return face::BOTTOM;
-			else if (pbox->max.z == phit.z) return face::BACK;
-			else if (pbox->min.z == phit.z) return face::FRONT;
+			if (equal(phit.x, pbox->max.x)) return face::LEFT;
+			if (equal(phit.x, pbox->min.x)) return face::RIGHT;
+			if (equal(phit.y, pbox->max.y)) return face::TOP;
+			if (equal(phit.y, pbox->min.y)) return face::BOTTOM;
+			if (equal(phit.z, pbox->max.z)) return face::FRONT;
+			if (equal(phit.z, pbox->min.z)) return face::BACK;
 			return face::NONE;
 		}
 
@@ -22,13 +22,11 @@ namespace RayTracer
 		Core::vec3 calculate_normal(const Core::box* pbox, const Core::vec3& phit)
 		{
 			face f = get_face(pbox, phit);
-			if (f == face::LEFT) return Core::vec3{ pbox->max.x, pbox->center.y, pbox->center.z } - pbox->center;
-			if (f == face::RIGHT) return Core::vec3{ pbox->min.x, pbox->center.y, pbox->center.z } - pbox->center;
-			if (f == face::BOTTOM) return Core::vec3{ pbox->center.x, pbox->min.y, pbox->center.z } - pbox->center;
-			if (f == face::TOP) return Core::vec3{ pbox->center.x, pbox->max.y, pbox->center.z } - pbox->center;
-			if (f == face::FRONT) return Core::vec3{ pbox->center.x, pbox->center.y, pbox->max.z } - pbox->center;
-			if (f == face::BACK) Core::vec3{ pbox->center.x, pbox->center.y, pbox->min.z } - pbox->center;
-			return Core::vec3{};
+			Core::vec3 inside{};
+			if ((f == face::LEFT) || (f == face::RIGHT)) inside = Core::vec3{ pbox->center.x, phit.y, phit.z };
+			if ((f == face::TOP) || (f == face::BOTTOM)) inside = Core::vec3{ phit.x, pbox->center.y, phit.z };
+			if ((f == face::FRONT) || (f == face::BACK)) inside = Core::vec3{ phit.x, phit.y, pbox->center.z };
+			return phit - inside;
 		}
 
 		RUN_ON_GPU
