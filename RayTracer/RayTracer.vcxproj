@@ -156,6 +156,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Background.cuh" />
     <ClInclude Include="Box.cuh" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Interface.cuh" />

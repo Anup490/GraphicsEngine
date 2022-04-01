@@ -6,19 +6,6 @@ namespace RayTracer
 {
 	namespace Box
 	{
-		enum class face { LEFT, RIGHT, BOTTOM, TOP, FRONT, BACK };
-
-		RUN_ON_GPU
-		face get_face(Core::box* pbox, Core::vec3& phit)
-		{
-			if (pbox->min.x == phit.x) return face::LEFT;
-			else if (pbox->max.x == phit.x) return face::RIGHT;
-			else if (pbox->min.y == phit.y) return face::BOTTOM;
-			else if (pbox->max.y == phit.y) return face::TOP;
-			else if (pbox->min.z == phit.z) return face::FRONT;
-			else return face::BACK;
-		}
-
 		RUN_ON_GPU
 		bool does_intersect(const Core::box& b, const ray& r, double& distance)
 		{

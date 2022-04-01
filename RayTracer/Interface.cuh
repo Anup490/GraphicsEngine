@@ -19,9 +19,9 @@ namespace RayTracer
 	}
 
 	RUN_ON_GPU
-	Core::vec3 get_color(const hit& hit_item, ray& rray, const texture& tex)
+	Core::vec3 get_color(const hit& hit_item, ray& rray, const Core::texture& tex)
 	{
-		if (!tex.dtextures)
+		if (!tex.ptextures)
 		{
 			return hit_item.pmodel->surface_color;
 		}

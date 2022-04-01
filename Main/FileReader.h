@@ -16,9 +16,10 @@ struct FileReadException : std::exception
 	char const* what() const override { return message.c_str(); }
 };
 
-std::unique_ptr<Core::model> prepare_gltf_model_data(const char* file_path) throw(FileReadException);
+std::unique_ptr<Core::model> prepare_gltf_model_data(Core::model_info info) throw(FileReadException);
 std::unique_ptr<Core::model> prepare_spheres();
 std::unique_ptr<Core::model> prepare_boxes();
+std::unique_ptr<Core::cubemap> prepare_cubemap(const char* file_path);
 
 void delete_texture(Core::model* pmodel);
 std::string extract_file(const char* path);

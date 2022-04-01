@@ -37,6 +37,16 @@ namespace Core
 		int channels = 0;
 	};
 
+	struct cubemap
+	{
+		texture left;
+		texture right;
+		texture bottom;
+		texture top;
+		texture front;
+		texture back;
+	};
+
 	struct model
 	{
 		vec3 position, emissive_color, surface_color, front{ 0,0,1 }, right{ 1,0,0 }, up{ 0,1,0 };
@@ -48,6 +58,12 @@ namespace Core
 		shape_type s_type;
 		model_type m_type;
 		~model() { if (pshapes) delete[] pshapes; }
+	};
+
+	struct model_info
+	{
+		const char* file_path;
+		Core::vec3 position;
 	};
 
 	struct triangle

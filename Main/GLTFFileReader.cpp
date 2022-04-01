@@ -8,8 +8,8 @@
 #include "stb_image.h"
 
 std::vector<unsigned char>* get_data(nlohmann::json& JSON, const char* file_path);
-void traverse_node(nlohmann::json& JSON, unsigned nextNode, std::vector<unsigned char>* pdata, Core::model* pmodel, const char* file);
-void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned char>* pdata, Core::model* pmodel, const char* file);
+void traverse_node(nlohmann::json& JSON, unsigned nextNode, std::vector<unsigned char>* pdata, Core::model* pmodel, Core::model_info& info);
+void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned char>* pdata, Core::model* pmodel, Core::model_info& info);
 std::vector<float>* get_floats(nlohmann::json& accessor, nlohmann::json& JSON, std::vector<unsigned char>* pdata);
 std::vector<Core::vec3>* group_floats_for_vec3(std::vector<float>* pfloatvec);
 std::vector<Core::vec3>* group_floats_for_vec2(std::vector<float>* pfloatvec);
@@ -17,18 +17,18 @@ std::vector<Core::vertex>* get_vertices(std::vector<Core::vec3>* ppositions, std
 std::vector<unsigned>* get_indices(nlohmann::json& accessor, nlohmann::json& JSON, std::vector<unsigned char>* pdata);
 void set_diffuse_texture(const char* file, const nlohmann::json& JSON, Core::texture& texture_data);
 void set_specular_texture(const char* file, const nlohmann::json& JSON, Core::texture& texture_data);
-void triangulate(Core::model* pmodel, std::vector<Core::vertex>* pvertices, std::vector<unsigned>* pindices);
+void triangulate(Core::model* pmodel, std::vector<Core::vertex>* pvertices, std::vector<unsigned>* pindices, Core::vec3& position);
 
-std::unique_ptr<Core::model> prepare_gltf_model_data(const char* file_path)
+std::unique_ptr<Core::model> prepare_gltf_model_data(Core::model_info info)
 {
-	std::string json_string = extract_file(file_path);
+	std::string json_string = extract_file(info.file_path);
 	if (json_string.empty()) throw FileReadException("Error reading gltf file");
 	nlohmann::json json_data = nlohmann::json::parse(json_string);
-	std::vector<unsigned char>* pdata = get_data(json_data, file_path);
+	std::vector<unsigned char>* pdata = get_data(json_data, info.file_path);
 	Core::model* pmodel = new Core::model;
-	traverse_node(json_data, 0, pdata, pmodel, file_path);
+	traverse_node(json_data, 0, pdata, pmodel, info);
 	delete pdata;
-	if(!pmodel->diffuse.ptextures) throw FileReadException(std::string("Error loading textures at : ").append(file_path));
+	if(!pmodel->diffuse.ptextures) throw FileReadException(std::string("Error loading textures at : ").append(info.file_path));
 	return std::unique_ptr<Core::model>(pmodel);
 }
 
@@ -70,22 +70,22 @@ std::vector<unsigned char>* get_data(nlohmann::json& JSON, const char* file_path
 	return pdata;
 }
 
-void traverse_node(nlohmann::json& JSON, unsigned nextNode, std::vector<unsigned char>* pdata, Core::model* pmodel, const char* file)
+void traverse_node(nlohmann::json& JSON, unsigned nextNode, std::vector<unsigned char>* pdata, Core::model* pmodel, Core::model_info& info)
 {
 	nlohmann::json node = JSON["nodes"][nextNode];
 	bool mesh_not_found = true;
 	if (node.find("mesh") != node.end())
 	{
 		mesh_not_found = false;
-		load_mesh(JSON, node["mesh"], pdata, pmodel, file);
+		load_mesh(JSON, node["mesh"], pdata, pmodel, info);
 	}
 	if (mesh_not_found)
 	{
-		traverse_node(JSON, ++nextNode, pdata, pmodel, file);
+		traverse_node(JSON, ++nextNode, pdata, pmodel, info);
 	}
 }
 
-void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned char>* pdata, Core::model* pmodel, const char* file)
+void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned char>* pdata, Core::model* pmodel, Core::model_info& info)
 {
 	unsigned int pos_acc_ind = JSON["meshes"][indMesh]["primitives"][0]["attributes"]["POSITION"];
 	unsigned int normal_acc_ind = JSON["meshes"][indMesh]["primitives"][0]["attributes"]["NORMAL"];
@@ -101,9 +101,9 @@ void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned 
 
 	std::vector<Core::vertex>* pvertices = get_vertices(ppositions, pnormals, ptexUVs);
 	std::vector<unsigned>* pindices = get_indices(JSON["accessors"][ind_acc_ind], JSON, pdata);
-	triangulate(pmodel, pvertices, pindices);
-	set_diffuse_texture(file, JSON, pmodel->diffuse);
-	set_specular_texture(file, JSON, pmodel->specular);
+	triangulate(pmodel, pvertices, pindices, info.position);
+	set_diffuse_texture(info.file_path, JSON, pmodel->diffuse);
+	set_specular_texture(info.file_path, JSON, pmodel->specular);
 
 	delete pposvec;
 	delete ppositions;
@@ -164,7 +164,7 @@ std::vector<Core::vec3>* group_floats_for_vec2(std::vector<float>* pfloatvec)
 	{
 		float x = pfloatvec->at(i++);
 		float y = pfloatvec->at(i++);
-		pvectors->push_back(Core::vec3{ x, -y, 0.0 });
+		pvectors->push_back(Core::vec3{ x, y, 0.0 });
 	}
 	return pvectors;
 }
@@ -236,6 +236,7 @@ void set_diffuse_texture(const char* file, const nlohmann::json& JSON, Core::tex
 		std::string tex_path = fileDirectory + tex_name;
 		if (tex_name.find("baseColor") != std::string::npos || tex_name.find("diffuse") != std::string::npos)
 		{
+			stbi_set_flip_vertically_on_load(true);
 			texture_data.ptextures = stbi_load(tex_path.c_str(), &texture_data.width, &texture_data.height, &texture_data.channels, 0);
 		}
 	}
@@ -252,12 +253,13 @@ void set_specular_texture(const char* file, const nlohmann::json& JSON, Core::te
 		std::string tex_path = fileDirectory + tex_name;
 		if (tex_name.find("metallicRoughness") != std::string::npos || tex_name.find("specular") != std::string::npos)
 		{
+			stbi_set_flip_vertically_on_load(true);
 			texture_data.ptextures = stbi_load(tex_path.c_str(), &texture_data.width, &texture_data.height, &texture_data.channels, 0);
 		}
 	}
 }
 
-void triangulate(Core::model* pmodel, std::vector<Core::vertex>* pvertices, std::vector<unsigned>* pindices)
+void triangulate(Core::model* pmodel, std::vector<Core::vertex>* pvertices, std::vector<unsigned>* pindices, Core::vec3& position)
 {
 	if (!pvertices || !pindices) return;
 	pmodel->shapes_size = pindices->size() / 3;
@@ -265,7 +267,7 @@ void triangulate(Core::model* pmodel, std::vector<Core::vertex>* pvertices, std:
 	pmodel->s_type = Core::shape_type::TRIANGLE;
 	pmodel->m_type = Core::model_type::OBJECT;
 	pmodel->surface_color = Core::vec3{ 1.0, 1.0, 1.0 };
-	pmodel->position = Core::vec3{ 0.0, 0.0, -3.0 };
+	pmodel->position = position;
 	unsigned t = 0;
 	for (unsigned i = 0; i < pindices->size();)
 	{
@@ -275,4 +277,25 @@ void triangulate(Core::model* pmodel, std::vector<Core::vertex>* pvertices, std:
 		Core::triangle* ptriangles = (Core::triangle*)(pmodel->pshapes);
 		ptriangles[t++] = Core::triangle{ a, b, c };
 	}
+}
+
+std::unique_ptr<Core::cubemap> prepare_cubemap(const char* file_path)
+{
+	Core::cubemap* pcubemap = new Core::cubemap;
+	std::string path(file_path);
+	if (path.substr(path.length() - 1) != "/") path.append("/");
+	std::string faces[] = { "left.jpg", "right.jpg", "bottom.jpg", "top.jpg", "front.jpg", "back.jpg" };
+	stbi_set_flip_vertically_on_load(true);
+	pcubemap->left.ptextures = stbi_load((path + faces[0]).c_str(), &(pcubemap->left.width), &(pcubemap->left.height), &(pcubemap->left.channels), 0);
+	stbi_set_flip_vertically_on_load(true);
+	pcubemap->right.ptextures = stbi_load((path + faces[1]).c_str(), &(pcubemap->right.width), &(pcubemap->right.height), &(pcubemap->right.channels), 0);
+	stbi_set_flip_vertically_on_load(true);
+	pcubemap->bottom.ptextures = stbi_load((path + faces[2]).c_str(), &(pcubemap->bottom.width), &(pcubemap->bottom.height), &(pcubemap->bottom.channels), 0);
+	stbi_set_flip_vertically_on_load(true);
+	pcubemap->top.ptextures = stbi_load((path + faces[3]).c_str(), &(pcubemap->top.width), &(pcubemap->top.height), &(pcubemap->top.channels), 0);
+	stbi_set_flip_vertically_on_load(true);
+	pcubemap->front.ptextures = stbi_load((path + faces[4]).c_str(), &(pcubemap->front.width), &(pcubemap->front.height), &(pcubemap->front.channels), 0);
+	stbi_set_flip_vertically_on_load(true);
+	pcubemap->back.ptextures = stbi_load((path + faces[5]).c_str(), &(pcubemap->back.width), &(pcubemap->back.height), &(pcubemap->back.channels), 0);
+	return std::unique_ptr<Core::cubemap>(pcubemap);
 }

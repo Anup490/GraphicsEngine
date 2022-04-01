@@ -16,14 +16,15 @@ namespace RayTracer
 	std::vector<unsigned char*>* p_all_textures = 0;
 
 	void prepare_data(const std::shared_ptr<std::vector<Core::model*>> pmodels, std::vector<model>& dmodels);
-	RayTracer::texture get_texture(Core::texture core_texture);
+	Core::texture get_texture(Core::texture core_texture);
 	void prepare_triangles(const Core::model* pmodel, std::vector<RayTracer::triangle>* ptriangles);
 	void prepare_spheres(const Core::model* pmodel, std::vector<RayTracer::sphere>* pspheres);
 	triangle make_triangle(Core::vertex a, Core::vertex b, Core::vertex c);
 	input* prepare_inputs(input& i);
+	Core::cubemap* prepare_cubemap(Core::cubemap* pcubemap);
 }
 
-void RayTracer::init(std::shared_ptr<std::vector<Core::model*>> pmodels, int width, int height)
+void RayTracer::init(std::shared_ptr<std::vector<Core::model*>> pmodels, Core::cubemap* pcubemap, int width, int height)
 {
 	if (((width % 32) != 0) || ((height % 32) != 0)) throw RayTraceException("width or height is not a multiple of 32");
 	if (((width < 640) != 0) || ((height < 480) != 0)) throw RayTraceException("minimum acceptable resolution is 640x480");
@@ -35,6 +36,7 @@ void RayTracer::init(std::shared_ptr<std::vector<Core::model*>> pmodels, int wid
 	cudaMemcpy(dgpumodels, dmodels.data(), sizeof(model) * dmodels.size(), cudaMemcpyHostToDevice);
 	models_size = dmodels.size();
 	world w{ dgpumodels, models_size };
+	w.dcubemap = prepare_cubemap(pcubemap);
 	cudaMalloc(&dworld, sizeof(world));
 	cudaMemcpy(dworld, &w, sizeof(world), cudaMemcpyHostToDevice);
 	rgb* drgbs;
@@ -114,15 +116,15 @@ void RayTracer::prepare_data(const std::shared_ptr<std::vector<Core::model*>> pm
 	}
 }
 
-RayTracer::texture RayTracer::get_texture(Core::texture core_texture)
+Core::texture RayTracer::get_texture(Core::texture core_texture)
 {
-	texture texture;
-	cudaMalloc(&texture.dtextures, sizeof(unsigned char) * core_texture.width * core_texture.height);
-	cudaMemcpy(texture.dtextures, core_texture.ptextures, sizeof(unsigned char) * core_texture.width * core_texture.height, cudaMemcpyHostToDevice);
+	Core::texture texture;
+	cudaMalloc(&texture.ptextures, sizeof(unsigned char) * core_texture.width * core_texture.height * core_texture.channels);
+	cudaMemcpy(texture.ptextures, core_texture.ptextures, sizeof(unsigned char) * core_texture.width * core_texture.height * core_texture.channels, cudaMemcpyHostToDevice);
 	texture.width = core_texture.width;
 	texture.height = core_texture.height;
 	texture.channels = core_texture.channels;
-	p_all_textures->push_back(texture.dtextures);
+	p_all_textures->push_back(texture.ptextures);
 	return texture;
 }
 
@@ -178,4 +180,19 @@ RayTracer::input* RayTracer::prepare_inputs(input& i)
 	cudaMalloc(&dinput, sizeof(input));
 	cudaMemcpy(dinput, &i, sizeof(input), cudaMemcpyHostToDevice);
 	return dinput;
+}
+
+Core::cubemap* RayTracer::prepare_cubemap(Core::cubemap* pcubemap)
+{
+	Core::cubemap cubemap;
+	cubemap.left = get_texture(pcubemap->left);
+	cubemap.right = get_texture(pcubemap->right);
+	cubemap.bottom = get_texture(pcubemap->bottom);
+	cubemap.top = get_texture(pcubemap->top);
+	cubemap.front = get_texture(pcubemap->front);
+	cubemap.back = get_texture(pcubemap->back);
+	Core::cubemap* dcubemap;
+	cudaMalloc(&dcubemap, sizeof(Core::cubemap));
+	cudaMemcpy(dcubemap, &cubemap, sizeof(Core::cubemap), cudaMemcpyHostToDevice);
+	return dcubemap;
 }

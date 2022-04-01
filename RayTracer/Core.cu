@@ -3,6 +3,7 @@
 #include "Core.cuh"
 #include "Interface.cuh"
 #include "Matrix.cuh"
+#include "Background.cuh"
 
 #define RECURSION_DEPTH 5
 
@@ -56,7 +57,7 @@ Core::vec3 RayTracer::cast_primary_ray(const world& models, ray& ray)
 {
 	Core::vec3 surface_color, background{ 1.0, 1.0, 1.0 };
 	hit hit_item;
-	if (!detect_hit(models, ray, hit_item)) return background;
+	if (!detect_hit(models, ray, hit_item)) return get_background_color(models.dcubemap, ray.dir);
 	if (hit_item.pmodel->reflectivity > 0.0 || hit_item.pmodel->transparency > 0.0)
 	{
 		Core::vec3 reflection_color = (hit_item.pmodel->reflectivity > 0.0) ? cast_second_ray(ColorType::REFLECTION, models, ray) : background;

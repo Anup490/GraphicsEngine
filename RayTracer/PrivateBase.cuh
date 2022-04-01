@@ -9,14 +9,6 @@
 
 namespace RayTracer
 {
-	struct texture
-	{
-		unsigned char* dtextures = 0;
-		int width = 0;
-		int height = 0;
-		int channels = 0;
-	};
-
 	struct triangle
 	{
 		Core::vec3 a, b, c, ab, bc, ca, a_tex, b_tex, c_tex, normal;
@@ -33,7 +25,7 @@ namespace RayTracer
 	{
 		Core::vec3 position, emissive_color, min_coord, max_coord, surface_color;
 		double reflectivity = 0.0, transparency = 0.0;
-		texture diffuse, specular;
+		Core::texture diffuse, specular;
 		void* dshapes = 0;
 		unsigned shapes_size = 0;
 		Core::shape_type s_type;
@@ -44,6 +36,7 @@ namespace RayTracer
 	{
 		model* models;
 		unsigned size = 0;
+		Core::cubemap* dcubemap;
 	};
 
 	struct ray 

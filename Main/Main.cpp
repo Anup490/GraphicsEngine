@@ -33,21 +33,20 @@ void main()
 	RayTracer::input i;
 	try
 	{
-		//pmodel = prepare_gltf_model_data("D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf");
+		//pmodel = prepare_gltf_model_data({ "D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf", Core::vec3{0.0,0.0,-3.0} });
 		//pmodel = prepare_spheres();
 		pmodel = prepare_boxes();
 
 		Core::model light;
 		Core::sphere* pspheres = new Core::sphere[1];
-		pspheres[0] = Core::sphere{ 2.0, Core::vec3{ -5.0, 5.0, 0.0  } };
+		pspheres[0] = Core::sphere{ 2.0, Core::vec3{ -100.0, 100.0, 100.0  } };
 		light.position = pspheres[0].center;
 		light.surface_color = Core::vec3{ 1.0, 1.0, 0.0 };
-		light.emissive_color = Core::vec3{ 0.8, 0.8, 0.8 };
+		light.emissive_color = Core::vec3{ 1.0, 1.0, 1.0 };
 		light.pshapes = pspheres;
 		light.shapes_size = 1;
-		light.s_type = Core::shape_type::SPHERE;
+		//light.s_type = Core::shape_type::SPHERE;
 		light.m_type = Core::model_type::LIGHT;
-
 
 		Core::model camera{ Core::vec3{} };
 		camera.m_type = Core::model_type::CAMERA;
@@ -56,7 +55,8 @@ void main()
 		pmodels->push_back(pmodel.get());
 		pmodels->push_back(&light);
 		pmodels->push_back(&camera);
-		RayTracer::init(pmodels, 640, 480);
+		std::unique_ptr<Core::cubemap> p = prepare_cubemap("D:/Projects/C++/3DImporter/Assets/skybox");
+		RayTracer::init(pmodels, p.get(), window_width, window_height);
 		init_called = true;
 	}
 	catch (std::exception& e)
