@@ -18,6 +18,7 @@ namespace RayTracer
 	RUN_ON_GPU Core::vec3 get_refract_dir(const Core::vec3& incident_dir, const Core::vec3& nhit, const bool& inside);
 	RUN_ON_GPU Core::vec3 cast_shadow_ray(const world& models, ray& ray, const hit& hit);
 	RUN_ON_GPU model* get_camera(const world& models);
+	RUN_ON_GPU void update_camera_position(const Core::mat4& translator, model* pcamera);
 	RUN_ON_GPU double get_glow(const unsigned light_index, const world& models, const ray& shadow_ray);
 }
 
@@ -40,11 +41,11 @@ void RayTracer::render(RayTracer::pixels pixels, const input* dinput, Projection
 	double x = ((2.0 * ((tx + 0.5) / pixels.width)) - 1.0) * aspect_ratio * tan_val * near_plane;
 	double y = (1.0 - (2.0 * ((ty + 0.5) / pixels.height))) * tan_val * near_plane;
 	world* dworld = (world*)(dinput->dworld);
-	Core::vec3 camera_pos = get_camera(*dworld)->position;
+	model* pcamera = get_camera(*dworld);
+	update_camera_position(dinput->translator, pcamera);
 	Core::vec3 dir = (proj_type == Projection::PERSPECTIVE) ? Core::vec3{ x, y, -near_plane } : Core::vec3{ 0.0, 0.0, -near_plane };
 	normalize(dir);
 	Core::vec3 origin = (proj_type == Projection::PERSPECTIVE) ? Core::vec3{} : Core::vec3{ x, y };
-	origin += camera_pos;
 	if(proj_type == Projection::PERSPECTIVE) dir = dinput->rotator * dir;
 	origin = dinput->translator * origin;
 	ray pray{ origin, dir };
@@ -137,7 +138,7 @@ Core::vec3 RayTracer::cast_shadow_ray(const world& models, ray& rray, const hit&
 			normalize(shadow_dir);
 			Core::vec3 shadow_origin = rray.phit + rray.nhit * bias;
 			ray shadow_ray{ shadow_origin, shadow_dir };
-			Core::vec3 diffuse = get_color(hit, rray, hit.pmodel->diffuse) * max_val(0.0, dot(rray.nhit, shadow_dir));
+			Core::vec3 diffuse = get_color(hit, rray, hit.pmodel->diffuse)* max_val(0.0, dot(rray.nhit, shadow_dir));
 			Core::vec3 reflect_dir = get_reflect_dir(-shadow_dir, rray.nhit);
 			normalize(reflect_dir);
 			Core::vec3 view_dir = pcamera->position - rray.phit;
@@ -163,6 +164,12 @@ RayTracer::model* RayTracer::get_camera(const world& models)
 		}
 	}
 	return pcamera;
+}
+
+RUN_ON_GPU 
+void RayTracer::update_camera_position(const Core::mat4& translator, model* pcamera)
+{
+	pcamera->position = translator * Core::vec3{};
 }
 
 RUN_ON_GPU 
