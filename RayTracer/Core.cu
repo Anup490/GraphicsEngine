@@ -127,6 +127,10 @@ RUN_ON_GPU
 Core::vec3 RayTracer::cast_shadow_ray(const world& models, ray& rray, const hit& hit)
 {
 	Core::vec3 color;
+	Core::vec3 diffuse_color = get_color(hit, rray, hit.pmodel->diffuse);
+	Core::vec3 specular_color = get_color(hit, rray, hit.pmodel->specular);
+	Core::vec3 ambient_color = Core::vec3{ 0.25, 0.25, 0.25 };
+	Core::vec3 ambient = diffuse_color * ambient_color;
 	double bias = 1e-4;
 	model* pcamera = get_camera(models);
 	for (unsigned l = 0; l < models.size; l++)
@@ -138,16 +142,17 @@ Core::vec3 RayTracer::cast_shadow_ray(const world& models, ray& rray, const hit&
 			normalize(shadow_dir);
 			Core::vec3 shadow_origin = rray.phit + rray.nhit * bias;
 			ray shadow_ray{ shadow_origin, shadow_dir };
-			Core::vec3 diffuse = get_color(hit, rray, hit.pmodel->diffuse)* max_val(0.0, dot(rray.nhit, shadow_dir));
+			double shadow_normal_dot = max_val(0.0, dot(rray.nhit, shadow_dir));
+			Core::vec3 diffuse = diffuse_color * shadow_normal_dot;
 			Core::vec3 reflect_dir = get_reflect_dir(-shadow_dir, rray.nhit);
 			normalize(reflect_dir);
 			Core::vec3 view_dir = pcamera->position - rray.phit;
 			normalize(view_dir);
-			Core::vec3 specular = get_color(hit, rray, hit.pmodel->specular) * pow(max_val(0.0, dot(view_dir, reflect_dir)), 32);
-			color += get_clamped(diffuse + specular) * get_glow(l, models, shadow_ray) * light_model->emissive_color;
+			Core::vec3 specular = specular_color * pow(max_val(0.0, dot(view_dir, reflect_dir)), 32) * shadow_normal_dot;
+			color += (diffuse + specular) * get_glow(l, models, shadow_ray) * light_model->emissive_color;
 		}
 	}
-	return color + hit.pmodel->emissive_color;
+	return get_clamped(color + hit.pmodel->emissive_color + ambient);
 }
 
 RUN_ON_GPU 
