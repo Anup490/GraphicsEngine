@@ -15,7 +15,7 @@ std::unique_ptr<Core::model> prepare_spheres()
 	pmodel->shapes_size = sphere_count;
 	pmodel->s_type = Core::shape_type::SPHERE;
 	pmodel->m_type = Core::model_type::OBJECT;
-
+	pmodel->reflectivity = 1.0;
 
 	/*
 	pspheres[0] = Core::sphere(vec3(0.0f, -10004.0f, -20.0f), 10000.0f, vec3(0.20f, 0.20f, 0.20f), 0.0f, 0.0f, vec3(0.0f));
@@ -42,5 +42,6 @@ std::unique_ptr<Core::model> prepare_boxes()
 	pmodel->shapes_size = sphere_count;
 	pmodel->s_type = Core::shape_type::BOX;
 	pmodel->m_type = Core::model_type::OBJECT;
+	pmodel->reflectivity = 1.0;
 	return std::unique_ptr<Core::model>(pmodel);
 }

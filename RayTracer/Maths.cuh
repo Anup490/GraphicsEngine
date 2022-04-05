@@ -5,7 +5,7 @@
 namespace RayTracer
 {
 	RUN_ON_CPU_AND_GPU
-	double square_root(double num)
+	double square_root(const double& num)
 	{
 		return sqrt(num);
 	}
@@ -23,13 +23,13 @@ namespace RayTracer
 	}
 
 	RUN_ON_CPU_AND_GPU
-	double max_val(double val1, double val2)
+	double max_val(const double& val1, const double& val2)
 	{
 		return (val1 > val2) ? val1 : val2;
 	}
 	
 	RUN_ON_CPU_AND_GPU
-	double schlick_approximation(double cosine, double R)
+	double schlick_approximation(const double& cosine, const double& R)
 	{
 		return R + ((1 - R) * pow(1 - cosine, 3));
 	}
@@ -54,32 +54,32 @@ namespace RayTracer
 	}
 
 	RUN_ON_CPU_AND_GPU
-	double sine(double angle)
+	double sine(const double& angle)
 	{
 		return sin(to_radian(angle));
 	}
 
 	RUN_ON_CPU_AND_GPU
-	double cosine(double angle)
+	double cosine(const double& angle)
 	{
 		return cos(to_radian(angle));
 	}
 
 	RUN_ON_CPU_AND_GPU
-	double tangent(double angle)
+	double tangent(const double& angle)
 	{
 		return tan(to_radian(angle));
 	}
 
 	RUN_ON_CPU_AND_GPU
-	double minimum(double& a, double& b, double& c)
+	double minimum(const double& a, const double& b, const double& c)
 	{
 		double m = (a < b) ? a : b;
 		return (m < c) ? m : c;
 	}
 
 	RUN_ON_CPU_AND_GPU
-	double maximum(double& a, double& b, double& c)
+	double maximum(const double& a, const double& b, const double& c)
 	{
 		double m = (a > b) ? a : b;
 		return (m > c) ? m : c;

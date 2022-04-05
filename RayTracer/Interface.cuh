@@ -4,6 +4,7 @@
 #include "Triangle.cuh"
 #include "Sphere.cuh"
 #include "Box.cuh"
+#include "Background.cuh"
 
 namespace RayTracer
 {
@@ -19,7 +20,7 @@ namespace RayTracer
 	}
 
 	RUN_ON_GPU
-	Core::vec3 get_color(const hit& hit_item, ray& rray, const Core::texture& tex)
+	Core::vec3 get_color(const hit& hit_item, const Core::texture& tex, ray& rray)
 	{
 		if (!tex.ptextures)
 		{
@@ -115,5 +116,32 @@ namespace RayTracer
 			}
 		}
 		return glow;
+	}
+
+	RUN_ON_GPU
+	Core::vec3 get_background_reflection(const hit& hit_item, const ray& rray, const Core::cubemap* pcubemap)
+	{
+		Core::vec3 dir;
+		if (hit_item.pmodel->s_type == Core::shape_type::TRIANGLE)
+		{
+			triangle* ptriangle = (triangle*)hit_item.shape;
+			Core::vec3 centroid;
+			centroid.x = (ptriangle->a.x + ptriangle->b.x + ptriangle->c.x) / 3.0;
+			centroid.y = (ptriangle->a.y + ptriangle->b.y + ptriangle->c.y) / 3.0;
+			centroid.z = (ptriangle->a.z + ptriangle->b.z + ptriangle->c.z) / 3.0;
+			Core::vec3 displaced_centroid = centroid - rray.nhit;
+			dir = rray.phit - displaced_centroid;
+		}
+		else if (hit_item.pmodel->s_type == Core::shape_type::SPHERE)
+		{
+			dir = rray.nhit;
+		}
+		else if (hit_item.pmodel->s_type == Core::shape_type::BOX)
+		{
+			Core::box* pbox = (Core::box*)hit_item.shape;
+			dir = rray.phit - pbox->center;
+		}
+		normalize(dir);
+		return get_background_color(pcubemap, dir);
 	}
 }
