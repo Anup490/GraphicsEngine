@@ -146,7 +146,7 @@ Core::vec3 RayTracer::cast_shadow_ray(const world& models, const hit& hit, const
 			normalize(reflect_dir);
 			Core::vec3 view_dir = pcamera->position - rray.phit;
 			normalize(view_dir);
-			Core::vec3 specular = specular_color * pow(max_val(0.0, dot(view_dir, reflect_dir)), 32) * shadow_normal_dot * hit.pmodel->reflectivity;
+			Core::vec3 specular = specular_color * pow(max_val(0.0, dot(view_dir, reflect_dir)), get_specularity(hit.pmodel->reflectivity)) * shadow_normal_dot;
 			color += (diffuse + specular) * get_glow(l, models, shadow_ray) * light_model->emissive_color;
 		}
 	}

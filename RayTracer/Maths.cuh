@@ -99,5 +99,11 @@ namespace RayTracer
 		double diff = (d1 > d2) ? d1 - d2 : d2 - d1;
 		return diff < 0.000001;
 	}
+
+	RUN_ON_CPU_AND_GPU
+	double get_specularity(const double& smoothness)
+	{
+		return (255.0 * smoothness) + 1.0;
+	}
 }
 
