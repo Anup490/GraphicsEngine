@@ -114,6 +114,7 @@ void RayTracer::prepare_data(const std::shared_ptr<std::vector<Core::model*>> pm
 		dmodel.position = pmodel->position;
 		dmodel.reflectivity = pmodel->reflectivity;
 		dmodel.transparency = pmodel->transparency;
+		dmodel.metallicity = pmodel->metallicity;
 		dmodel.shapes_size = pmodel->shapes_size;
 		dmodel.s_type = pmodel->s_type;
 		dmodel.diffuse = get_texture(pmodel->diffuse);

@@ -54,7 +54,7 @@ namespace Core
 		unsigned shapes_size = 0;
 		texture diffuse;
 		texture specular;
-		double reflectivity = 0.0, transparency = 0.0;
+		double reflectivity = 0.0, transparency = 0.0, metallicity = 0.0;
 		shape_type s_type;
 		model_type m_type;
 		~model() { if (pshapes) delete[] pshapes; }

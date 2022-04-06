@@ -24,7 +24,7 @@ namespace RayTracer
 	struct model
 	{
 		Core::vec3 position, emissive_color, min_coord, max_coord, surface_color;
-		double reflectivity = 0.0, transparency = 0.0;
+		double reflectivity = 0.0, transparency = 0.0, metallicity = 0.0;
 		Core::texture diffuse, specular;
 		void* dshapes = 0;
 		unsigned shapes_size = 0;

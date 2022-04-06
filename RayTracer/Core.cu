@@ -143,7 +143,7 @@ Core::vec3 RayTracer::cast_shadow_ray(const world& models, const hit& hit, ray& 
 			Core::vec3 shadow_origin = rray.phit + rray.nhit * bias;
 			ray shadow_ray{ shadow_origin, shadow_dir };
 			double shadow_normal_dot = max_val(0.0, dot(rray.nhit, shadow_dir));
-			Core::vec3 diffuse = diffuse_color * shadow_normal_dot;
+			Core::vec3 diffuse = diffuse_color * shadow_normal_dot * (1 - hit.pmodel->metallicity);
 			Core::vec3 reflect_dir = get_reflect_dir(-shadow_dir, rray.nhit);
 			normalize(reflect_dir);
 			Core::vec3 view_dir = pcamera->position - rray.phit;
