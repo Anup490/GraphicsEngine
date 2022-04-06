@@ -163,6 +163,7 @@
     <ClInclude Include="Maths.cuh" />
     <ClInclude Include="Maths.h" />
     <ClInclude Include="Matrix.cuh" />
+    <ClInclude Include="Matrix.h" />
     <ClInclude Include="PrivateBase.cuh" />
     <ClInclude Include="PublicBase.h" />
     <ClInclude Include="RayTracer.h" />

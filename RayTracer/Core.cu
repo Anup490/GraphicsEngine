@@ -58,9 +58,9 @@ Core::vec3 RayTracer::cast_primary_ray(const world& models, ray& ray)
 	Core::vec3 surface_color{};
 	hit hit_item;
 	if (!detect_hit(models, ray, hit_item)) return get_background_color(models.dcubemap, ray.dir);
-	if (hit_item.pmodel->reflectivity > 0.0 || hit_item.pmodel->transparency > 0.0)
+	if (hit_item.pmodel->smoothness > 0.0 || hit_item.pmodel->transparency > 0.0)
 	{
-		Core::vec3 reflect_color = (hit_item.pmodel->reflectivity > 0.0) ? cast_second_ray(ColorType::REFLECTION,models,hit_item,ray) : Core::vec3{};
+		Core::vec3 reflect_color = (hit_item.pmodel->smoothness > 0.0) ? cast_second_ray(ColorType::REFLECTION,models,hit_item,ray) : Core::vec3{};
 		Core::vec3 refract_color = (hit_item.pmodel->transparency > 0.0) ? cast_second_ray(ColorType::REFRACTION,models,hit_item,ray) : Core::vec3{};
 		Core::vec3 diffuse_color = get_color(hit_item, hit_item.pmodel->diffuse, ray);
 		Core::vec3 dir = pcamera->position - ray.phit;
@@ -86,7 +86,7 @@ Core::vec3 RayTracer::cast_second_ray(const ColorType type, const world& models,
 	while ((depth < RECURSION_DEPTH) && detect_hit(models, nray, hit_item))
 	{
 		if (not_calc_color) not_calc_color = false;
-		if ((type == ColorType::REFRACTION) ? (hit_item.pmodel->transparency > 0.0) : (hit_item.pmodel->reflectivity > 0.0))
+		if ((type == ColorType::REFRACTION) ? (hit_item.pmodel->transparency > 0.0) : (hit_item.pmodel->smoothness > 0.0))
 		{
 			color *= get_color(hit_item, hit_item.pmodel->diffuse, nray);
 			nray.dir = (type == ColorType::REFRACTION) ? get_refract_dir(nray.dir, nray.nhit, inside) : get_reflect_dir(nray.dir, nray.nhit);
@@ -100,7 +100,7 @@ Core::vec3 RayTracer::cast_second_ray(const ColorType type, const world& models,
 		}
 	}
 	if ((type == ColorType::REFLECTION) && not_calc_color)
-		color = get_background_reflection(first_hit, pray, models.dcubemap) * first_hit.pmodel->reflectivity;
+		color = get_background_reflection(first_hit, pray, models.dcubemap) * first_hit.pmodel->smoothness;
 	return color;
 }
 
@@ -148,7 +148,7 @@ Core::vec3 RayTracer::cast_shadow_ray(const world& models, const hit& hit, ray& 
 			normalize(reflect_dir);
 			Core::vec3 view_dir = pcamera->position - rray.phit;
 			normalize(view_dir);
-			Core::vec3 specular = specular_color * pow(max_val(0.0, dot(view_dir, reflect_dir)), get_specularity(hit.pmodel->reflectivity)) * shadow_normal_dot;
+			Core::vec3 specular = specular_color * pow(max_val(0.0, dot(view_dir, reflect_dir)), get_specularity(hit.pmodel->smoothness)) * shadow_normal_dot;
 			color += (diffuse + specular) * get_glow(l, models, shadow_ray) * light_model->emissive_color;
 		}
 	}

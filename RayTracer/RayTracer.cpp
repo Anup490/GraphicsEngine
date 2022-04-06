@@ -3,6 +3,7 @@
 #include "PrivateBase.cuh"
 #include "Core.cuh"
 #include "Vector.h"
+#include "Matrix.h"
 #include <memory>
 #include <vector>
 
@@ -25,8 +26,6 @@ namespace RayTracer
 	input* prepare_inputs(input& i);
 	Core::cubemap* prepare_cubemap(Core::cubemap* pcubemap);
 	void update_camera(input& i);
-
-	Core::vec3 operator*(const Core::mat4& m, const Core::vec3& v);
 }
 
 void RayTracer::init(std::shared_ptr<std::vector<Core::model*>> pmodels, Core::cubemap* pcubemap, int width, int height)
@@ -112,7 +111,7 @@ void RayTracer::prepare_data(const std::shared_ptr<std::vector<Core::model*>> pm
 		}
 		dmodel.emissive_color = pmodel->emissive_color;
 		dmodel.position = pmodel->position;
-		dmodel.reflectivity = pmodel->reflectivity;
+		dmodel.smoothness = pmodel->smoothness;
 		dmodel.transparency = pmodel->transparency;
 		dmodel.metallicity = pmodel->metallicity;
 		dmodel.shapes_size = pmodel->shapes_size;

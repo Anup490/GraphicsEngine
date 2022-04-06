@@ -65,9 +65,9 @@ void main()
 	{
 		std::cout << "Exception thrown :: "<< e.what() << std::endl;
 	}
-	std::cout << "Opening window" << std::endl;
 	if (init_called)
 	{
+		std::cout << "Opening window" << std::endl;
 		const char* window_title = "GraphicsEngine";
 
 		GLfloat square_vertices[] =

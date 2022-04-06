@@ -15,8 +15,8 @@ std::unique_ptr<Core::model> prepare_spheres()
 	pmodel->shapes_size = sphere_count;
 	pmodel->s_type = Core::shape_type::SPHERE;
 	pmodel->m_type = Core::model_type::OBJECT;
-	pmodel->reflectivity = 1.0;
-	pmodel->metallicity = 1.0;
+	pmodel->smoothness = 0.2;
+	pmodel->metallicity = 0.9;
 	pmodel->diffuse = get_texture("D:/Projects/C++/3DImporter/Assets/jupiter/moon_baseColor.jpg");
     return std::unique_ptr<Core::model>(pmodel);
 }
@@ -34,8 +34,8 @@ std::unique_ptr<Core::model> prepare_boxes()
 	pmodel->shapes_size = sphere_count;
 	pmodel->s_type = Core::shape_type::BOX;
 	pmodel->m_type = Core::model_type::OBJECT;
-	pmodel->reflectivity = 1.0;
-	pmodel->metallicity = 1.0;
+	pmodel->smoothness = 0.3;
+	pmodel->metallicity = 0.3;
 	pmodel->diffuse = get_texture("D:/Projects/C++/3DImporter/Assets/crow/diffuse.png");
 	return std::unique_ptr<Core::model>(pmodel);
 }
