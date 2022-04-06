@@ -18,6 +18,7 @@ int window_width = 640, window_height = 480;
 
 Core::model* pcamera = 0;
 RayTracer::Projection proj_type = RayTracer::Projection::PERSPECTIVE;
+Core::vec3 translater;
 
 void check_btn_press(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -45,7 +46,7 @@ void main()
 		light.emissive_color = Core::vec3{ 1.0, 1.0, 1.0 };
 		light.pshapes = pspheres;
 		light.shapes_size = 1;
-		//light.s_type = Core::shape_type::SPHERE;
+		light.s_type = Core::shape_type::SPHERE;
 		light.m_type = Core::model_type::LIGHT;
 
 		Core::model camera{ Core::vec3{} };
@@ -200,35 +201,38 @@ void main()
 
 void check_btn_press(GLFWwindow* window)
 {
+	translater.x = 0.0;
+	translater.y = 0.0;
+	translater.z = 0.0;
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 	{
 		if (proj_type == RayTracer::Projection::PERSPECTIVE)
 		{
-			pcamera->position.x -= pcamera->front.x;
-			pcamera->position.y -= pcamera->front.y;
-			pcamera->position.z -= pcamera->front.z;
+			translater.x -= pcamera->front.x;
+			translater.y -= pcamera->front.y;
+			translater.z -= pcamera->front.z;
 		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 	{
-		pcamera->position.x += pcamera->right.x;
-		pcamera->position.y += pcamera->right.y;
-		pcamera->position.z += pcamera->right.z;
+		translater.x += pcamera->right.x;
+		translater.y += pcamera->right.y;
+		translater.z += pcamera->right.z;
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 	{
 		if (proj_type == RayTracer::Projection::PERSPECTIVE)
 		{
-			pcamera->position.x += pcamera->front.x;
-			pcamera->position.y += pcamera->front.y;
-			pcamera->position.z += pcamera->front.z;
+			translater.x += pcamera->front.x;
+			translater.y += pcamera->front.y;
+			translater.z += pcamera->front.z;
 		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 	{
-		pcamera->position.x -= pcamera->right.x;
-		pcamera->position.y -= pcamera->right.y;
-		pcamera->position.z -= pcamera->right.z;
+		translater.x -= pcamera->right.x;
+		translater.y -= pcamera->right.y;
+		translater.z -= pcamera->right.z;
 	}
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
 	{
@@ -296,15 +300,15 @@ void prepare_input(RayTracer::input& i)
 	i.translator.pmatrix[0] = 1;
 	i.translator.pmatrix[1] = 0;
 	i.translator.pmatrix[2] = 0;
-	i.translator.pmatrix[3] = pcamera->position.x;
+	i.translator.pmatrix[3] = translater.x;
 	i.translator.pmatrix[4] = 0;
 	i.translator.pmatrix[5] = 1;
 	i.translator.pmatrix[6] = 0;
-	i.translator.pmatrix[7] = pcamera->position.y;
+	i.translator.pmatrix[7] = translater.y;
 	i.translator.pmatrix[8] = 0;
 	i.translator.pmatrix[9] = 0;
 	i.translator.pmatrix[10] = 1;
-	i.translator.pmatrix[11] = pcamera->position.z;
+	i.translator.pmatrix[11] = translater.z;
 	i.translator.pmatrix[12] = 0;
 	i.translator.pmatrix[13] = 0;
 	i.translator.pmatrix[14] = 0;

@@ -15,6 +15,7 @@ namespace RayTracer
 	RayTracer::pixels* ppixels = 0;
 	std::vector<void*>* p_all_shapes = 0;
 	std::vector<unsigned char*>* p_all_textures = 0;
+	int camera_index = -1;
 
 	void prepare_data(const std::shared_ptr<std::vector<Core::model*>> pmodels, std::vector<model>& dmodels);
 	Core::texture get_texture(Core::texture core_texture);
@@ -23,6 +24,9 @@ namespace RayTracer
 	triangle make_triangle(Core::vertex a, Core::vertex b, Core::vertex c);
 	input* prepare_inputs(input& i);
 	Core::cubemap* prepare_cubemap(Core::cubemap* pcubemap);
+	void update_camera(input& i);
+
+	Core::vec3 operator*(const Core::mat4& m, const Core::vec3& v);
 }
 
 void RayTracer::init(std::shared_ptr<std::vector<Core::model*>> pmodels, Core::cubemap* pcubemap, int width, int height)
@@ -50,12 +54,15 @@ std::unique_ptr<RayTracer::rgb> RayTracer::render(input i, Projection proj_type)
 {
 	if (!dgpumodels || !ppixels) throw RayTraceException("init function not called");
 	i.dworld = dworld;
+	update_camera(i);
 	input* dinput = prepare_inputs(i);
 	draw_frame(*ppixels, dinput, proj_type);
 	cudaDeviceSynchronize();
 	int size = (ppixels->width) * (ppixels->height);
 	rgb* prgbs = new rgb[size];
 	cudaMemcpy(prgbs, ppixels->data, sizeof(rgb) * size, cudaMemcpyDeviceToHost);
+	cudaFree(i.translator.pmatrix);
+	cudaFree(i.rotator.pmatrix);
 	cudaFree(dinput);
 	return std::unique_ptr<rgb>(prgbs);
 }
@@ -114,6 +121,7 @@ void RayTracer::prepare_data(const std::shared_ptr<std::vector<Core::model*>> pm
 		dmodel.surface_color = pmodel->surface_color;
 		dmodel.m_type = pmodel->m_type;
 		dmodels.push_back(dmodel);
+		if (pmodel->m_type == Core::model_type::CAMERA) camera_index = i;
 		p_all_shapes->push_back(dmodel.dshapes);
 	}
 }
@@ -196,4 +204,20 @@ Core::cubemap* RayTracer::prepare_cubemap(Core::cubemap* pcubemap)
 	cudaMalloc(&dcubemap, sizeof(Core::cubemap));
 	cudaMemcpy(dcubemap, &cubemap, sizeof(Core::cubemap), cudaMemcpyHostToDevice);
 	return dcubemap;
+}
+
+void RayTracer::update_camera(input& i)
+{
+	if (camera_index > 0)
+	{
+		model* pcamera = new model;
+		model* dcamera = dgpumodels + camera_index;
+		cudaMemcpy(pcamera, dcamera, sizeof(model), cudaMemcpyDeviceToHost);
+		if (pcamera)
+		{
+			pcamera->position = i.translator * pcamera->position;
+			cudaMemcpy(dcamera, pcamera, sizeof(model), cudaMemcpyHostToDevice);
+		}
+		delete pcamera;
+	}
 }

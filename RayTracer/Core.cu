@@ -8,15 +8,17 @@
 
 namespace RayTracer
 {
+	RUN_ON_GPU model* pcamera = 0;
+
 	enum class ColorType { REFLECTION, REFRACTION };
 
 	RUN_ON_GPU_CALL_FROM_CPU void render(pixels pixels, const input* dinput, Projection proj_type);
-	RUN_ON_GPU Core::vec3 cast_primary_ray(const world& models, ray& ray, const model* pcamera);
-	RUN_ON_GPU Core::vec3 cast_second_ray(const ColorType type, const world& models, const hit& first_hit, ray& ray, const model* pcamera);
+	RUN_ON_GPU Core::vec3 cast_primary_ray(const world& models, ray& ray);
+	RUN_ON_GPU Core::vec3 cast_second_ray(const ColorType type, const world& models, const hit& first_hit, ray& ray);
 	RUN_ON_GPU Core::vec3 get_reflect_dir(const Core::vec3& incident_dir, const Core::vec3& nhit);
 	RUN_ON_GPU Core::vec3 get_refract_dir(const Core::vec3& incident_dir, const Core::vec3& nhit, const bool& inside);
-	RUN_ON_GPU Core::vec3 cast_shadow_ray(const world& models, const hit& hit, const model* pcamera, ray& rray);
-	RUN_ON_GPU model* get_updated_camera(const input* dinput);
+	RUN_ON_GPU Core::vec3 cast_shadow_ray(const world& models, const hit& hit, ray& rray);
+	RUN_ON_GPU model* get_camera(const input* dinput);
 	RUN_ON_GPU double get_glow(const unsigned light_index, const world& models, const ray& shadow_ray);
 }
 
@@ -39,39 +41,39 @@ void RayTracer::render(RayTracer::pixels pixels, const input* dinput, Projection
 	double x = ((2.0 * ((tx + 0.5) / pixels.width)) - 1.0) * aspect_ratio * tan_val * near_plane;
 	double y = (1.0 - (2.0 * ((ty + 0.5) / pixels.height))) * tan_val * near_plane;
 	world* dworld = (world*)(dinput->dworld);
-	model* pcamera = get_updated_camera(dinput);
+	if(!pcamera) pcamera = get_camera(dinput);
 	Core::vec3 dir = (proj_type == Projection::PERSPECTIVE) ? Core::vec3{ x, y, -near_plane } : Core::vec3{ 0.0, 0.0, -near_plane };
 	normalize(dir);
 	Core::vec3 origin = (proj_type == Projection::PERSPECTIVE) ? Core::vec3{} : Core::vec3{ x, y };
 	if (proj_type == Projection::PERSPECTIVE) dir = dinput->rotator * dir;
-	origin = dinput->translator * origin;
+	origin = pcamera->position;
 	ray pray{ origin, dir };
-	Core::vec3 color = cast_primary_ray(*dworld, pray, pcamera);
+	Core::vec3 color = cast_primary_ray(*dworld, pray);
 	pixels.data[index] = rgb{ unsigned char(color.x * 255.0), unsigned char(color.y * 255.0), unsigned char(color.z * 255.0) };
 }
 
 RUN_ON_GPU
-Core::vec3 RayTracer::cast_primary_ray(const world& models, ray& ray, const model* pcamera)
+Core::vec3 RayTracer::cast_primary_ray(const world& models, ray& ray)
 {
 	Core::vec3 surface_color{};
 	hit hit_item;
 	if (!detect_hit(models, ray, hit_item)) return get_background_color(models.dcubemap, ray.dir);
 	if (hit_item.pmodel->reflectivity > 0.0 || hit_item.pmodel->transparency > 0.0)
 	{
-		Core::vec3 reflect_color = (hit_item.pmodel->reflectivity > 0.0) ? cast_second_ray(ColorType::REFLECTION,models,hit_item,ray,pcamera) : Core::vec3{};
-		Core::vec3 refract_color = (hit_item.pmodel->transparency > 0.0) ? cast_second_ray(ColorType::REFRACTION,models,hit_item,ray,pcamera) : Core::vec3{};
+		Core::vec3 reflect_color = (hit_item.pmodel->reflectivity > 0.0) ? cast_second_ray(ColorType::REFLECTION,models,hit_item,ray) : Core::vec3{};
+		Core::vec3 refract_color = (hit_item.pmodel->transparency > 0.0) ? cast_second_ray(ColorType::REFRACTION,models,hit_item,ray) : Core::vec3{};
 		Core::vec3 diffuse_color = get_color(hit_item, hit_item.pmodel->diffuse, ray);
 		Core::vec3 dir = pcamera->position - ray.phit;
 		normalize(dir);
 		double fresnel = schlick_approximation(max_val(0.0, dot(dir, ray.nhit)), 0.1);
 		surface_color = ((reflect_color * fresnel) + (refract_color * (1 - fresnel) * hit_item.pmodel->transparency)) * diffuse_color;
 	}
-	surface_color += cast_shadow_ray(models, hit_item, pcamera, ray);
+	surface_color += cast_shadow_ray(models, hit_item, ray);
 	return get_clamped(surface_color);
 }
 
 RUN_ON_GPU
-Core::vec3 RayTracer::cast_second_ray(const ColorType type, const world& models, const hit& first_hit, ray& pray, const model* pcamera)
+Core::vec3 RayTracer::cast_second_ray(const ColorType type, const world& models, const hit& first_hit, ray& pray)
 {
 	Core::vec3 color{ 1.0, 1.0, 1.0 };
 	double bias = 1e-4;
@@ -93,7 +95,7 @@ Core::vec3 RayTracer::cast_second_ray(const ColorType type, const world& models,
 		}
 		else
 		{
-			color *= cast_shadow_ray(models, hit_item, pcamera, pray);
+			color *= cast_shadow_ray(models, hit_item, pray);
 			break;
 		}
 	}
@@ -123,7 +125,7 @@ Core::vec3 RayTracer::get_refract_dir(const Core::vec3& incident_dir, const Core
 }
 
 RUN_ON_GPU
-Core::vec3 RayTracer::cast_shadow_ray(const world& models, const hit& hit, const model* pcamera, ray& rray)
+Core::vec3 RayTracer::cast_shadow_ray(const world& models, const hit& hit, ray& rray)
 {
 	Core::vec3 color;
 	Core::vec3 diffuse_color = get_color(hit, hit.pmodel->diffuse, rray);
@@ -154,7 +156,7 @@ Core::vec3 RayTracer::cast_shadow_ray(const world& models, const hit& hit, const
 }
 
 RUN_ON_GPU
-RayTracer::model* RayTracer::get_updated_camera(const input* dinput)
+RayTracer::model* RayTracer::get_camera(const input* dinput)
 {
 	model* pcamera = 0;
 	world* dworld = (world*)dinput->dworld;
@@ -167,7 +169,6 @@ RayTracer::model* RayTracer::get_updated_camera(const input* dinput)
 			break;
 		}
 	}
-	if(pcamera) pcamera->position = dinput->translator * Core::vec3{};
 	return pcamera;
 }
 
