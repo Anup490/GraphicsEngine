@@ -1,6 +1,5 @@
 #include "Maths.cuh"
 #include "Vector.cuh"
-#include "Texture.cuh"
 #include "Triangle.cuh"
 #include "Sphere.cuh"
 #include "Box.cuh"
@@ -22,12 +21,25 @@ namespace RayTracer
 	RUN_ON_GPU
 	Core::vec3 get_color(const hit& hit_item, const Core::texture& tex, ray& rray)
 	{
-		if (!tex.ptextures)
+		if (!tex.ptextures) return hit_item.pmodel->surface_color;
+		if (hit_item.pmodel->s_type == Core::shape_type::TRIANGLE)
 		{
-			return hit_item.pmodel->surface_color;
+			rray.texcoord = get_texcoord(hit_item.shape, rray.phit, hit_item.pmodel->s_type);
+			return hit_item.pmodel->surface_color * Texture::get_color(rray.texcoord, tex);
 		}
-		rray.texcoord = get_texcoord(hit_item.shape, rray.phit, hit_item.pmodel->s_type);
-		return hit_item.pmodel->surface_color * Texture::get_color(rray.texcoord, tex);
+		Core::cubemap texture_3d;
+		to_cubemap(tex, texture_3d);
+		if (hit_item.pmodel->s_type == Core::shape_type::SPHERE)
+		{
+			return hit_item.pmodel->surface_color * get_background_color(&texture_3d, rray.nhit);
+		}
+		if (hit_item.pmodel->s_type == Core::shape_type::BOX)
+		{
+			Core::box* pbox = (Core::box*)hit_item.shape;
+			Core::vec3 dir = rray.phit - pbox->center;
+			return hit_item.pmodel->surface_color * get_background_color(&texture_3d, dir);
+		}
+		return Core::vec3{};
 	}
 
 	RUN_ON_GPU

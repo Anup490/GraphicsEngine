@@ -10,24 +10,15 @@ std::unique_ptr<Core::model> prepare_spheres()
 	pspheres[0] = Core::sphere{ 4.0, Core::vec3{ 0.0, 10.0, -20.0 }};
 	pmodel->position = pspheres[0].center;
 	pmodel->emissive_color = Core::vec3{};
-	pmodel->surface_color = Core::vec3{ 1.00, 0.32, 0.36 };
+	pmodel->surface_color = Core::vec3{ 1.0, 1.0, 1.0 };
 	pmodel->pshapes = pspheres;
 	pmodel->shapes_size = sphere_count;
 	pmodel->s_type = Core::shape_type::SPHERE;
 	pmodel->m_type = Core::model_type::OBJECT;
 	pmodel->reflectivity = 1.0;
 	pmodel->metallicity = 1.0;
-
-	/*
-	pspheres[0] = Core::sphere(vec3(0.0f, -10004.0f, -20.0f), 10000.0f, vec3(0.20f, 0.20f, 0.20f), 0.0f, 0.0f, vec3(0.0f));
-	pspheres[1] = Core::sphere(vec3(0.0f, 0.0f, -20.0f), 4.0f, vec3(1.00f, 0.32f, 0.36f), 1.0f, 0.5f, vec3(0.0f));
-	pspheres[2] = Core::sphere(vec3(5.0f, -1.0f, -15.0f), 2.0f, vec3(0.90f, 0.76f, 0.46f), 1.0f, 0.0f, vec3(0.0f));
-	pspheres[3] = Core::sphere(vec3(5.0f, 0.0f, -25.0f), 3.0f, vec3(0.65f, 0.77f, 0.97f), 1.0f, 0.0f, vec3(0.0f));
-	pspheres[4] = Core::sphere(vec3(-5.5f, 0.0f, -15.0f), 3.0f, vec3(0.90f, 0.90f, 0.90f), 1.0f, 0.0f, vec3(0.0f));
-	pspheres[5] = Core::sphere(vec3(0.0f, 20.0f, -30.0f), 3.0f, vec3(1.0f, 1.0f, 1.0f), 0.0f, 0.0f, vec3(1.0f));
-	*/
-
-	return std::unique_ptr<Core::model>(pmodel);
+	pmodel->diffuse = get_texture("D:/Projects/C++/3DImporter/Assets/jupiter/moon_baseColor.jpg");
+    return std::unique_ptr<Core::model>(pmodel);
 }
 
 std::unique_ptr<Core::model> prepare_boxes()
@@ -38,12 +29,13 @@ std::unique_ptr<Core::model> prepare_boxes()
 	pboxes[0] = Core::box{ Core::vec3{ 0.0, 0.0, -40.0 }, Core::vec3{ 10.0, 10.0, -30.0 } };
 	pmodel->position = pboxes[0].center;
 	pmodel->emissive_color = Core::vec3{};
-	pmodel->surface_color = Core::vec3{ 0.32, 0.36, 1.0 };
+	pmodel->surface_color = Core::vec3{ 1.0, 1.0, 1.0 };
 	pmodel->pshapes = pboxes;
 	pmodel->shapes_size = sphere_count;
 	pmodel->s_type = Core::shape_type::BOX;
 	pmodel->m_type = Core::model_type::OBJECT;
 	pmodel->reflectivity = 1.0;
 	pmodel->metallicity = 1.0;
+	pmodel->diffuse = get_texture("D:/Projects/C++/3DImporter/Assets/crow/diffuse.png");
 	return std::unique_ptr<Core::model>(pmodel);
 }

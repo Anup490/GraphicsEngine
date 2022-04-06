@@ -299,3 +299,11 @@ std::unique_ptr<Core::cubemap> prepare_cubemap(const char* file_path)
 	pcubemap->back.ptextures = stbi_load((path + faces[5]).c_str(), &(pcubemap->back.width), &(pcubemap->back.height), &(pcubemap->back.channels), 0);
 	return std::unique_ptr<Core::cubemap>(pcubemap);
 }
+
+Core::texture get_texture(const char* file_path)
+{
+	Core::texture texture;
+	stbi_set_flip_vertically_on_load(true);
+	texture.ptextures = stbi_load(file_path, &(texture.width), &(texture.height), &(texture.channels), 0);
+	return texture;
+}

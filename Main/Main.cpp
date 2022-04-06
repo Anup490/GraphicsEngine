@@ -30,11 +30,11 @@ void main()
 	std::cout << "Loading..." << std::endl;
 	const char* window_title = "GraphicsEngine";
 	bool init_called = false;
-	std::unique_ptr<Core::model> pmodel;
+	std::shared_ptr<std::vector<Core::model*>> pmodels(new std::vector<Core::model*>);
 	RayTracer::input i;
 	try
 	{
-		//pmodel = prepare_gltf_model_data({ "D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf", Core::vec3{0.0,0.0,-3.0} });
+		//std::unique_ptr<Core::model> pmodel = prepare_gltf_model_data({ "D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf", Core::vec3{0.0,0.0,-3.0} });
 		std::unique_ptr<Core::model> psphere = prepare_spheres();
 		std::unique_ptr<Core::model> pbox = prepare_boxes();
 
@@ -46,13 +46,11 @@ void main()
 		light.emissive_color = Core::vec3{ 1.0, 1.0, 1.0 };
 		light.pshapes = pspheres;
 		light.shapes_size = 1;
-		light.s_type = Core::shape_type::SPHERE;
 		light.m_type = Core::model_type::LIGHT;
 
 		Core::model camera{ Core::vec3{} };
 		camera.m_type = Core::model_type::CAMERA;
 		pcamera = &camera;
-		std::shared_ptr<std::vector<Core::model*>> pmodels(new std::vector<Core::model*>);
 		//pmodels->push_back(pmodel.get());
 		pmodels->push_back(psphere.get());
 		pmodels->push_back(pbox.get());
@@ -61,6 +59,7 @@ void main()
 		std::unique_ptr<Core::cubemap> p = prepare_cubemap("D:/Projects/C++/3DImporter/Assets/skybox");
 		RayTracer::init(pmodels, p.get(), window_width, window_height);
 		init_called = true;
+		for (Core::model* pmodel : *pmodels) delete_texture(pmodel);
 	}
 	catch (std::exception& e)
 	{
@@ -193,7 +192,6 @@ void main()
 		glfwDestroyWindow(window);
 		glfwTerminate();
 	}
-	if(pmodel) delete_texture(pmodel.get());
 	if(init_called) RayTracer::clear();
 	if(i.rotator.pmatrix) delete[] i.rotator.pmatrix;
 	if(i.translator.pmatrix) delete[] i.translator.pmatrix;

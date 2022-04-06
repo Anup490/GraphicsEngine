@@ -1,4 +1,5 @@
 #include "PrivateBase.cuh"
+#include "Texture.cuh"
 
 namespace RayTracer
 {
@@ -53,4 +54,39 @@ namespace RayTracer
 		}
 		return Core::vec3{ 1.0, 1.0, 1.0 };
 	}
+
+	RUN_ON_GPU
+	void to_cubemap(const Core::texture& tex, Core::cubemap& cubemap)
+	{
+		cubemap.left.ptextures = tex.ptextures;
+		cubemap.left.channels = tex.channels;
+		cubemap.left.width = tex.width;
+		cubemap.left.height = tex.height;
+
+		cubemap.right.ptextures = tex.ptextures;
+		cubemap.right.channels = tex.channels;
+		cubemap.right.width = tex.width;
+		cubemap.right.height = tex.height;
+
+		cubemap.bottom.ptextures = tex.ptextures;
+		cubemap.bottom.channels = tex.channels;
+		cubemap.bottom.width = tex.width;
+		cubemap.bottom.height = tex.height;
+
+		cubemap.top.ptextures = tex.ptextures;
+		cubemap.top.channels = tex.channels;
+		cubemap.top.width = tex.width;
+		cubemap.top.height = tex.height;
+
+		cubemap.front.ptextures = tex.ptextures;
+		cubemap.front.channels = tex.channels;
+		cubemap.front.width = tex.width;
+		cubemap.front.height = tex.height;
+
+		cubemap.back.ptextures = tex.ptextures;
+		cubemap.back.channels = tex.channels;
+		cubemap.back.width = tex.width;
+		cubemap.back.height = tex.height;
+	}
+
 }

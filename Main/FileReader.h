@@ -20,6 +20,6 @@ std::unique_ptr<Core::model> prepare_gltf_model_data(Core::model_info info) thro
 std::unique_ptr<Core::model> prepare_spheres();
 std::unique_ptr<Core::model> prepare_boxes();
 std::unique_ptr<Core::cubemap> prepare_cubemap(const char* file_path);
-
+Core::texture get_texture(const char* file_path);
 void delete_texture(Core::model* pmodel);
 std::string extract_file(const char* path);
