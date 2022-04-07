@@ -7,14 +7,9 @@
 #include <glfw3.h>
 #include <math.h>
 
-double fov = 90.0;
-double last_x = 0.0;
-double last_y = 0.0;
-double yaw = 0.0;
-double pitch = 0.0;
-bool lmb_hold = false;
-bool first_lmb = true;
-int window_width = 640, window_height = 480;
+double fov = 90.0, last_x = 0.0, last_y = 0.0, yaw = 0.0, pitch = 0.0;
+bool lmb_hold = false, first_lmb = true;
+int window_width = 1024, window_height = 768;
 
 Core::model* pcamera = 0;
 RayTracer::Projection proj_type = RayTracer::Projection::PERSPECTIVE;

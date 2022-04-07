@@ -16,9 +16,8 @@ namespace std
 
 namespace RayTracer
 {
-	class RayTraceException : std::exception {
+	struct RayTraceException : std::exception {
 		const char* message;
-	public:
 		RayTraceException(const char* message) : message(message) {}
 		char const* what() const override { return message; }
 	};
