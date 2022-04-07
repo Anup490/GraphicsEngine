@@ -59,6 +59,39 @@ void delete_texture(Core::model* pmodel)
 	if(pmodel->specular.ptextures) stbi_image_free(pmodel->specular.ptextures);
 }
 
+Core::texture get_texture(const char* file_path)
+{
+	Core::texture texture;
+	stbi_set_flip_vertically_on_load(true);
+	texture.ptextures = stbi_load(file_path, &(texture.width), &(texture.height), &(texture.channels), 0);
+	return texture;
+}
+
+std::unique_ptr<Core::cubemap> prepare_cubemap(const char* file_path)
+{
+	Core::cubemap* pcubemap = new Core::cubemap;
+	std::string path(file_path);
+	if (path.substr(path.length() - 1) != "/") path.append("/");
+	std::string faces[] = { "left.jpg", "right.jpg", "bottom.jpg", "top.jpg", "front.jpg", "back.jpg" };
+	pcubemap->left = get_texture((path + faces[0]).c_str());
+	pcubemap->right = get_texture((path + faces[1]).c_str());
+	pcubemap->bottom = get_texture((path + faces[2]).c_str());
+	pcubemap->top = get_texture((path + faces[3]).c_str());
+	pcubemap->front = get_texture((path + faces[4]).c_str());
+	pcubemap->back = get_texture((path + faces[5]).c_str());
+	return std::unique_ptr<Core::cubemap>(pcubemap);
+}
+
+void delete_cubemap(std::unique_ptr<Core::cubemap>& pcubemap)
+{
+	if (pcubemap->left.ptextures) stbi_image_free(pcubemap->left.ptextures);
+	if (pcubemap->right.ptextures) stbi_image_free(pcubemap->right.ptextures);
+	if (pcubemap->top.ptextures) stbi_image_free(pcubemap->top.ptextures);
+	if (pcubemap->bottom.ptextures) stbi_image_free(pcubemap->bottom.ptextures);
+	if (pcubemap->front.ptextures) stbi_image_free(pcubemap->front.ptextures);
+	if (pcubemap->back.ptextures) stbi_image_free(pcubemap->back.ptextures);
+}
+
 std::vector<unsigned char>* get_data(nlohmann::json& JSON, const char* file_path)
 {
 	std::string bytesText;
@@ -277,33 +310,4 @@ void triangulate(Core::model* pmodel, std::vector<Core::vertex>* pvertices, std:
 		Core::triangle* ptriangles = (Core::triangle*)(pmodel->pshapes);
 		ptriangles[t++] = Core::triangle{ a, b, c };
 	}
-}
-
-std::unique_ptr<Core::cubemap> prepare_cubemap(const char* file_path)
-{
-	Core::cubemap* pcubemap = new Core::cubemap;
-	std::string path(file_path);
-	if (path.substr(path.length() - 1) != "/") path.append("/");
-	std::string faces[] = { "left.jpg", "right.jpg", "bottom.jpg", "top.jpg", "front.jpg", "back.jpg" };
-	stbi_set_flip_vertically_on_load(true);
-	pcubemap->left.ptextures = stbi_load((path + faces[0]).c_str(), &(pcubemap->left.width), &(pcubemap->left.height), &(pcubemap->left.channels), 0);
-	stbi_set_flip_vertically_on_load(true);
-	pcubemap->right.ptextures = stbi_load((path + faces[1]).c_str(), &(pcubemap->right.width), &(pcubemap->right.height), &(pcubemap->right.channels), 0);
-	stbi_set_flip_vertically_on_load(true);
-	pcubemap->bottom.ptextures = stbi_load((path + faces[2]).c_str(), &(pcubemap->bottom.width), &(pcubemap->bottom.height), &(pcubemap->bottom.channels), 0);
-	stbi_set_flip_vertically_on_load(true);
-	pcubemap->top.ptextures = stbi_load((path + faces[3]).c_str(), &(pcubemap->top.width), &(pcubemap->top.height), &(pcubemap->top.channels), 0);
-	stbi_set_flip_vertically_on_load(true);
-	pcubemap->front.ptextures = stbi_load((path + faces[4]).c_str(), &(pcubemap->front.width), &(pcubemap->front.height), &(pcubemap->front.channels), 0);
-	stbi_set_flip_vertically_on_load(true);
-	pcubemap->back.ptextures = stbi_load((path + faces[5]).c_str(), &(pcubemap->back.width), &(pcubemap->back.height), &(pcubemap->back.channels), 0);
-	return std::unique_ptr<Core::cubemap>(pcubemap);
-}
-
-Core::texture get_texture(const char* file_path)
-{
-	Core::texture texture;
-	stbi_set_flip_vertically_on_load(true);
-	texture.ptextures = stbi_load(file_path, &(texture.width), &(texture.height), &(texture.channels), 0);
-	return texture;
 }
