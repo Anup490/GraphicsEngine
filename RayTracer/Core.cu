@@ -180,7 +180,7 @@ double RayTracer::get_glow(const unsigned light_index, const world& models, cons
 	{
 		if (m != light_index)
 		{
-			glow = get_glow_val(models.models[m], shadow_ray, t0);
+			glow *= get_glow_val(models.models[m], shadow_ray, t0);
 			if (glow == 0.0) break;
 		}
 	}

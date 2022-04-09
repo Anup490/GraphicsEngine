@@ -98,7 +98,7 @@ namespace RayTracer
 			{
 				if (Triangle::does_intersect(triangles[i], shadow_ray, t0))
 				{
-					glow = 0.0;
+					glow = model.transparency;
 					break;
 				}
 			}
@@ -110,7 +110,7 @@ namespace RayTracer
 			{
 				if (Sphere::does_intersect(spheres[i], shadow_ray, t0))
 				{
-					glow = 0.0;
+					glow = model.transparency;
 					break;
 				}
 			}
@@ -122,7 +122,7 @@ namespace RayTracer
 			{
 				if (Box::does_intersect(boxes[i], shadow_ray, t0))
 				{
-					glow = 0.0;
+					glow = model.transparency;
 					break;
 				}
 			}
