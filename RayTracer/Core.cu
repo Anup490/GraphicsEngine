@@ -129,7 +129,7 @@ Core::vec3 RayTracer::cast_shadow_ray(const world& models, const hit& hit, ray& 
 {
 	Core::vec3 color;
 	Core::vec3 diffuse_color = get_color(hit, hit.pmodel->diffuse, rray);
-	Core::vec3 specular_color = get_color(hit, hit.pmodel->specular, rray);
+	Core::vec3 specular_color = get_specular_val(hit, hit.pmodel->specular, rray);
 	Core::vec3 ambient_color = Core::vec3{ 0.25, 0.25, 0.25 };
 	Core::vec3 ambient = diffuse_color * ambient_color;
 	double bias = 1e-4;
@@ -147,8 +147,8 @@ Core::vec3 RayTracer::cast_shadow_ray(const world& models, const hit& hit, ray& 
 			Core::vec3 reflect_dir = get_reflect_dir(-shadow_dir, rray.nhit);
 			normalize(reflect_dir);
 			Core::vec3 view_dir = pcamera->position - rray.phit;
-			normalize(view_dir);
-			Core::vec3 specular = specular_color * pow(max_val(0.0, dot(view_dir, reflect_dir)), get_specularity(hit.pmodel->smoothness)) * shadow_normal_dot * hit.pmodel->smoothness;
+			normalize(view_dir);																
+			Core::vec3 specular = specular_color * pow(max_val(0.0, dot(view_dir, reflect_dir)), to_1_to_256(specular_color.x)) * shadow_normal_dot;
 			color += (diffuse + specular) * get_glow(l, models, shadow_ray) * light_model->emissive_color;
 		}
 	}
@@ -180,7 +180,7 @@ double RayTracer::get_glow(const unsigned light_index, const world& models, cons
 	{
 		if (m != light_index)
 		{
-			glow *= get_glow_val(models.models[m], shadow_ray, t0);
+			glow *= get_glow_by_shape(models.models[m], shadow_ray, t0);
 			if (glow == 0.0) break;
 		}
 	}

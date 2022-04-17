@@ -101,7 +101,7 @@ namespace RayTracer
 	}
 
 	RUN_ON_CPU_AND_GPU
-	double get_specularity(const double& smoothness)
+	double to_1_to_256(const double& smoothness)
 	{
 		return (255.0 * smoothness) + 1.0;
 	}

@@ -19,13 +19,13 @@ namespace RayTracer
 	}
 
 	RUN_ON_GPU
-	Core::vec3 get_color(const hit& hit_item, const Core::texture& tex, ray& rray)
+	Core::vec3 get_color(const hit& hit_item, const Core::texture& tex, const ray& rray)
 	{
 		if (!tex.ptextures) return hit_item.pmodel->surface_color;
 		if (hit_item.pmodel->s_type == Core::shape_type::TRIANGLE)
 		{
-			rray.texcoord = get_texcoord(hit_item.shape, rray.phit, hit_item.pmodel->s_type);
-			return hit_item.pmodel->surface_color * Texture::get_color(rray.texcoord, tex);
+			Core::vec3 texcoord = get_texcoord(hit_item.shape, rray.phit, hit_item.pmodel->s_type);
+			return hit_item.pmodel->surface_color * Texture::get_color(texcoord, tex);
 		}
 		Core::cubemap texture_3d;
 		to_cubemap(tex, texture_3d);
@@ -40,6 +40,14 @@ namespace RayTracer
 			return hit_item.pmodel->surface_color * get_background_color(&texture_3d, dir);
 		}
 		return Core::vec3{};
+	}
+
+	RUN_ON_GPU
+	Core::vec3 get_specular_val(const hit& hit_item, const Core::texture& tex, const ray& rray)
+	{
+		if (!tex.ptextures) return Core::vec3{ hit_item.pmodel->smoothness,hit_item.pmodel->smoothness,hit_item.pmodel->smoothness };
+		Core::vec3 texcoord = get_texcoord(hit_item.shape, rray.phit, hit_item.pmodel->s_type);
+		return Texture::get_color(texcoord, tex);
 	}
 
 	RUN_ON_GPU
@@ -88,7 +96,7 @@ namespace RayTracer
 	}
 
 	RUN_ON_GPU
-	double get_glow_val(const model& model, const ray& shadow_ray, double& t0)
+	double get_glow_by_shape(const model& model, const ray& shadow_ray, double& t0)
 	{
 		double glow = 1.0;
 		if (model.s_type == Core::shape_type::TRIANGLE)

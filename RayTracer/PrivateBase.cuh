@@ -41,7 +41,7 @@ namespace RayTracer
 
 	struct ray 
 	{ 
-		Core::vec3 origin, dir, phit, nhit, texcoord;
+		Core::vec3 origin, dir, phit, nhit;
 	};
 
 	struct hit { void* shape; model* pmodel; };
