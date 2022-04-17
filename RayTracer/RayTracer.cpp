@@ -69,13 +69,9 @@ std::unique_ptr<RayTracer::rgb> RayTracer::render(input i, Projection proj_type)
 void RayTracer::clear()
 {
 	for (void* dshape : *p_all_shapes)
-	{
 		cudaFree(dshape);
-	}
 	for (unsigned char* dtexture : *p_all_textures)
-	{
 		cudaFree(dtexture);
-	}
 	cudaFree(dgpumodels);
 	cudaFree(dcubemap);
 	cudaFree(dworld);
@@ -208,7 +204,7 @@ Core::cubemap* RayTracer::prepare_cubemap(Core::cubemap* pcubemap)
 
 void RayTracer::update_camera(input& i)
 {
-	if (camera_index > 0)
+	if (camera_index >= 0)
 	{
 		model* pcamera = new model;
 		model* dcamera = dgpumodels + camera_index;
