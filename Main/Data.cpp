@@ -32,8 +32,8 @@ std::shared_ptr<std::vector<Core::model*>> prepare_data(Core::model*& pcamera)
 	pcamera = new Core::model;
 	pcamera->m_type = Core::model_type::CAMERA;
 	
-	pmodels->push_back(plight);
 	pmodels->push_back(pcamera);
+	pmodels->push_back(plight);	
 	//pmodels->push_back(pmodel);
 	pmodels->push_back(psurface);
 	pmodels->push_back(psphere1);
