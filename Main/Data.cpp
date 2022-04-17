@@ -3,7 +3,7 @@
 #include <vector>
 #include "FileReader.h"
 
-std::unique_ptr<Core::model> prepare_gltf_model_data(Core::model_info info) throw(FileReadException);
+Core::model* prepare_gltf_model_data(Core::model_info info) throw(FileReadException);
 Core::texture get_texture(const char* file_path);
 void delete_texture(Core::model* pmodel);
 Core::model* prepare_sphere(const Core::sphere& sphere, const Core::vec3& surface_color, const double& smoothness, const double& metallicity, const double& transparency, const char* tex_path);
@@ -13,7 +13,7 @@ Core::model* prepare_box(const Core::box& box, const Core::vec3& surface_color, 
 std::shared_ptr<std::vector<Core::model*>> prepare_data(Core::model*& pcamera)
 {
 	std::shared_ptr<std::vector<Core::model*>> pmodels(new std::vector<Core::model*>);
-	//std::unique_ptr<Core::model> pmodel = prepare_gltf_model_data({ "D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf", Core::vec3{0.0,0.0,-3.0} });//34,71, 114
+	//Core::model* pmodel = prepare_gltf_model_data({ "D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf", Core::vec3{0.0,0.0,-3.0} });
 	Core::model* psurface = prepare_box(Core::box{ Core::vec3{ -50.0, -40.0, -70.0 }, Core::vec3{ 100.0, -30.0, 20.0 } }, Core::vec3{ 0.13, 0.29, 0.45 }, 0.0, 0.0, 0.0, "");
 	
 	Core::model* psphere1 = prepare_sphere(Core::sphere{ 4.0, Core::vec3{ 5.0, -26.0, -10.0 } }, Core::vec3{ 1.0, 1.0, 1.0 }, 0.2, 0.9, 0.0, "D:/Projects/C++/3DImporter/Assets/jupiter/moon_baseColor.jpg");	
@@ -31,8 +31,10 @@ std::shared_ptr<std::vector<Core::model*>> prepare_data(Core::model*& pcamera)
 
 	pcamera = new Core::model;
 	pcamera->m_type = Core::model_type::CAMERA;
-
-	//pmodels->push_back(pmodel.get());
+	
+	pmodels->push_back(plight);
+	pmodels->push_back(pcamera);
+	//pmodels->push_back(pmodel);
 	pmodels->push_back(psurface);
 	pmodels->push_back(psphere1);
 	pmodels->push_back(psphere2);
@@ -40,9 +42,7 @@ std::shared_ptr<std::vector<Core::model*>> prepare_data(Core::model*& pcamera)
 	pmodels->push_back(pbox1);
 	pmodels->push_back(pbox2);
 	pmodels->push_back(pbox3);
-	pmodels->push_back(plight);
-	pmodels->push_back(pcamera);
-
+	
 	return pmodels;
 }
 

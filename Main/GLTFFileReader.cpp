@@ -1,7 +1,6 @@
 #include "json.h"
 #include "Core.h"
 #include "FileReader.h"
-#include <memory>
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -19,7 +18,7 @@ void set_diffuse_texture(const char* file, const nlohmann::json& JSON, Core::tex
 void set_specular_texture(const char* file, const nlohmann::json& JSON, Core::texture& texture_data);
 void triangulate(Core::model* pmodel, std::vector<Core::vertex>* pvertices, std::vector<unsigned>* pindices, Core::vec3& position);
 
-std::unique_ptr<Core::model> prepare_gltf_model_data(Core::model_info info)
+Core::model* prepare_gltf_model_data(Core::model_info info)
 {
 	std::string json_string = extract_file(info.file_path);
 	if (json_string.empty()) throw FileReadException("Error reading gltf file");
@@ -29,7 +28,7 @@ std::unique_ptr<Core::model> prepare_gltf_model_data(Core::model_info info)
 	traverse_node(json_data, 0, pdata, pmodel, info);
 	delete pdata;
 	if(!pmodel->diffuse.ptextures) throw FileReadException(std::string("Error loading textures at : ").append(info.file_path));
-	return std::unique_ptr<Core::model>(pmodel);
+	return pmodel;
 }
 
 std::string extract_file(const char* path)
