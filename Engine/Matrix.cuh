@@ -1,6 +1,6 @@
-#include "PrivateBase.cuh"
+#include "EngineCore.cuh"
 
-namespace RayTracer
+namespace Engine
 {
 	RUN_ON_CPU_AND_GPU
 	Base::vec3 operator*(const Base::mat4& m, const Base::vec3& v)
@@ -8,7 +8,8 @@ namespace RayTracer
 		double x = m.pmatrix[0] * v.x + m.pmatrix[1] * v.y + m.pmatrix[2] * v.z + m.pmatrix[3];
 		double y = m.pmatrix[4] * v.x + m.pmatrix[5] * v.y + m.pmatrix[6] * v.z + m.pmatrix[7];
 		double z = m.pmatrix[8] * v.x + m.pmatrix[9] * v.y + m.pmatrix[10] * v.z + m.pmatrix[11];
-		return Base::vec3{ x, y, z };
+		double w = m.pmatrix[12] * v.x + m.pmatrix[13] * v.y + m.pmatrix[14] * v.z + m.pmatrix[15];
+		return Base::vec3{ x/w, y/w, z/w };
 	}
 
 	RUN_ON_CPU_AND_GPU

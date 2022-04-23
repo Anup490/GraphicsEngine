@@ -1,9 +1,9 @@
 #pragma once
-#include "PrivateBase.cuh"
+#include "EngineCore.cuh"
 #include "Vector.h"
 #include "Maths.h"
 
-namespace RayTracer
+namespace Engine
 {
 	namespace Sphere
 	{

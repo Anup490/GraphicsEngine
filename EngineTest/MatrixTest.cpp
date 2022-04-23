@@ -1,11 +1,11 @@
 #include "pch.h"
 #include "CppUnitTest.h"
-#include "RayTracer.h"
+#include "Engine.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
-using namespace RayTracer;
+using namespace Engine;
 
-namespace RayTracerTest
+namespace EngineTest
 {
 	TEST_CLASS(MatrixTest)
 	{
@@ -26,10 +26,10 @@ namespace RayTracerTest
 			matrix[9] = 10;
 			matrix[10] = 11;
 			matrix[11] = 12;
-			matrix[12] = 13;
-			matrix[13] = 14;
-			matrix[14] = 15;
-			matrix[15] = 16;
+			matrix[12] = 0;
+			matrix[13] = 0;
+			matrix[14] = 0;
+			matrix[15] = 1;
 			m.pmatrix = matrix;
 			Base::vec3 v2 = m * v1;
 			Assert::AreEqual(v2.x, 18.0);

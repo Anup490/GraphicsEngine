@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{50d8309c-7668-4351-a4ae-c751c612a3e3}</ProjectGuid>
-    <RootNamespace>RayTracer</RootNamespace>
+    <ProjectGuid>{150998a8-1a1d-41a6-8d95-61550abdb52c}</ProjectGuid>
+    <RootNamespace>Engine</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -73,11 +73,9 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>D:\Projects\C++\GraphicsEngine\Core;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>D:\Projects\C++\GraphicsEngine\Core;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -85,7 +83,6 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>D:\Projects\C++\GraphicsEngine\Core;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -158,17 +155,17 @@
   <ItemGroup>
     <ClInclude Include="Background.cuh" />
     <ClInclude Include="Box.cuh" />
+    <ClInclude Include="RayTracerCore.cuh" />
     <ClInclude Include="framework.h" />
-    <ClInclude Include="Interface.cuh" />
+    <ClInclude Include="RayTracerInterface.cuh" />
     <ClInclude Include="Maths.cuh" />
     <ClInclude Include="Maths.h" />
     <ClInclude Include="Matrix.cuh" />
     <ClInclude Include="Matrix.h" />
-    <ClInclude Include="PrivateBase.cuh" />
-    <ClInclude Include="PublicBase.h" />
-    <ClInclude Include="RayTracer.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Core.cuh" />
+    <ClInclude Include="EngineCore.cuh" />
+    <ClInclude Include="Engine.h" />
+    <ClInclude Include="RayTracer.h" />
     <ClInclude Include="Sphere.cuh" />
     <ClInclude Include="Texture.cuh" />
     <ClInclude Include="Triangle.cuh" />
@@ -177,20 +174,20 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="RayTracer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="Core.cu" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Base\Base.vcxproj">
       <Project>{55c88d36-2b5d-44e7-8102-44ee13c007bf}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="RayTracerCore.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

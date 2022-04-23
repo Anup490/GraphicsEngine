@@ -1,6 +1,6 @@
 #pragma once
 
-namespace RayTracer
+namespace Engine
 {
 	namespace Texture
 	{

@@ -12,26 +12,25 @@ bool lmb_hold = false, first_lmb = true;
 int window_width = 1024, window_height = 768;
 
 Base::model* pcamera = 0;
-RayTracer::Projection proj_type = RayTracer::Projection::PERSPECTIVE;
+Engine::Projection proj_type = Engine::Projection::PERSPECTIVE;
 Base::vec3 translater;
 
 void check_btn_press(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xpos, double ypos);
-void prepare_input(RayTracer::input& i);
+void prepare_input(Engine::input& i);
 
 void main()
 {
 	std::cout << "Loading..." << std::endl;
 	const char* window_title = "GraphicsEngine";
-	bool init_called = false;
-	RayTracer::input i;
+	Engine::input i;
+	Engine::RayTracer* praytracer = 0;
 	try
 	{
 		std::shared_ptr<std::vector<Base::model*>> pmodels = prepare_data(pcamera);
 		std::unique_ptr<Base::cubemap> pcubemap = prepare_cubemap("D:/Projects/C++/3DImporter/Assets/skybox");
-		RayTracer::init(pmodels, pcubemap.get(), window_width, window_height);
-		init_called = true;
+		praytracer = new Engine::RayTracer(pmodels, pcubemap.get(), window_width, window_height);
 		delete_cubemap(pcubemap);
 		delete_data(pmodels);
 	}
@@ -39,7 +38,7 @@ void main()
 	{
 		std::cout << "Exception thrown :: "<< e.what() << std::endl;
 	}
-	if (init_called)
+	if (praytracer)
 	{
 		std::cout << "Opening window" << std::endl;
 		const char* window_title = "GraphicsEngine";
@@ -145,10 +144,10 @@ void main()
 			try
 			{
 				prepare_input(i);
-				std::unique_ptr<RayTracer::rgb> ppixels = RayTracer::render(i, proj_type);
+				std::unique_ptr<Engine::rgb> ppixels = praytracer->render(i, proj_type);
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, ppixels.get());
 			}
-			catch (RayTracer::RayTraceException& e)
+			catch (Engine::RayTraceException& e)
 			{
 				std::cout << "Exception caught :: " << e.what() << std::endl;
 				break;
@@ -166,7 +165,7 @@ void main()
 		glfwDestroyWindow(window);
 		glfwTerminate();
 	}
-	if (init_called) RayTracer::clear();
+	if (praytracer) delete praytracer;
 	if (i.rotator.pmatrix) delete[] i.rotator.pmatrix;
 	if (i.translator.pmatrix) delete[] i.translator.pmatrix;
 	if (pcamera) delete pcamera;
@@ -179,7 +178,7 @@ void check_btn_press(GLFWwindow* window)
 	translater.z = 0.0;
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 	{
-		if (proj_type == RayTracer::Projection::PERSPECTIVE)
+		if (proj_type == Engine::Projection::PERSPECTIVE)
 		{
 			translater.x -= pcamera->front.x;
 			translater.y -= pcamera->front.y;
@@ -194,7 +193,7 @@ void check_btn_press(GLFWwindow* window)
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 	{
-		if (proj_type == RayTracer::Projection::PERSPECTIVE)
+		if (proj_type == Engine::Projection::PERSPECTIVE)
 		{
 			translater.x += pcamera->front.x;
 			translater.y += pcamera->front.y;
@@ -220,7 +219,7 @@ void check_btn_press(GLFWwindow* window)
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-	if (lmb_hold && proj_type == RayTracer::Projection::PERSPECTIVE)
+	if (lmb_hold && proj_type == Engine::Projection::PERSPECTIVE)
 	{
 		if (first_lmb)
 		{
@@ -265,7 +264,7 @@ void scroll_callback(GLFWwindow* window, double xpos, double ypos)
 	if (ypos < 0.0) if (fov >= 180.0) fov -= 1.0; else fov += 1.0;
 }
 
-void prepare_input(RayTracer::input& i)
+void prepare_input(Engine::input& i)
 {
 	i.fov = fov;
 

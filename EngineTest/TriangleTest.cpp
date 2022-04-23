@@ -1,16 +1,16 @@
 #include "pch.h"
 #include "CppUnitTest.h"
 #include "Vector.h"
-#include "RayTracer.h"
+#include "Engine.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
-using namespace RayTracer;
+using namespace Engine;
 
-namespace RayTracerTest
+namespace EngineTest
 {
 	TEST_CLASS(TriangleTest)
 	{
-		RayTracer::triangle make_triangle(Base::vertex& a, Base::vertex& b, Base::vertex& c)
+		Engine::triangle make_triangle(Base::vertex& a, Base::vertex& b, Base::vertex& c)
 		{
 			Base::vec3 ab = b.position - a.position;
 			Base::vec3 bc = c.position - b.position;
@@ -60,7 +60,7 @@ namespace RayTracerTest
 			return s;
 		}
 
-		TEST_METHOD(BaryCentricTest)
+		TEST_METHOD(BarycentricTest)
 		{
 			Base::vec3 a_pos{ 2.0, 1.0, -4.0 };
 			Base::vec3 b_pos{ 8.0, 4.0, -4.0 };
@@ -74,7 +74,7 @@ namespace RayTracerTest
 			Base::vertex a{ a_pos, a_normal, a_tex };
 			Base::vertex b{ b_pos, b_normal, b_tex };
 			Base::vertex c{ c_pos, c_normal, c_tex };
-			RayTracer::triangle triangle = make_triangle(a, b, c);
+			Engine::triangle triangle = make_triangle(a, b, c);
 			Base::vec3 origin;
 			Base::vec3 dir{ 5.0, 4.0, -4.0 };
 			normalize(dir);

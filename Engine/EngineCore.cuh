@@ -1,5 +1,5 @@
 #pragma once
-#include "PublicBase.h"
+#include "Engine.h"
 #include <cuda_runtime.h>
 
 #define RUN_ON_CPU __host__
@@ -7,7 +7,7 @@
 #define RUN_ON_CPU_AND_GPU __host__ __device__
 #define RUN_ON_GPU_CALL_FROM_CPU __global__
 
-namespace RayTracer
+namespace Engine
 {
 	struct triangle
 	{

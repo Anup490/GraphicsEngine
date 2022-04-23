@@ -1,7 +1,7 @@
-#include "PrivateBase.cuh"
+#include "EngineCore.cuh"
 #include "Texture.cuh"
 
-namespace RayTracer
+namespace Engine
 {
 	RUN_ON_GPU
 	Base::vec3 get_background_color(const Base::cubemap* dcubemap, const Base::vec3& dir)

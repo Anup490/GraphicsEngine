@@ -1,12 +1,12 @@
 #include "pch.h"
 #include <device_launch_parameters.h>
-#include "Core.cuh"
-#include "Interface.cuh"
+#include "RayTracerCore.cuh"
+#include "RayTracerInterface.cuh"
 #include "Matrix.cuh"
 
 #define RECURSION_DEPTH 5
 
-namespace RayTracer
+namespace Engine
 {
 	RUN_ON_GPU model* pcamera = 0;
 
@@ -22,7 +22,7 @@ namespace RayTracer
 	RUN_ON_GPU double get_glow(const unsigned light_index, const world& models, const ray& shadow_ray);
 }
 
-void RayTracer::draw_frame(RayTracer::pixels pixels, input* dinput, Projection proj_type)
+void Engine::draw_frame(Engine::pixels pixels, input* dinput, Projection proj_type)
 {
 	dim3 block_size(32, 32, 1);
 	dim3 grid_size(pixels.width / 32, pixels.height / 32, 1);
@@ -30,7 +30,7 @@ void RayTracer::draw_frame(RayTracer::pixels pixels, input* dinput, Projection p
 }
 
 RUN_ON_GPU_CALL_FROM_CPU
-void RayTracer::render(RayTracer::pixels pixels, const input* dinput, Projection proj_type)
+void Engine::render(Engine::pixels pixels, const input* dinput, Projection proj_type)
 {
 	double aspect_ratio = pixels.width / pixels.height;
 	double tan_val = tangent(dinput->fov / 2.0);
@@ -53,7 +53,7 @@ void RayTracer::render(RayTracer::pixels pixels, const input* dinput, Projection
 }
 
 RUN_ON_GPU
-Base::vec3 RayTracer::cast_primary_ray(const world& models, ray& ray)
+Base::vec3 Engine::cast_primary_ray(const world& models, ray& ray)
 {
 	Base::vec3 surface_color{};
 	hit hit_item;
@@ -73,7 +73,7 @@ Base::vec3 RayTracer::cast_primary_ray(const world& models, ray& ray)
 }
 
 RUN_ON_GPU
-Base::vec3 RayTracer::cast_second_ray(const ColorType type, const world& models, const hit& first_hit, ray& pray)
+Base::vec3 Engine::cast_second_ray(const ColorType type, const world& models, const hit& first_hit, ray& pray)
 {
 	Base::vec3 color{ 1.0, 1.0, 1.0 };
 	double bias = 1e-4;
@@ -105,7 +105,7 @@ Base::vec3 RayTracer::cast_second_ray(const ColorType type, const world& models,
 }
 
 RUN_ON_GPU
-Base::vec3 RayTracer::get_reflect_dir(const Base::vec3& incident_dir, const Base::vec3& nhit)
+Base::vec3 Engine::get_reflect_dir(const Base::vec3& incident_dir, const Base::vec3& nhit)
 {
 	Base::vec3 reflect_dir = incident_dir - (nhit * dot(incident_dir, nhit) * 2);
 	normalize(reflect_dir);
@@ -113,7 +113,7 @@ Base::vec3 RayTracer::get_reflect_dir(const Base::vec3& incident_dir, const Base
 }
 
 RUN_ON_GPU
-Base::vec3 RayTracer::get_refract_dir(const Base::vec3& incident_dir, const Base::vec3& nhit, const bool& inside)
+Base::vec3 Engine::get_refract_dir(const Base::vec3& incident_dir, const Base::vec3& nhit, const bool& inside)
 {
 	double ref_index_ratio = (inside) ? 1.1f : 1 / 1.1f;
 	double cosine = dot(-incident_dir, nhit);
@@ -125,7 +125,7 @@ Base::vec3 RayTracer::get_refract_dir(const Base::vec3& incident_dir, const Base
 }
 
 RUN_ON_GPU
-Base::vec3 RayTracer::cast_shadow_ray(const world& models, const hit& hit, ray& rray)
+Base::vec3 Engine::cast_shadow_ray(const world& models, const hit& hit, ray& rray)
 {
 	Base::vec3 color;
 	Base::vec3 diffuse_color = get_color(hit, hit.pmodel->diffuse, rray);
@@ -156,7 +156,7 @@ Base::vec3 RayTracer::cast_shadow_ray(const world& models, const hit& hit, ray& 
 }
 
 RUN_ON_GPU
-RayTracer::model* RayTracer::get_camera(const input* dinput)
+Engine::model* Engine::get_camera(const input* dinput)
 {
 	model* pcamera = 0;
 	world* dworld = (world*)dinput->dworld;
@@ -173,7 +173,7 @@ RayTracer::model* RayTracer::get_camera(const input* dinput)
 }
 
 RUN_ON_GPU
-double RayTracer::get_glow(const unsigned light_index, const world& models, const ray& shadow_ray)
+double Engine::get_glow(const unsigned light_index, const world& models, const ray& shadow_ray)
 {
 	double t0 = INFINITY, glow = 1.0;
 	for (unsigned m = 0; m < models.size; m++)

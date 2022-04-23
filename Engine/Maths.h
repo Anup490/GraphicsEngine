@@ -1,6 +1,6 @@
 #pragma once
 
-namespace RayTracer
+namespace Engine
 {
 	double square_root(const double& num);
 	double get_infinity();

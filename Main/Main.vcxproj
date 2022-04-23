@@ -83,7 +83,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>D:\Projects\C++\GraphicsEngine\RayTracer;D:\Projects\C++\GraphicsEngine\Main\Libraries\include;D:\Projects\C++\GraphicsEngine\Base;$(IncludePath)</IncludePath>
+    <IncludePath>D:\Projects\C++\GraphicsEngine\Engine;D:\Projects\C++\GraphicsEngine\Main\Libraries\include;D:\Projects\C++\GraphicsEngine\Base;$(IncludePath)</IncludePath>
     <LibraryPath>D:\Projects\C++\GraphicsEngine\Main\Libraries\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -162,8 +162,8 @@
     <ProjectReference Include="..\Base\Base.vcxproj">
       <Project>{55c88d36-2b5d-44e7-8102-44ee13c007bf}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\RayTracer\RayTracer.vcxproj">
-      <Project>{50d8309c-7668-4351-a4ae-c751c612a3e3}</Project>
+    <ProjectReference Include="..\Engine\Engine.vcxproj">
+      <Project>{150998a8-1a1d-41a6-8d95-61550abdb52c}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

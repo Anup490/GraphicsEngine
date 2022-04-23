@@ -1,8 +1,8 @@
 #pragma once
-#include "PrivateBase.cuh"
+#include "EngineCore.cuh"
 #include <math.h>
 
-namespace RayTracer
+namespace Engine
 {
 	RUN_ON_CPU_AND_GPU
 	double square_root(const double& num)

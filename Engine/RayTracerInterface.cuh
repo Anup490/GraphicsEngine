@@ -5,7 +5,7 @@
 #include "Box.cuh"
 #include "Background.cuh"
 
-namespace RayTracer
+namespace Engine
 {
 	RUN_ON_GPU
 	Base::vec3 get_texcoord(const void* hit_shape, const Base::vec3& p, Base::shape_type shape)

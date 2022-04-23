@@ -1,7 +1,7 @@
 #pragma once
 #include "Base.h"
 
-namespace RayTracer
+namespace Engine
 {
 	double dot(const Base::vec3& v1, const Base::vec3& v2);
 	double length(const Base::vec3& v1);

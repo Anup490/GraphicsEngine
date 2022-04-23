@@ -1,7 +1,19 @@
 #pragma once
 #include "Base.h"
 
-namespace RayTracer
+namespace std
+{
+	template <class _Ty>
+	struct default_delete;
+
+	template <class _Ty>
+	class shared_ptr;
+
+	template <class _Ty, class _Dx = std::default_delete<_Ty>>
+	class unique_ptr;
+}
+
+namespace Engine
 {
 	struct rgb
 	{

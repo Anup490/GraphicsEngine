@@ -1,13 +1,13 @@
 #include "pch.h"
 #include "CppUnitTest.h"
 #include "Vector.h"
-#include "RayTracer.h"
+#include "Engine.h"
 #include <math.h>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
-using namespace RayTracer;
+using namespace Engine;
 
-namespace RayTracerTest
+namespace EngineTest
 {
 	TEST_CLASS(VectorTest)
 	{

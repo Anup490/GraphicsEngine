@@ -1,8 +1,8 @@
 #pragma once
-#include "PrivateBase.cuh"
+#include "EngineCore.cuh"
 #include "Vector.h"
 
-namespace RayTracer
+namespace Engine
 {
 	namespace Triangle
 	{

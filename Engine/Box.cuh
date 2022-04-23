@@ -1,8 +1,8 @@
-#include "PrivateBase.cuh"
+#include "EngineCore.cuh"
 #include "Maths.h"
 #include "Vector.h"
 
-namespace RayTracer
+namespace Engine
 {
 	namespace Box
 	{

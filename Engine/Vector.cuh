@@ -1,8 +1,8 @@
 #pragma once
-#include "PrivateBase.cuh"
+#include "EngineCore.cuh"
 #include "Maths.h"
 
-namespace RayTracer
+namespace Engine
 {
 	RUN_ON_CPU_AND_GPU
 	double dot(const Base::vec3& v1, const Base::vec3& v2)
