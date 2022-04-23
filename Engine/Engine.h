@@ -27,13 +27,20 @@ namespace Engine
 		pixels(int width, int height) : width(width), height(height) {}
 	};
 
-	struct input
+	enum class Projection { PERSPECTIVE, ORTHOGRAPHIC };
+
+	struct raytrace_input
 	{
 		void* dworld;
 		double fov = 90.0;
 		Base::mat4 translator;
 		Base::mat4 rotator;
 	};
-
-	enum class Projection { PERSPECTIVE, ORTHOGRAPHIC };
+	
+	struct raster_input
+	{
+		Base::mat4 view;
+		Base::mat4 projection;
+	};
+	
 }

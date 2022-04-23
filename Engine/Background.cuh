@@ -4,7 +4,7 @@
 namespace Engine
 {
 	RUN_ON_GPU
-	Base::vec3 get_background_color(const Base::cubemap* dcubemap, const Base::vec3& dir)
+	static Base::vec3 get_background_color(const Base::cubemap* dcubemap, const Base::vec3& dir)
 	{
 		Base::box unit{ Base::vec3{ -1.0, -1.0, -1.0}, Base::vec3{ 1.0, 1.0, 1.0 } };
 		double dist;
@@ -56,7 +56,7 @@ namespace Engine
 	}
 
 	RUN_ON_GPU
-	void to_cubemap(const Base::texture& tex, Base::cubemap& cubemap)
+	static void to_cubemap(const Base::texture& tex, Base::cubemap& cubemap)
 	{
 		cubemap.left.ptextures = tex.ptextures;
 		cubemap.left.channels = tex.channels;

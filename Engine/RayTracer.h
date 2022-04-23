@@ -15,7 +15,7 @@ namespace Engine
 		struct RayTracerCore* pcore;
 	public:
 		RayTracer(std::shared_ptr<std::vector<Base::model*>> pmodels, Base::cubemap* pcubemap, int width, int height) throw(RayTraceException);
-		std::unique_ptr<rgb> render(input i, Projection proj_type) throw(RayTraceException);
+		std::unique_ptr<rgb> render(raytrace_input i, Projection proj_type) throw(RayTraceException);
 		~RayTracer();
 	};
 }

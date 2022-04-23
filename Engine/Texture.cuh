@@ -5,7 +5,7 @@ namespace Engine
 	namespace Texture
 	{
 		RUN_ON_GPU
-		Base::vec3 get_color(const Base::vec3& texcoord, const Base::texture& tex)
+		static Base::vec3 get_color(const Base::vec3& texcoord, const Base::texture& tex)
 		{
 			if (tex.width == 0) return Base::vec3{};
 			unsigned x = texcoord.x * tex.width;

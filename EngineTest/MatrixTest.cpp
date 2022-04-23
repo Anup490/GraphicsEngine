@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "CppUnitTest.h"
-#include "Engine.h"
+#include "Matrix.cuh"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 using namespace Engine;

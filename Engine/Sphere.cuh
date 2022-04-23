@@ -1,14 +1,14 @@
 #pragma once
 #include "EngineCore.cuh"
-#include "Vector.h"
-#include "Maths.h"
+#include "Vector.cuh"
+#include "Maths.cuh"
 
 namespace Engine
 {
 	namespace Sphere
 	{
 		RUN_ON_GPU
-		bool does_intersect(const sphere& s, const ray& r, double& distance)
+		static bool does_intersect(const sphere& s, const ray& r, double& distance)
 		{
 			Base::vec3 l = s.center - r.origin;
 			double tca = dot(l, r.dir);
@@ -23,7 +23,7 @@ namespace Engine
 		}
 
 		RUN_ON_GPU
-		bool detect_hit(model& model, ray& ray, hit& hit_item, double& tnear)
+		static bool detect_hit(model& model, ray& ray, hit& hit_item, double& tnear)
 		{
 			double t0 = get_infinity();
 			sphere* spheres = (sphere*)model.dshapes;

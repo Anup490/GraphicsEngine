@@ -1,13 +1,13 @@
 #include "EngineCore.cuh"
-#include "Maths.h"
-#include "Vector.h"
+#include "Maths.cuh"
+#include "Vector.cuh"
 
 namespace Engine
 {
 	namespace Box
 	{
 		RUN_ON_GPU
-		face get_face(const Base::box* pbox, const Base::vec3& phit)
+		static face get_face(const Base::box* pbox, const Base::vec3& phit)
 		{
 			if (equal(phit.x, pbox->max.x)) return face::LEFT;
 			if (equal(phit.x, pbox->min.x)) return face::RIGHT;
@@ -19,7 +19,7 @@ namespace Engine
 		}
 
 		RUN_ON_GPU
-		Base::vec3 calculate_normal(const Base::box* pbox, const Base::vec3& phit)
+		static Base::vec3 calculate_normal(const Base::box* pbox, const Base::vec3& phit)
 		{
 			face f = get_face(pbox, phit);
 			Base::vec3 inside{};
@@ -30,7 +30,7 @@ namespace Engine
 		}
 
 		RUN_ON_GPU
-		bool does_intersect(const Base::box& b, const ray& r, double& distance)
+		static bool does_intersect(const Base::box& b, const ray& r, double& distance)
 		{
 			double txmin = (b.min.x - r.origin.x) / r.dir.x;
 			double txmax = (b.max.x - r.origin.x) / r.dir.x;
@@ -55,7 +55,7 @@ namespace Engine
 		}
 
 		RUN_ON_GPU
-		bool detect_hit(model& model, ray& ray, hit& hit_item, double& tnear)
+		static bool detect_hit(model& model, ray& ray, hit& hit_item, double& tnear)
 		{
 			double t0 = get_infinity();
 			Base::box* boxes = (Base::box*)model.dshapes;

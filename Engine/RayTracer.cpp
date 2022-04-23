@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "RayTracer.h"
 #include "RayTracerCore.cuh"
-#include "Vector.h"
-#include "Matrix.h"
+#include "Vector.cuh"
+#include "Matrix.cuh"
 #include <memory>
 #include <vector>
 
@@ -30,12 +30,12 @@ namespace Engine
 		pcore->ppixels->data = drgbs;
 	}
 
-	std::unique_ptr<rgb> RayTracer::render(input i, Projection proj_type) throw(RayTraceException)
+	std::unique_ptr<rgb> RayTracer::render(raytrace_input i, Projection proj_type) throw(RayTraceException)
 	{
 		if (!pcore->dgpumodels || !pcore->ppixels) throw RayTraceException("init function not called");
 		i.dworld = pcore->dworld;
 		pcore->update_camera(i);
-		input* dinput = pcore->prepare_inputs(i);
+		raytrace_input* dinput = pcore->prepare_inputs(i);
 		draw_frame(*pcore->ppixels, dinput, proj_type);
 		cudaDeviceSynchronize();
 		int size = (pcore->ppixels->width) * (pcore->ppixels->height);
@@ -154,9 +154,9 @@ namespace Engine
 		return triangle{ a.position,b.position,c.position,ab,bc,ca,a.texcoord,b.texcoord,c.texcoord,normal,plane_distance,area };
 	}
 
-	input* RayTracerCore::prepare_inputs(input& i)
+	raytrace_input* RayTracerCore::prepare_inputs(raytrace_input& i)
 	{
-		input* dinput;
+		raytrace_input* dinput;
 		double* dtranslator;
 		double* drotator;
 		cudaMalloc(&dtranslator, sizeof(double) * i.translator.size);
@@ -165,8 +165,8 @@ namespace Engine
 		cudaMemcpy(drotator, i.rotator.pmatrix, sizeof(double) * i.rotator.size, cudaMemcpyHostToDevice);
 		i.translator.pmatrix = dtranslator;
 		i.rotator.pmatrix = drotator;
-		cudaMalloc(&dinput, sizeof(input));
-		cudaMemcpy(dinput, &i, sizeof(input), cudaMemcpyHostToDevice);
+		cudaMalloc(&dinput, sizeof(raytrace_input));
+		cudaMemcpy(dinput, &i, sizeof(raytrace_input), cudaMemcpyHostToDevice);
 		return dinput;
 	}
 
@@ -184,7 +184,7 @@ namespace Engine
 		return dcubemap;
 	}
 
-	void RayTracerCore::update_camera(input& i)
+	void RayTracerCore::update_camera(raytrace_input& i)
 	{
 		if (camera_index >= 0)
 		{

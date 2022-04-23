@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "CppUnitTest.h"
-#include "Vector.h"
-#include "Engine.h"
+#include "Triangle.cuh"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 using namespace Engine;

@@ -28,13 +28,16 @@
     <Filter Include="Source Files\RayTracer">
       <UniqueIdentifier>{6666d684-137c-49e4-b7e0-4bf7117560b5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Private\Rasterizer">
+      <UniqueIdentifier>{c6a40b6e-0c37-4e8a-9b74-e80201f77d9e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Rasterizer">
+      <UniqueIdentifier>{23640dbf-621c-44d6-b35f-a8c81cd77443}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="RayTracer.h">
-      <Filter>Header Files\Public</Filter>
     </ClInclude>
     <ClInclude Include="framework.h">
       <Filter>Header Files</Filter>
@@ -51,13 +54,7 @@
     <ClInclude Include="Maths.cuh">
       <Filter>Header Files\Private\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="Maths.h">
-      <Filter>Header Files\Private\Utils</Filter>
-    </ClInclude>
     <ClInclude Include="Matrix.cuh">
-      <Filter>Header Files\Private\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Matrix.h">
       <Filter>Header Files\Private\Utils</Filter>
     </ClInclude>
     <ClInclude Include="Sphere.cuh">
@@ -72,9 +69,6 @@
     <ClInclude Include="Vector.cuh">
       <Filter>Header Files\Private\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="Vector.h">
-      <Filter>Header Files\Private\Utils</Filter>
-    </ClInclude>
     <ClInclude Include="RayTracerCore.cuh">
       <Filter>Header Files\Private\RayTracer</Filter>
     </ClInclude>
@@ -82,6 +76,15 @@
       <Filter>Header Files\Private\RayTracer</Filter>
     </ClInclude>
     <ClInclude Include="Engine.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="RasterizerCore.cuh">
+      <Filter>Header Files\Private\Rasterizer</Filter>
+    </ClInclude>
+    <ClInclude Include="Rasterizer.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="RayTracer.h">
       <Filter>Header Files\Public</Filter>
     </ClInclude>
   </ItemGroup>
@@ -92,10 +95,16 @@
     <ClCompile Include="RayTracer.cpp">
       <Filter>Source Files\RayTracer</Filter>
     </ClCompile>
+    <ClCompile Include="Rasterizer.cpp">
+      <Filter>Source Files\Rasterizer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="RayTracerCore.cu">
       <Filter>Source Files\RayTracer</Filter>
+    </CudaCompile>
+    <CudaCompile Include="RasterizerCore.cu">
+      <Filter>Source Files\Rasterizer</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

@@ -8,7 +8,7 @@
 namespace Engine
 {
 	RUN_ON_GPU
-	Base::vec3 get_texcoord(const void* hit_shape, const Base::vec3& p, Base::shape_type shape)
+	static Base::vec3 get_texcoord(const void* hit_shape, const Base::vec3& p, Base::shape_type shape)
 	{
 		if (shape == Base::shape_type::TRIANGLE)
 		{
@@ -19,7 +19,7 @@ namespace Engine
 	}
 
 	RUN_ON_GPU
-	Base::vec3 get_color(const hit& hit_item, const Base::texture& tex, const ray& rray)
+	static Base::vec3 get_color(const hit& hit_item, const Base::texture& tex, const ray& rray)
 	{
 		if (!tex.ptextures) return hit_item.pmodel->surface_color;
 		if (hit_item.pmodel->s_type == Base::shape_type::TRIANGLE)
@@ -43,7 +43,7 @@ namespace Engine
 	}
 
 	RUN_ON_GPU
-	Base::vec3 get_specular_val(const hit& hit_item, const Base::texture& tex, const ray& rray)
+	static Base::vec3 get_specular_val(const hit& hit_item, const Base::texture& tex, const ray& rray)
 	{
 		if (!tex.ptextures) return Base::vec3{ hit_item.pmodel->smoothness,hit_item.pmodel->smoothness,hit_item.pmodel->smoothness };
 		Base::vec3 texcoord = get_texcoord(hit_item.shape, rray.phit, hit_item.pmodel->s_type);
@@ -51,7 +51,7 @@ namespace Engine
 	}
 
 	RUN_ON_GPU
-	bool detect_hit(const world& models, ray& ray, hit& hit_item)
+	static bool detect_hit(const world& models, ray& ray, hit& hit_item)
 	{
 		double tnear = INFINITY;
 		bool hit = false;
@@ -96,7 +96,7 @@ namespace Engine
 	}
 
 	RUN_ON_GPU
-	double get_glow_by_shape(const model& model, const ray& shadow_ray, double& t0)
+	static double get_glow_by_shape(const model& model, const ray& shadow_ray, double& t0)
 	{
 		double glow = 1.0;
 		if (model.s_type == Base::shape_type::TRIANGLE)
@@ -139,7 +139,7 @@ namespace Engine
 	}
 
 	RUN_ON_GPU
-	Base::vec3 get_background_reflection(const hit& hit_item, const ray& rray, const Base::cubemap* pcubemap)
+	static Base::vec3 get_background_reflection(const hit& hit_item, const ray& rray, const Base::cubemap* pcubemap)
 	{
 		Base::vec3 dir;
 		if (hit_item.pmodel->s_type == Base::shape_type::TRIANGLE)

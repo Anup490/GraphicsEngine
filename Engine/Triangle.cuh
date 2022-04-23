@@ -1,25 +1,25 @@
 #pragma once
 #include "EngineCore.cuh"
-#include "Vector.h"
+#include "Vector.cuh"
 
 namespace Engine
 {
 	namespace Triangle
 	{
 		RUN_ON_CPU_AND_GPU
-		double edge_function(const Base::vec3& a, const Base::vec3& b, const Base::vec3& c)
+		static double edge_function(const Base::vec3& a, const Base::vec3& b, const Base::vec3& c)
 		{
 			return ((a.x - b.x) * (c.y - a.y)) - ((a.y - b.y) * (c.x - a.x));
 		}
 
 		RUN_ON_CPU_AND_GPU
-		bool is_inside(const triangle& t, const Base::vec3& p)
+		static bool is_inside(const triangle& t, const Base::vec3& p)
 		{
 			return (edge_function(t.c, t.a, p) < 0.0f) && (edge_function(p, t.a, t.b) < 0.0f) && (edge_function(t.c, p, t.b) < 0.0f);
 		}
 
 		RUN_ON_CPU_AND_GPU
-		bool does_intersect(const triangle& t, const ray& r, double& distance)
+		static bool does_intersect(const triangle& t, const ray& r, double& distance)
 		{
 			double dir_normal_dot = dot(r.dir, t.normal);
 			if (dir_normal_dot >= 0.0f) return false;
@@ -32,7 +32,7 @@ namespace Engine
 		}
 
 		RUN_ON_CPU_AND_GPU
-		Base::vec3 get_texcoord(const triangle& t, const Base::vec3& p)
+		static Base::vec3 get_texcoord(const triangle& t, const Base::vec3& p)
 		{
 			double cap_area = length(cross(t.ca, p - t.a));
 			double abp_area = length(cross(t.ab, p - t.b));
@@ -44,7 +44,7 @@ namespace Engine
 		}
 
 		RUN_ON_CPU_AND_GPU
-		bool detect_hit(model& model, ray& ray, hit& hit_item, double& tnear)
+		static bool detect_hit(model& model, ray& ray, hit& hit_item, double& tnear)
 		{
 			double t0 = INFINITY;
 			triangle* triangles = (triangle*)model.dshapes;

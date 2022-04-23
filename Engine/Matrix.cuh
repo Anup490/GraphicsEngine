@@ -3,7 +3,7 @@
 namespace Engine
 {
 	RUN_ON_CPU_AND_GPU
-	Base::vec3 operator*(const Base::mat4& m, const Base::vec3& v)
+	static Base::vec3 operator*(const Base::mat4& m, const Base::vec3& v)
 	{
 		double x = m.pmatrix[0] * v.x + m.pmatrix[1] * v.y + m.pmatrix[2] * v.z + m.pmatrix[3];
 		double y = m.pmatrix[4] * v.x + m.pmatrix[5] * v.y + m.pmatrix[6] * v.z + m.pmatrix[7];
@@ -13,7 +13,7 @@ namespace Engine
 	}
 
 	RUN_ON_CPU_AND_GPU
-	Base::mat4 operator*(const Base::mat4& m1, const Base::mat4& m2)
+	static Base::mat4 operator*(const Base::mat4& m1, const Base::mat4& m2)
 	{
 		Base::mat4 m;
 		m.pmatrix = new double[16];
