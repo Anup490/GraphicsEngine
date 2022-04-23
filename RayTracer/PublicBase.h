@@ -1,5 +1,5 @@
 #pragma once
-#include "Core.h"
+#include "Base.h"
 
 namespace RayTracer
 {
@@ -19,8 +19,8 @@ namespace RayTracer
 	{
 		void* dworld;
 		double fov = 90.0;
-		Core::mat4 translator;
-		Core::mat4 rotator;
+		Base::mat4 translator;
+		Base::mat4 rotator;
 	};
 
 	enum class Projection { PERSPECTIVE, ORTHOGRAPHIC };

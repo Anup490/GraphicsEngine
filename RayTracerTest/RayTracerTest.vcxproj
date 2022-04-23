@@ -83,7 +83,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>D:\Projects\C++\GraphicsEngine\Core;D:\Projects\C++\GraphicsEngine\RayTracer;$(IncludePath)</IncludePath>
+    <IncludePath>D:\Projects\C++\GraphicsEngine\Base;D:\Projects\C++\GraphicsEngine\RayTracer;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

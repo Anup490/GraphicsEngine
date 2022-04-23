@@ -81,7 +81,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>D:\Projects\C++\GraphicsEngine\Core;$(IncludePath)</IncludePath>
+    <IncludePath>D:\Projects\C++\GraphicsEngine\Base;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -185,12 +185,12 @@
     <ClCompile Include="RayTracer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Core\Core.vcxproj">
-      <Project>{82a2dd1a-84f4-40de-ab87-e599ca1c809c}</Project>
-    </ProjectReference>
+    <CudaCompile Include="Core.cu" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="Core.cu" />
+    <ProjectReference Include="..\Base\Base.vcxproj">
+      <Project>{55c88d36-2b5d-44e7-8102-44ee13c007bf}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

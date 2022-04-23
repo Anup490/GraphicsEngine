@@ -7,7 +7,7 @@ namespace RayTracer
 	namespace Box
 	{
 		RUN_ON_GPU
-		face get_face(const Core::box* pbox, const Core::vec3& phit)
+		face get_face(const Base::box* pbox, const Base::vec3& phit)
 		{
 			if (equal(phit.x, pbox->max.x)) return face::LEFT;
 			if (equal(phit.x, pbox->min.x)) return face::RIGHT;
@@ -19,18 +19,18 @@ namespace RayTracer
 		}
 
 		RUN_ON_GPU
-		Core::vec3 calculate_normal(const Core::box* pbox, const Core::vec3& phit)
+		Base::vec3 calculate_normal(const Base::box* pbox, const Base::vec3& phit)
 		{
 			face f = get_face(pbox, phit);
-			Core::vec3 inside{};
-			if ((f == face::LEFT) || (f == face::RIGHT)) inside = Core::vec3{ pbox->center.x, phit.y, phit.z };
-			if ((f == face::TOP) || (f == face::BOTTOM)) inside = Core::vec3{ phit.x, pbox->center.y, phit.z };
-			if ((f == face::FRONT) || (f == face::BACK)) inside = Core::vec3{ phit.x, phit.y, pbox->center.z };
+			Base::vec3 inside{};
+			if ((f == face::LEFT) || (f == face::RIGHT)) inside = Base::vec3{ pbox->center.x, phit.y, phit.z };
+			if ((f == face::TOP) || (f == face::BOTTOM)) inside = Base::vec3{ phit.x, pbox->center.y, phit.z };
+			if ((f == face::FRONT) || (f == face::BACK)) inside = Base::vec3{ phit.x, phit.y, pbox->center.z };
 			return phit - inside;
 		}
 
 		RUN_ON_GPU
-		bool does_intersect(const Core::box& b, const ray& r, double& distance)
+		bool does_intersect(const Base::box& b, const ray& r, double& distance)
 		{
 			double txmin = (b.min.x - r.origin.x) / r.dir.x;
 			double txmax = (b.max.x - r.origin.x) / r.dir.x;
@@ -58,7 +58,7 @@ namespace RayTracer
 		bool detect_hit(model& model, ray& ray, hit& hit_item, double& tnear)
 		{
 			double t0 = get_infinity();
-			Core::box* boxes = (Core::box*)model.dshapes;
+			Base::box* boxes = (Base::box*)model.dshapes;
 			bool hit = false;
 			for (unsigned i = 0; i < model.shapes_size; i++)
 			{

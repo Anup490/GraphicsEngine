@@ -7,13 +7,13 @@ namespace RayTracer
 	namespace Triangle
 	{
 		RUN_ON_CPU_AND_GPU
-		double edge_function(const Core::vec3& a, const Core::vec3& b, const Core::vec3& c)
+		double edge_function(const Base::vec3& a, const Base::vec3& b, const Base::vec3& c)
 		{
 			return ((a.x - b.x) * (c.y - a.y)) - ((a.y - b.y) * (c.x - a.x));
 		}
 
 		RUN_ON_CPU_AND_GPU
-		bool is_inside(const triangle& t, const Core::vec3& p)
+		bool is_inside(const triangle& t, const Base::vec3& p)
 		{
 			return (edge_function(t.c, t.a, p) < 0.0f) && (edge_function(p, t.a, t.b) < 0.0f) && (edge_function(t.c, p, t.b) < 0.0f);
 		}
@@ -26,13 +26,13 @@ namespace RayTracer
 			double origin_normal_dot = dot(r.origin, t.normal);
 			distance = ((t.plane_distance + origin_normal_dot) / dir_normal_dot) * -1.0f;
 			if (distance <= 0.0f) return false;
-			Core::vec3 point = r.origin + r.dir * distance;
+			Base::vec3 point = r.origin + r.dir * distance;
 			if (!is_inside(t, point)) return false;
 			return true;
 		}
 
 		RUN_ON_CPU_AND_GPU
-		Core::vec3 get_texcoord(const triangle& t, const Core::vec3& p)
+		Base::vec3 get_texcoord(const triangle& t, const Base::vec3& p)
 		{
 			double cap_area = length(cross(t.ca, p - t.a));
 			double abp_area = length(cross(t.ab, p - t.b));

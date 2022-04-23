@@ -35,9 +35,9 @@ namespace RayTracer
 	}
 
 	RUN_ON_CPU_AND_GPU
-	Core::vec3 get_clamped(const Core::vec3& unclamped)
+	Base::vec3 get_clamped(const Base::vec3& unclamped)
 	{
-		Core::vec3 clamped = unclamped;
+		Base::vec3 clamped = unclamped;
 		if (unclamped.x > 1.0) clamped.x = 1.0;
 		else if (unclamped.x < 0.0) clamped.x = 0.0;
 		if (unclamped.y > 1.0) clamped.y = 1.0;

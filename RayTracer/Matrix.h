@@ -1,8 +1,8 @@
 #pragma once
-#include "Core.h"
+#include "Base.h"
 
 namespace RayTracer
 {
-	Core::vec3 operator*(const Core::mat4& m, const Core::vec3& v);
-	Core::mat4 operator*(const Core::mat4& m1, const Core::mat4& m2);
+	Base::vec3 operator*(const Base::mat4& m, const Base::vec3& v);
+	Base::mat4 operator*(const Base::mat4& m1, const Base::mat4& m2);
 }

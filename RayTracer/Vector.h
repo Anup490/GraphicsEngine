@@ -1,19 +1,19 @@
 #pragma once
-#include "Core.h"
+#include "Base.h"
 
 namespace RayTracer
 {
-	double dot(const Core::vec3& v1, const Core::vec3& v2);
-	double length(const Core::vec3& v1);
-	void normalize(Core::vec3& v1);
-	Core::vec3 cross(const Core::vec3& v1, const Core::vec3& v2);
-	Core::vec3 operator*(const Core::vec3& v1, const double& f);
-	Core::vec3 operator+(const Core::vec3& v1, const Core::vec3& v2);
-	Core::vec3 operator*(const Core::vec3& v1, const Core::vec3& v2);
-	Core::vec3 operator-(const Core::vec3& v1, const Core::vec3& v2);
-	Core::vec3 operator-(const Core::vec3& v1);
-	Core::vec3& operator+=(Core::vec3& v1, const Core::vec3& v2);
-	Core::vec3& operator*=(Core::vec3& v1, const Core::vec3& v2);
-	Core::vec3& operator-=(Core::vec3& v1, const Core::vec3& v2);
+	double dot(const Base::vec3& v1, const Base::vec3& v2);
+	double length(const Base::vec3& v1);
+	void normalize(Base::vec3& v1);
+	Base::vec3 cross(const Base::vec3& v1, const Base::vec3& v2);
+	Base::vec3 operator*(const Base::vec3& v1, const double& f);
+	Base::vec3 operator+(const Base::vec3& v1, const Base::vec3& v2);
+	Base::vec3 operator*(const Base::vec3& v1, const Base::vec3& v2);
+	Base::vec3 operator-(const Base::vec3& v1, const Base::vec3& v2);
+	Base::vec3 operator-(const Base::vec3& v1);
+	Base::vec3& operator+=(Base::vec3& v1, const Base::vec3& v2);
+	Base::vec3& operator*=(Base::vec3& v1, const Base::vec3& v2);
+	Base::vec3& operator-=(Base::vec3& v1, const Base::vec3& v2);
 }
 

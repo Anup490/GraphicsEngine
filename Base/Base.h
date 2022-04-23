@@ -8,7 +8,7 @@ namespace std
 	template <class _Ty, class _Alloc = allocator<_Ty>>
 	class vector;
 }
-namespace Core
+namespace Base
 {
 	enum class shape_type { TRIANGLE, SPHERE, BOX };
 	enum class model_type { LIGHT, CAMERA, OBJECT };
@@ -63,7 +63,7 @@ namespace Core
 	struct model_info
 	{
 		const char* file_path;
-		Core::vec3 position;
+		Base::vec3 position;
 	};
 
 	struct triangle
@@ -74,11 +74,11 @@ namespace Core
 	struct sphere
 	{
 		double radius = 0.0;
-		Core::vec3 center;
+		Base::vec3 center;
 	};
 
 	struct box
 	{
-		Core::vec3 min, max, center{ (min.x + max.x)/2.0, (min.y + max.y) / 2.0, (min.z + max.z) / 2.0 };
+		Base::vec3 min, max, center{ (min.x + max.x) / 2.0, (min.y + max.y) / 2.0, (min.z + max.z) / 2.0 };
 	};
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "Core.h"
+#include "Base.h"
 
 #include <exception>
 
@@ -25,8 +25,8 @@ struct FileReadException : std::exception
 	char const* what() const override { return message.c_str(); }
 };
 
-std::shared_ptr<std::vector<Core::model*>> prepare_data(Core::model*& pcamera);
-void delete_data(std::shared_ptr<std::vector<Core::model*>> pmodels);
-std::unique_ptr<Core::cubemap> prepare_cubemap(const char* file_path);
+std::shared_ptr<std::vector<Base::model*>> prepare_data(Base::model*& pcamera);
+void delete_data(std::shared_ptr<std::vector<Base::model*>> pmodels);
+std::unique_ptr<Base::cubemap> prepare_cubemap(const char* file_path);
 std::string extract_file(const char* path);
-void delete_cubemap(std::unique_ptr<Core::cubemap>& pcubemap);
+void delete_cubemap(std::unique_ptr<Base::cubemap>& pcubemap);

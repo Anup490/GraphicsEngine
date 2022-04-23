@@ -11,9 +11,9 @@ double fov = 90.0, last_x = 0.0, last_y = 0.0, yaw = 0.0, pitch = 0.0;
 bool lmb_hold = false, first_lmb = true;
 int window_width = 1024, window_height = 768;
 
-Core::model* pcamera = 0;
+Base::model* pcamera = 0;
 RayTracer::Projection proj_type = RayTracer::Projection::PERSPECTIVE;
-Core::vec3 translater;
+Base::vec3 translater;
 
 void check_btn_press(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -28,8 +28,8 @@ void main()
 	RayTracer::input i;
 	try
 	{
-		std::shared_ptr<std::vector<Core::model*>> pmodels = prepare_data(pcamera);
-		std::unique_ptr<Core::cubemap> pcubemap = prepare_cubemap("D:/Projects/C++/3DImporter/Assets/skybox");
+		std::shared_ptr<std::vector<Base::model*>> pmodels = prepare_data(pcamera);
+		std::unique_ptr<Base::cubemap> pcubemap = prepare_cubemap("D:/Projects/C++/3DImporter/Assets/skybox");
 		RayTracer::init(pmodels, pcubemap.get(), window_width, window_height);
 		init_called = true;
 		delete_cubemap(pcubemap);

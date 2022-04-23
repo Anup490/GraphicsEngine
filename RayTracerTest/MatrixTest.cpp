@@ -11,8 +11,8 @@ namespace RayTracerTest
 	{
 		TEST_METHOD(MatrixVectorMultiplication)
 		{
-			Core::vec3 v1{ 1, 2, 3 };
-			Core::mat4 m;
+			Base::vec3 v1{ 1, 2, 3 };
+			Base::mat4 m;
 			double matrix[16];
 			matrix[0] = 1;
 			matrix[1] = 2;
@@ -31,7 +31,7 @@ namespace RayTracerTest
 			matrix[14] = 15;
 			matrix[15] = 16;
 			m.pmatrix = matrix;
-			Core::vec3 v2 = m * v1;
+			Base::vec3 v2 = m * v1;
 			Assert::AreEqual(v2.x, 18.0);
 			Assert::AreEqual(v2.y, 46.0);
 			Assert::AreEqual(v2.z, 74.0);
@@ -39,7 +39,7 @@ namespace RayTracerTest
 
 		TEST_METHOD(MatrixMatrixMultiplication)
 		{
-			Core::mat4 m1;
+			Base::mat4 m1;
 			double matrix1[16];
 			matrix1[0] = 1;
 			matrix1[1] = 2;
@@ -58,7 +58,7 @@ namespace RayTracerTest
 			matrix1[14] = 15;
 			matrix1[15] = 16;
 			m1.pmatrix = matrix1;
-			Core::mat4 m2;
+			Base::mat4 m2;
 			double matrix2[16];
 			matrix2[0] = 3;
 			matrix2[1] = 4;
@@ -77,7 +77,7 @@ namespace RayTracerTest
 			matrix2[14] = 1;
 			matrix2[15] = 9;
 			m2.pmatrix = matrix2;
-			Core::mat4 m = m1 * m2;
+			Base::mat4 m = m1 * m2;
 			Assert::AreEqual(m.pmatrix[0], 45.0);
 			Assert::AreEqual(m.pmatrix[1], 63.0);
 			Assert::AreEqual(m.pmatrix[2], 29.0);

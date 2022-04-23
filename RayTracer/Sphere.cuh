@@ -10,7 +10,7 @@ namespace RayTracer
 		RUN_ON_GPU
 		bool does_intersect(const sphere& s, const ray& r, double& distance)
 		{
-			Core::vec3 l = s.center - r.origin;
+			Base::vec3 l = s.center - r.origin;
 			double tca = dot(l, r.dir);
 			double d_square = dot(l, l) - (tca * tca);
 			if (d_square > s.radius_square) return false;
