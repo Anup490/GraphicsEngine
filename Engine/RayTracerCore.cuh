@@ -3,7 +3,7 @@
 
 namespace Engine
 {
-	void draw_frame(pixels pixels, raytrace_input* dinput, Projection proj_type);
+	void draw_frame(pixels pixels, const world* dworld, const raytrace_input* dinput);
 
 	struct RayTracerCore
 	{

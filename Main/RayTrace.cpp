@@ -269,6 +269,9 @@ namespace RayTrace
 	void prepare_raytrace_input(Engine::raytrace_input& i)
 	{
 		i.fov = fov;
+		i.near = (proj_type == Engine::Projection::PERSPECTIVE) ? 1.0 : 20.0;
+		i.far = i.near + 100.0;
+		i.proj_type = proj_type;
 
 		i.translator.pmatrix = new double[16];
 		i.translator.pmatrix[0] = 1;

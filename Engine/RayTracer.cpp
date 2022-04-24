@@ -33,10 +33,9 @@ namespace Engine
 	std::unique_ptr<rgb> RayTracer::render(raytrace_input i, Projection proj_type) throw(RayTraceException)
 	{
 		if (!pcore->dgpumodels || !pcore->ppixels) throw RayTraceException("init function not called");
-		i.dworld = pcore->dworld;
 		pcore->update_camera(i);
 		raytrace_input* dinput = pcore->prepare_inputs(i);
-		draw_frame(*pcore->ppixels, dinput, proj_type);
+		draw_frame(*pcore->ppixels, pcore->dworld, dinput);
 		cudaDeviceSynchronize();
 		int size = (pcore->ppixels->width) * (pcore->ppixels->height);
 		rgb* prgbs = new rgb[size];

@@ -12,40 +12,38 @@ namespace Engine
 
 	enum class ColorType { REFLECTION, REFRACTION };
 
-	RUN_ON_GPU_CALL_FROM_CPU void render(pixels pixels, const raytrace_input* draytrace_input, Projection proj_type);
+	RUN_ON_GPU_CALL_FROM_CPU void render(pixels pixels, const world* dworld, const raytrace_input* dinput);
 	RUN_ON_GPU Base::vec3 cast_primary_ray(const world& models, ray& ray);
 	RUN_ON_GPU Base::vec3 cast_second_ray(const ColorType type, const world& models, const hit& first_hit, ray& ray);
 	RUN_ON_GPU Base::vec3 get_reflect_dir(const Base::vec3& incident_dir, const Base::vec3& nhit);
 	RUN_ON_GPU Base::vec3 get_refract_dir(const Base::vec3& incident_dir, const Base::vec3& nhit, const bool& inside);
 	RUN_ON_GPU Base::vec3 cast_shadow_ray(const world& models, const hit& hit, ray& rray);
-	RUN_ON_GPU model* get_camera(const raytrace_input* draytrace_input);
+	RUN_ON_GPU model* get_camera(const world* dworld, const raytrace_input* dinput);
 	RUN_ON_GPU double get_glow(const unsigned light_index, const world& models, const ray& shadow_ray);
 }
 
-void Engine::draw_frame(Engine::pixels pixels, raytrace_input* draytrace_input, Projection proj_type)
+void Engine::draw_frame(Engine::pixels pixels, const world* dworld, const raytrace_input* dinput)
 {
 	dim3 block_size(32, 32, 1);
 	dim3 grid_size(pixels.width / 32, pixels.height / 32, 1);
-	render << < grid_size, block_size >> > (pixels, draytrace_input, proj_type);
+	render << < grid_size, block_size >> > (pixels, dworld, dinput);
 }
 
 RUN_ON_GPU_CALL_FROM_CPU
-void Engine::render(Engine::pixels pixels, const raytrace_input* draytrace_input, Projection proj_type)
+void Engine::render(Engine::pixels pixels, const world* dworld, const raytrace_input* dinput)
 {
 	double aspect_ratio = pixels.width / pixels.height;
-	double tan_val = tangent(draytrace_input->fov / 2.0);
+	double tan_val = tangent(dinput->fov / 2.0);
 	int tx = blockIdx.x * blockDim.x + threadIdx.x;
 	int ty = blockIdx.y * blockDim.y + threadIdx.y;
-	double near_plane = (proj_type == Projection::PERSPECTIVE) ? 1.0 : 20.0;
 	int index = (ty * pixels.width) + tx;
-	double x = ((2.0 * ((tx + 0.5) / pixels.width)) - 1.0) * aspect_ratio * tan_val * near_plane;
-	double y = (1.0 - (2.0 * ((ty + 0.5) / pixels.height))) * tan_val * near_plane;
-	world* dworld = (world*)(draytrace_input->dworld);
-	if(!pcamera) pcamera = get_camera(draytrace_input);
-	Base::vec3 dir = (proj_type == Projection::PERSPECTIVE) ? Base::vec3{ x, y, -near_plane } : Base::vec3{ 0.0, 0.0, -near_plane };
+	double x = ((2.0 * ((tx + 0.5) / pixels.width)) - 1.0) * aspect_ratio * tan_val * dinput->near;
+	double y = (1.0 - (2.0 * ((ty + 0.5) / pixels.height))) * tan_val * dinput->near;
+	if(!pcamera) pcamera = get_camera(dworld, dinput);
+	Base::vec3 dir = (dinput->proj_type == Projection::PERSPECTIVE) ? Base::vec3{ x, y, -dinput->near } : Base::vec3{ 0.0, 0.0, -dinput->near };
 	normalize(dir);
-	Base::vec3 origin = (proj_type == Projection::PERSPECTIVE) ? Base::vec3{} : Base::vec3{ x, y };
-	if (proj_type == Projection::PERSPECTIVE) dir = draytrace_input->rotator * dir;
+	Base::vec3 origin = (dinput->proj_type == Projection::PERSPECTIVE) ? Base::vec3{} : Base::vec3{ x, y };
+	if (dinput->proj_type == Projection::PERSPECTIVE) dir = dinput->rotator * dir;
 	origin = pcamera->position;
 	ray pray{ origin, dir };
 	Base::vec3 color = cast_primary_ray(*dworld, pray);
@@ -156,10 +154,9 @@ Base::vec3 Engine::cast_shadow_ray(const world& models, const hit& hit, ray& rra
 }
 
 RUN_ON_GPU
-Engine::model* Engine::get_camera(const raytrace_input* draytrace_input)
+Engine::model* Engine::get_camera(const world* dworld, const raytrace_input* dinput)
 {
 	model* pcamera = 0;
-	world* dworld = (world*)draytrace_input->dworld;
 	for (unsigned i = 0; i < dworld->size; i++)
 	{
 		model* pmodel = &(dworld->models)[i];

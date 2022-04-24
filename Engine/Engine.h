@@ -31,8 +31,10 @@ namespace Engine
 
 	struct raytrace_input
 	{
-		void* dworld;
 		double fov = 90.0;
+		double near = 0.0;
+		double far = 0.0;
+		Projection proj_type;
 		Base::mat4 translator;
 		Base::mat4 rotator;
 	};
