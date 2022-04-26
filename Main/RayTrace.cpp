@@ -5,6 +5,7 @@
 #include "RayTracer.h"
 #include <glad/glad.h>
 #include <glfw3.h>
+#define _USE_MATH_DEFINES
 #include <math.h>
 
 namespace RayTrace
@@ -47,10 +48,10 @@ namespace RayTrace
 
 			GLfloat square_vertices[] =
 			{
-				-1.0f, -1.0f, 0.0f,   1.0f, 1.0f,
-				 1.0f, -1.0f, 0.0f,   0.0f, 1.0f,
-				-1.0f,  1.0f, 0.0f,   1.0f, 0.0f,
-				 1.0f,  1.0f, 0.0f,   0.0f, 0.0f
+				-1.0f, -1.0f, 0.0f,   0.0f, 1.0f,
+				 1.0f, -1.0f, 0.0f,   1.0f, 1.0f,
+				-1.0f,  1.0f, 0.0f,   0.0f, 0.0f,
+				 1.0f,  1.0f, 0.0f,   1.0f, 0.0f
 			};
 
 			GLuint square_indices[] =
@@ -189,9 +190,9 @@ namespace RayTrace
 		}
 		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 		{
-			translater.x += pcamera->right.x;
-			translater.y += pcamera->right.y;
-			translater.z += pcamera->right.z;
+			translater.x -= pcamera->right.x;
+			translater.y -= pcamera->right.y;
+			translater.z -= pcamera->right.z;
 		}
 		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 		{
@@ -204,9 +205,9 @@ namespace RayTrace
 		}
 		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		{
-			translater.x -= pcamera->right.x;
-			translater.y -= pcamera->right.y;
-			translater.z -= pcamera->right.z;
+			translater.x += pcamera->right.x;
+			translater.y += pcamera->right.y;
+			translater.z += pcamera->right.z;
 		}
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
 		{
@@ -235,7 +236,7 @@ namespace RayTrace
 				double xdiff = xpos - last_x;
 				last_x = xpos;
 				yaw += xdiff;
-				double yaw_in_rad = (yaw * 3.141592653589793) / 180.0;
+				double yaw_in_rad = (yaw * M_PI) / 180.0;
 
 				double ydiff = last_y - ypos;
 				last_y = ypos;
@@ -243,17 +244,17 @@ namespace RayTrace
 				if (pitch > 89.0) pitch = 89.0;
 				if (pitch < -89.0) pitch = -89.0;
 
-				double pitch_in_rad = (pitch * 3.141592653589793) / 180.0;
+				double pitch_in_rad = (pitch * M_PI) / 180.0;
 
 				pcamera->right.x = cos(yaw_in_rad);
 				pcamera->right.y = 0;
-				pcamera->right.z = -sin(yaw_in_rad);
+				pcamera->right.z = sin(yaw_in_rad);
 
-				pcamera->up.x = sin(yaw_in_rad) * sin(pitch_in_rad);
+				pcamera->up.x = -sin(yaw_in_rad) * sin(pitch_in_rad);
 				pcamera->up.y = cos(pitch_in_rad);
 				pcamera->up.z = cos(yaw_in_rad) * sin(pitch_in_rad);
 
-				pcamera->front.x = sin(yaw_in_rad) * cos(pitch_in_rad);
+				pcamera->front.x = -sin(yaw_in_rad) * cos(pitch_in_rad);
 				pcamera->front.y = -sin(pitch_in_rad);
 				pcamera->front.z = cos(yaw_in_rad) * cos(pitch_in_rad);
 			}
