@@ -82,5 +82,13 @@ namespace EngineTest
 			Base::vec3 v = origin + (dir * t);
 			Logger::WriteMessage(to_string(Triangle::get_texcoord(triangle, v)).data());
 		}
+		TEST_METHOD(EdgeFunctionTest)
+		{
+			Base::vec3 a{ 1, 1 };
+			Base::vec3 b{ 5, 2 };
+			Base::vec3 c{ 3, 4 };
+			Base::vec3 p{ 3, 2 };
+			Assert::AreEqual(true, Triangle::is_inside(triangle{ a,b,c }, p));
+		}
 	};
 }

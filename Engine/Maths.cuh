@@ -105,5 +105,11 @@ namespace Engine
 	{
 		return (255.0 * smoothness) + 1.0;
 	}
+
+	RUN_ON_CPU_AND_GPU
+	static unsigned nearest_high_multiple(const double& dividend, const unsigned& divisor)
+	{
+		return unsigned((dividend / divisor + 1)) * divisor;
+	}
 }
 

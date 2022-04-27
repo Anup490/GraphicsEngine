@@ -15,17 +15,17 @@ namespace Engine
 		RUN_ON_CPU_AND_GPU
 		static bool is_inside(const triangle& t, const Base::vec3& p)
 		{
-			return (edge_function(t.c, t.a, p) < 0.0f) && (edge_function(p, t.a, t.b) < 0.0f) && (edge_function(t.c, p, t.b) < 0.0f);
+			return (edge_function(t.c, t.a, p) <= 0.0) && (edge_function(p, t.a, t.b) <= 0.0) && (edge_function(t.c, p, t.b) <= 0.0);
 		}
 
 		RUN_ON_CPU_AND_GPU
 		static bool does_intersect(const triangle& t, const ray& r, double& distance)
 		{
 			double dir_normal_dot = dot(r.dir, t.normal);
-			if (dir_normal_dot >= 0.0f) return false;
+			if (dir_normal_dot >= 0.0) return false;
 			double origin_normal_dot = dot(r.origin, t.normal);
-			distance = ((t.plane_distance + origin_normal_dot) / dir_normal_dot) * -1.0f;
-			if (distance <= 0.0f) return false;
+			distance = ((t.plane_distance + origin_normal_dot) / dir_normal_dot) * -1.0;
+			if (distance <= 0.0) return false;
 			Base::vec3 point = r.origin + r.dir * distance;
 			if (!is_inside(t, point)) return false;
 			return true;

@@ -3,15 +3,20 @@
 
 namespace Engine
 {
+	struct model_data
+	{
+		model* dmodel;
+		unsigned shape_count;
+	};
+
 	void draw_background(pixels pixels, raster_input* dinput, Base::cubemap* dcubemap);
-	void draw_frame(pixels pixels, raster_input* dinput, model* dmodel);
+	void draw_frame(pixels pixels, raster_input* dinput, model_data data);
 
 	struct RasterizerCore
 	{
-		int camera_index = -1;
 		std::vector<unsigned char*>* p_all_textures = 0;
 		std::vector<void*>* p_all_shapes = 0;
-		std::vector<model*>* p_all_models = 0;
+		std::vector<model_data>* p_all_models = 0;
 		pixels* ppixels = 0;
 		Base::cubemap* dcubemap = 0;
 		void prepare_data(const std::shared_ptr<std::vector<Base::model*>> pmodels);

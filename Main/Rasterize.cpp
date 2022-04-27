@@ -5,13 +5,21 @@
 #include "Rasterizer.h"
 #include <glad/glad.h>
 #include <glfw3.h>
+
+#define _USE_MATH_DEFINES
 #include <math.h>
+#define TO_RADIAN(x) (x * M_PI)/180
 
 Base::model* prepare_gltf_model_data(Base::model_info info) throw(FileReadException);
 
 namespace Rasterize
 {
 	int window_width = 1024, window_height = 768;
+	double fov = 90.0;
+	double near_plane = -1.0;
+	double far_plane = -10.0;
+
+	void prepare_raster_input(Engine::raster_input& i);
 
 	void rasterize()
 	{
@@ -22,7 +30,7 @@ namespace Rasterize
 		try
 		{
 			std::shared_ptr<std::vector<Base::model*>> pmodels(new std::vector<Base::model*>);
-			Base::model* pmodel = prepare_gltf_model_data({ "D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf", Base::vec3{0.0,0.0,-3.0} });
+			Base::model* pmodel = prepare_gltf_model_data({ "D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf", Base::vec3{} });
 			pmodels->push_back(pmodel);
 			std::unique_ptr<Base::cubemap> pcubemap = prepare_cubemap("D:/Projects/C++/3DImporter/Assets/skybox");
 			prasterizer = new Engine::Rasterizer(pmodels, pcubemap.get(), window_width, window_height);
@@ -138,7 +146,7 @@ namespace Rasterize
 				glClear(GL_COLOR_BUFFER_BIT);
 				try
 				{
-					//prepare_input(i);
+					prepare_raster_input(i);
 					std::unique_ptr<Engine::rgb> ppixels = prasterizer->render(i);
 					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, ppixels.get());
 				}
@@ -163,6 +171,51 @@ namespace Rasterize
 		if (prasterizer) delete prasterizer;
 		if (i.view.pmatrix) delete[] i.view.pmatrix;
 		if (i.projection.pmatrix) delete[] i.projection.pmatrix;
-		//if (pcamera) delete pcamera;
+	}
+
+	void prepare_raster_input(Engine::raster_input& i)
+	{
+		i.view.pmatrix = new double[16];
+		i.view.pmatrix[0] = 1;
+		i.view.pmatrix[1] = 0;
+		i.view.pmatrix[2] = 0;
+		i.view.pmatrix[3] = 0;
+		i.view.pmatrix[4] = 0;
+		i.view.pmatrix[5] = 1;
+		i.view.pmatrix[6] = 0;
+		i.view.pmatrix[7] = 0;
+		i.view.pmatrix[8] = 0;
+		i.view.pmatrix[9] = 0;
+		i.view.pmatrix[10] = -1;
+		i.view.pmatrix[11] = 3;
+		i.view.pmatrix[12] = 0;
+		i.view.pmatrix[13] = 0;
+		i.view.pmatrix[14] = 0;
+		i.view.pmatrix[15] = 1;
+
+		double n = near_plane;
+		double f = far_plane;
+		double l = n * tan(TO_RADIAN(fov / 2.0));
+		double r = -n * tan(TO_RADIAN(fov / 2.0));
+		double b = n * tan(TO_RADIAN(fov / 2.0));
+		double t = -n * tan(TO_RADIAN(fov / 2.0));
+
+		i.projection.pmatrix = new double[16];
+		i.projection.pmatrix[0] = (2 * n) / (r - l);
+		i.projection.pmatrix[1] = 0;
+		i.projection.pmatrix[2] = (r + l) / (r - l);
+		i.projection.pmatrix[3] = 0;
+		i.projection.pmatrix[4] = 0;
+		i.projection.pmatrix[5] = (2 * n) / (t - b);
+		i.projection.pmatrix[6] = (t + b) / (t - b);
+		i.projection.pmatrix[7] = 0;
+		i.projection.pmatrix[8] = 0;
+		i.projection.pmatrix[9] = 0;
+		i.projection.pmatrix[10] = (-f - n)/(f - n);
+		i.projection.pmatrix[11] = (-2 * f * n) / (f - n);
+		i.projection.pmatrix[12] = 0;
+		i.projection.pmatrix[13] = 0;
+		i.projection.pmatrix[14] = -1;
+		i.projection.pmatrix[15] = 0;
 	}
 }

@@ -12,7 +12,7 @@ namespace Engine
 		if (((width % 32) != 0) || ((height % 32) != 0)) throw RasterizeException("width or height is not a multiple of 32");
 		if (((width < 640) != 0) || ((height < 480) != 0)) throw RasterizeException("minimum acceptable resolution is 640x480");
 		pcore = new RasterizerCore;
-		pcore->p_all_models = new std::vector<model*>;
+		pcore->p_all_models = new std::vector<model_data>;
 		pcore->p_all_shapes = new std::vector<void*>;
 		pcore->p_all_textures = new std::vector<unsigned char*>();
 		pcore->prepare_data(pmodels);
@@ -28,9 +28,9 @@ namespace Engine
 		raster_input* dinput = pcore->prepare_inputs(i);
 		draw_background(*pcore->ppixels, dinput, pcore->dcubemap);
 		cudaDeviceSynchronize();
-		for (model* dmodel : *pcore->p_all_models)
+		for (model_data data : *pcore->p_all_models)
 		{
-			draw_frame(*pcore->ppixels, dinput, dmodel);
+			draw_frame(*pcore->ppixels, dinput, data);
 			cudaDeviceSynchronize();
 		}
 		int size = (pcore->ppixels->width) * (pcore->ppixels->height);
@@ -48,8 +48,8 @@ namespace Engine
 			cudaFree(dshape);
 		for (unsigned char* dtexture : *pcore->p_all_textures)
 			cudaFree(dtexture);
-		for (model* dmodel : *pcore->p_all_models)
-			cudaFree(dmodel);
+		for (model_data data : *pcore->p_all_models)
+			cudaFree(data.dmodel);
 		cudaFree(pcore->dcubemap);
 		cudaFree(pcore->ppixels->data);
 		delete pcore->p_all_shapes;
@@ -84,9 +84,8 @@ namespace Engine
 			model.m_type = pmodel->m_type;
 			cudaMalloc(&dmodel, sizeof(model));
 			cudaMemcpy(dmodel, &model, sizeof(model), cudaMemcpyHostToDevice);
-			p_all_models->push_back(dmodel);
+			p_all_models->push_back(model_data{ dmodel, model.shapes_size });
 			p_all_shapes->push_back(model.dshapes);
-			if (pmodel->m_type == Base::model_type::CAMERA) camera_index = i;
 		}
 	}
 
@@ -147,14 +146,14 @@ namespace Engine
 	raster_input* RasterizerCore::prepare_inputs(raster_input& i)
 	{
 		raster_input* dinput;
-		double* dtranslator;
-		double* drotator;
-		cudaMalloc(&dtranslator, sizeof(double) * i.view.size);
-		cudaMalloc(&drotator, sizeof(double) * i.projection.size);
-		cudaMemcpy(dtranslator, i.view.pmatrix, sizeof(double) * i.view.size, cudaMemcpyHostToDevice);
-		cudaMemcpy(drotator, i.projection.pmatrix, sizeof(double) * i.projection.size, cudaMemcpyHostToDevice);
-		i.view.pmatrix = dtranslator;
-		i.projection.pmatrix = drotator;
+		double* dview;
+		double* dprojection;
+		cudaMalloc(&dview, sizeof(double) * i.view.size);
+		cudaMalloc(&dprojection, sizeof(double) * i.projection.size);
+		cudaMemcpy(dview, i.view.pmatrix, sizeof(double) * i.view.size, cudaMemcpyHostToDevice);
+		cudaMemcpy(dprojection, i.projection.pmatrix, sizeof(double) * i.projection.size, cudaMemcpyHostToDevice);
+		i.view.pmatrix = dview;
+		i.projection.pmatrix = dprojection;
 		cudaMalloc(&dinput, sizeof(raster_input));
 		cudaMemcpy(dinput, &i, sizeof(raster_input), cudaMemcpyHostToDevice);
 		return dinput;
