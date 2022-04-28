@@ -26,6 +26,8 @@ namespace Rasterize
 		std::cout << "Loading..." << std::endl;
 		const char* window_title = "GraphicsEngine";
 		Engine::raster_input i;
+		i.view.pmatrix = new double[16];
+		i.projection.pmatrix = new double[16];
 		Engine::Rasterizer* prasterizer = 0;
 		try
 		{
@@ -175,7 +177,6 @@ namespace Rasterize
 
 	void prepare_raster_input(Engine::raster_input& i)
 	{
-		i.view.pmatrix = new double[16];
 		i.view.pmatrix[0] = 1;
 		i.view.pmatrix[1] = 0;
 		i.view.pmatrix[2] = 0;
@@ -200,7 +201,6 @@ namespace Rasterize
 		double b = n * tan(TO_RADIAN(fov / 2.0));
 		double t = -n * tan(TO_RADIAN(fov / 2.0));
 
-		i.projection.pmatrix = new double[16];
 		i.projection.pmatrix[0] = (2 * n) / (r - l);
 		i.projection.pmatrix[1] = 0;
 		i.projection.pmatrix[2] = (r + l) / (r - l);

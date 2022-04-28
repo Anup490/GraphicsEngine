@@ -28,6 +28,8 @@ namespace RayTrace
 		std::cout << "Loading..." << std::endl;
 		const char* window_title = "GraphicsEngine";
 		Engine::raytrace_input i;
+		i.translator.pmatrix = new double[16];
+		i.rotator.pmatrix = new double[16];
 		Engine::RayTracer* praytracer = 0;
 		try
 		{
@@ -274,7 +276,6 @@ namespace RayTrace
 		i.far = i.near + 100.0;
 		i.proj_type = proj_type;
 
-		i.translator.pmatrix = new double[16];
 		i.translator.pmatrix[0] = 1;
 		i.translator.pmatrix[1] = 0;
 		i.translator.pmatrix[2] = 0;
@@ -292,7 +293,6 @@ namespace RayTrace
 		i.translator.pmatrix[14] = 0;
 		i.translator.pmatrix[15] = 1;
 
-		i.rotator.pmatrix = new double[16];
 		i.rotator.pmatrix[0] = pcamera->right.x;
 		i.rotator.pmatrix[1] = pcamera->up.x;
 		i.rotator.pmatrix[2] = pcamera->front.x;
