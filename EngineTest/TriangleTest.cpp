@@ -81,7 +81,8 @@ namespace EngineTest
 			Triangle::does_intersect(triangle, ray{ origin, dir }, t);
 			Base::vec3 v = origin + (dir * t);
 			Logger::WriteMessage(to_string(Triangle::get_texcoord(triangle, v)).data());
-		}
+		} 
+
 		TEST_METHOD(EdgeFunctionTest)
 		{
 			Base::vec3 a{ 1, 1 };

@@ -9,7 +9,6 @@ namespace Engine
 {
 	RUN_ON_GPU_CALL_FROM_CPU void render_background(pixels pixels, raster_input* draster_input, Base::cubemap* dcubemap);
 	RUN_ON_GPU_CALL_FROM_CPU void render_frame(pixels pixels, raster_input* draster_input, Engine::model* dmodel);
-	RUN_ON_GPU Base::vec3 to_ndc(raster_input* draster_input, Base::vec3& p);
 	RUN_ON_GPU bool is_visible(const Base::vec3& p);
 	RUN_ON_GPU Base::vec3 to_raster(const pixels& pixels, const Base::vec3& ndc);
 }
@@ -46,16 +45,14 @@ void Engine::render_frame(pixels pixels, raster_input* dinput, Engine::model* dm
 	if (index >= (dmodel->shapes_size)) return;
 	triangle* ptriangles = (triangle*)dmodel->dshapes;
 	triangle* ptriangle = ptriangles + index;
-	Base::vec3 a_ndc = to_ndc(dinput, ptriangle->a);
-	Base::vec3 b_ndc = to_ndc(dinput, ptriangle->b);
-	Base::vec3 c_ndc = to_ndc(dinput, ptriangle->c);
+	Base::vec3 a_ndc = dinput->projection * (dinput->view * ptriangle->a);
+	Base::vec3 b_ndc = dinput->projection * (dinput->view * ptriangle->b);
+	Base::vec3 c_ndc = dinput->projection * (dinput->view * ptriangle->c);
 	if (!is_visible(a_ndc) && !is_visible(b_ndc) && !is_visible(c_ndc)) return;
 	double max_ndc_x = Engine::maximum(a_ndc.x, b_ndc.x, c_ndc.x);
 	double max_ndc_y = Engine::maximum(a_ndc.y, b_ndc.y, c_ndc.y);
 	double min_ndc_x = Engine::minimum(a_ndc.x, b_ndc.x, c_ndc.x);
 	double min_ndc_y = Engine::minimum(a_ndc.y, b_ndc.y, c_ndc.y);
-	/* The y values in min_raster and max_raster are swapped as the mapping of y values from ndc to raster is opposite 
-	   i.e -1 is mapped to pixels->height and 1 is mapped to zero.*/
 	Base::vec3 min_raster = to_raster(pixels, Base::vec3{ min_ndc_x, max_ndc_y });
 	Base::vec3 max_raster = to_raster(pixels, Base::vec3{ max_ndc_x, min_ndc_y });
 	Base::vec3 a_raster = to_raster(pixels, a_ndc);
@@ -76,13 +73,6 @@ void Engine::render_frame(pixels pixels, raster_input* dinput, Engine::model* dm
 			}
 		}
 	}
-}
-
-RUN_ON_GPU 
-Base::vec3 Engine::to_ndc(raster_input* dinput, Base::vec3& p)
-{
-	Base::vec3 p_view_space = dinput->view * p;
-	return dinput->projection * p_view_space;
 }
 
 RUN_ON_GPU 
