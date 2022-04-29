@@ -30,34 +30,23 @@ namespace Engine
 		pcore->ppixels->data = drgbs;
 	}
 
-	std::unique_ptr<rgb> RayTracer::render(raytrace_input i, Projection proj_type) throw(RayTraceException)
+	std::unique_ptr<rgb> RayTracer::render(const raytrace_input& i, Projection proj_type) throw(RayTraceException)
 	{
 		if (!pcore->dgpumodels || !pcore->ppixels) throw RayTraceException("init function not called");
 		pcore->update_camera(i);
-		raytrace_input* dinput = pcore->prepare_inputs(i);
-		draw_frame(*pcore->ppixels, pcore->dworld, dinput);
+		raytrace_input input = pcore->prepare_input(i);
+		draw_frame(*pcore->ppixels, pcore->dworld, input);
 		cudaDeviceSynchronize();
 		int size = (pcore->ppixels->width) * (pcore->ppixels->height);
 		rgb* prgbs = new rgb[size];
 		cudaMemcpy(prgbs, pcore->ppixels->data, sizeof(rgb) * size, cudaMemcpyDeviceToHost);
-		cudaFree(i.translator.pmatrix);
-		cudaFree(i.rotator.pmatrix);
-		cudaFree(dinput);
+		cudaFree(input.translator.pmatrix);
+		cudaFree(input.rotator.pmatrix);
 		return std::unique_ptr<rgb>(prgbs);
 	}
 
 	RayTracer::~RayTracer()
 	{
-		for (void* dshape : *pcore->p_all_shapes)
-			cudaFree(dshape);
-		for (unsigned char* dtexture : *pcore->p_all_textures)
-			cudaFree(dtexture);
-		cudaFree(pcore->dgpumodels);
-		cudaFree(pcore->dcubemap);
-		cudaFree(pcore->dworld);
-		cudaFree(pcore->ppixels->data);
-		delete pcore->p_all_shapes;
-		delete pcore->ppixels;
 		delete pcore;
 	}
 
@@ -153,20 +142,22 @@ namespace Engine
 		return triangle{ a.position,b.position,c.position,ab,bc,ca,a.texcoord,b.texcoord,c.texcoord,normal,plane_distance,area };
 	}
 
-	raytrace_input* RayTracerCore::prepare_inputs(raytrace_input& i)
+	raytrace_input RayTracerCore::prepare_input(const raytrace_input& i)
 	{
-		raytrace_input* dinput;
+		raytrace_input input;
+		input.fov = i.fov;
+		input.near = i.near;
+		input.far = i.far;
+		input.proj_type = i.proj_type;
 		double* dtranslator;
 		double* drotator;
 		cudaMalloc(&dtranslator, sizeof(double) * i.translator.size);
 		cudaMalloc(&drotator, sizeof(double) * i.rotator.size);
 		cudaMemcpy(dtranslator, i.translator.pmatrix, sizeof(double) * i.translator.size, cudaMemcpyHostToDevice);
 		cudaMemcpy(drotator, i.rotator.pmatrix, sizeof(double) * i.rotator.size, cudaMemcpyHostToDevice);
-		i.translator.pmatrix = dtranslator;
-		i.rotator.pmatrix = drotator;
-		cudaMalloc(&dinput, sizeof(raytrace_input));
-		cudaMemcpy(dinput, &i, sizeof(raytrace_input), cudaMemcpyHostToDevice);
-		return dinput;
+		input.translator.pmatrix = dtranslator;
+		input.rotator.pmatrix = drotator;
+		return input;
 	}
 
 	Base::cubemap* RayTracerCore::prepare_cubemap(Base::cubemap* pcubemap)
@@ -183,7 +174,7 @@ namespace Engine
 		return dcubemap;
 	}
 
-	void RayTracerCore::update_camera(raytrace_input& i)
+	void RayTracerCore::update_camera(const raytrace_input& i)
 	{
 		if (camera_index >= 0)
 		{
@@ -197,6 +188,20 @@ namespace Engine
 			}
 			delete pcamera;
 		}
+	}
+
+	RayTracerCore::~RayTracerCore()
+	{
+		for (void* dshape : *p_all_shapes)
+			cudaFree(dshape);
+		for (unsigned char* dtexture : *p_all_textures)
+			cudaFree(dtexture);
+		cudaFree(dgpumodels);
+		cudaFree(dcubemap);
+		cudaFree(dworld);
+		cudaFree(ppixels->data);
+		delete p_all_shapes;
+		delete ppixels;
 	}
 }
 

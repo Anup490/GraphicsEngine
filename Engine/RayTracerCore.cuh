@@ -3,7 +3,7 @@
 
 namespace Engine
 {
-	void draw_frame(pixels pixels, const world* dworld, const raytrace_input* dinput);
+	void draw_frame(pixels pixels, const world* dworld, const raytrace_input& input);
 
 	struct RayTracerCore
 	{
@@ -20,8 +20,9 @@ namespace Engine
 		void prepare_triangles(const Base::model* pmodel, std::vector<triangle>* ptriangles);
 		void prepare_spheres(const Base::model* pmodel, std::vector<sphere>* pspheres);
 		triangle make_triangle(Base::vertex a, Base::vertex b, Base::vertex c);
-		raytrace_input* prepare_inputs(raytrace_input& i);
+		raytrace_input prepare_input(const raytrace_input& i);
 		Base::cubemap* prepare_cubemap(Base::cubemap* pcubemap);
-		void update_camera(raytrace_input& i);
+		void update_camera(const raytrace_input& i);
+		~RayTracerCore();
 	};
 }
