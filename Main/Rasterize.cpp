@@ -232,7 +232,6 @@ namespace Rasterize
 				last_x = xpos;
 				yaw += xdiff;
 				double yaw_in_rad = (yaw * M_PI) / 180.0;
-				//ydiff calculation is inverted here. This is a hit and trial solution to fix rotation
 				double ydiff = ypos - last_y;
 				last_y = ypos;
 				pitch += ydiff;

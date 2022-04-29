@@ -36,7 +36,6 @@ void Engine::render_background(pixels pixels, Base::mat4 dirmatrix, Base::cubema
 {
 	int tx = blockIdx.x * blockDim.x + threadIdx.x;
 	int ty = blockIdx.y * blockDim.y + threadIdx.y;
-	//ndcx and ndcy calculation are inverted here. This is a hit and trial solution to fix cubemap rotation
 	double ndcx = (1.0 - (2.0 * ((tx + 0.5) / pixels.width)));
 	double ndcy = ((2.0 * ((ty + 0.5) / pixels.height)) - 1.0);
 	Base::vec3 dir = dirmatrix * Base::vec3{ ndcx, ndcy, -1 };
