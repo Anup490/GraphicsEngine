@@ -148,9 +148,13 @@ namespace Engine
 	{
 		Base::mat4 dirmatrix;
 		dirmatrix.pmatrix = new double[16];
-		for (unsigned m=0; m<15; m++)
+		for (unsigned r = 0; r < 4; r++)
 		{
-			dirmatrix.pmatrix[m] = ((m + 1) % 4 == 0) ? 0 : i.view.pmatrix[m];
+			for (unsigned c = 0; c < 4; c++)
+			{
+				unsigned m = r * 4 + c;
+				dirmatrix.pmatrix[c*4 + r] = ((m + 1) % 4 == 0) ? 0 : i.view.pmatrix[m];
+			}
 		}
 		dirmatrix.pmatrix[15] = 1;
 		cudaMemcpy(pdirmatrix, dirmatrix.pmatrix, sizeof(double) * 16, cudaMemcpyHostToDevice);
