@@ -16,46 +16,37 @@ namespace Engine
 		pcore->p_all_shapes = new std::vector<void*>;
 		pcore->p_all_textures = new std::vector<unsigned char*>();
 		pcore->prepare_data(pmodels);
+		pcore->prepare_cubemap(pcubemap);
+		cudaMalloc(&pcore->pdirmatrix, sizeof(double) * 16);
 		rgb* drgbs;
 		cudaMalloc(&drgbs, sizeof(rgb) * width * height);
 		pcore->ppixels = new pixels(width, height);
 		pcore->ppixels->data = drgbs;
 	}
 
-	std::unique_ptr<Engine::rgb> Rasterizer::render(raster_input i)
+	std::unique_ptr<Engine::rgb> Rasterizer::render(const raster_input& i)
 	{
 		if (!pcore->ppixels) throw RasterizeException("init function not called");
-		raster_input* dinput = pcore->prepare_inputs(i);
-		draw_background(*pcore->ppixels, dinput, pcore->dcubemap);
+		Base::mat4 dirmatrix = pcore->prepare_dirmatrix(i);
+		raster_input input = pcore->prepare_input(i);
+		draw_background(*pcore->ppixels, dirmatrix, pcore->dcubemap);
 		cudaDeviceSynchronize();
 		for (model_data data : *pcore->p_all_models)
 		{
-			draw_frame(*pcore->ppixels, dinput, data);
+			draw_frame(*pcore->ppixels, input, data);
 			cudaDeviceSynchronize();
 		}
 		int size = (pcore->ppixels->width) * (pcore->ppixels->height);
 		rgb* prgbs = new rgb[size];
 		cudaMemcpy(prgbs, pcore->ppixels->data, sizeof(rgb) * size, cudaMemcpyDeviceToHost);
-		cudaFree(i.view.pmatrix);
-		cudaFree(i.projection.pmatrix);
-		cudaFree(dinput);
+		cudaFree(input.view.pmatrix);
+		cudaFree(input.projection.pmatrix);
 		return std::unique_ptr<rgb>(prgbs);
 	}
 
 	Rasterizer::~Rasterizer()
 	{
-		for (void* dshape : *pcore->p_all_shapes)
-			cudaFree(dshape);
-		for (unsigned char* dtexture : *pcore->p_all_textures)
-			cudaFree(dtexture);
-		for (model_data data : *pcore->p_all_models)
-			cudaFree(data.dmodel);
-		cudaFree(pcore->dcubemap);
-		cudaFree(pcore->ppixels->data);
-		delete pcore->p_all_shapes;
-		delete pcore->p_all_textures;
-		delete pcore->p_all_models;
-		delete pcore->ppixels;
+		delete pcore;
 	}
 
 	void RasterizerCore::prepare_data(const std::shared_ptr<std::vector<Base::model*>> pmodels)
@@ -130,7 +121,7 @@ namespace Engine
 		return texture;
 	}
 
-	void RasterizerCore::prepare_cubemap(Base::cubemap* pcubemap)
+	void RasterizerCore::prepare_cubemap(const Base::cubemap* pcubemap)
 	{
 		Base::cubemap cubemap;
 		cubemap.left = get_texture(pcubemap->left);
@@ -143,19 +134,45 @@ namespace Engine
 		cudaMemcpy(dcubemap, &cubemap, sizeof(Base::cubemap), cudaMemcpyHostToDevice);
 	}
 
-	raster_input* RasterizerCore::prepare_inputs(raster_input& i)
+	raster_input RasterizerCore::prepare_input(const raster_input& i)
 	{
-		raster_input* dinput;
-		double* dview;
-		double* dprojection;
-		cudaMalloc(&dview, sizeof(double) * i.view.size);
-		cudaMalloc(&dprojection, sizeof(double) * i.projection.size);
-		cudaMemcpy(dview, i.view.pmatrix, sizeof(double) * i.view.size, cudaMemcpyHostToDevice);
-		cudaMemcpy(dprojection, i.projection.pmatrix, sizeof(double) * i.projection.size, cudaMemcpyHostToDevice);
-		i.view.pmatrix = dview;
-		i.projection.pmatrix = dprojection;
-		cudaMalloc(&dinput, sizeof(raster_input));
-		cudaMemcpy(dinput, &i, sizeof(raster_input), cudaMemcpyHostToDevice);
-		return dinput;
+		raster_input input;
+		cudaMalloc(&input.view.pmatrix, sizeof(double) * i.view.size);
+		cudaMalloc(&input.projection.pmatrix, sizeof(double) * i.projection.size);
+		cudaMemcpy(input.view.pmatrix, i.view.pmatrix, sizeof(double) * i.view.size, cudaMemcpyHostToDevice);
+		cudaMemcpy(input.projection.pmatrix, i.projection.pmatrix, sizeof(double) * i.projection.size, cudaMemcpyHostToDevice);
+		return input;
+	}
+
+	Base::mat4 RasterizerCore::prepare_dirmatrix(const raster_input& i)
+	{
+		Base::mat4 dirmatrix;
+		dirmatrix.pmatrix = new double[16];
+		for (unsigned m=0; m<15; m++)
+		{
+			dirmatrix.pmatrix[m] = ((m + 1) % 4 == 0) ? 0 : i.view.pmatrix[m];
+		}
+		dirmatrix.pmatrix[15] = 1;
+		cudaMemcpy(pdirmatrix, dirmatrix.pmatrix, sizeof(double) * 16, cudaMemcpyHostToDevice);
+		delete[] dirmatrix.pmatrix;
+		dirmatrix.pmatrix = pdirmatrix;
+		return dirmatrix;
+	}
+
+	RasterizerCore::~RasterizerCore()
+	{
+		for (void* dshape : *p_all_shapes)
+			cudaFree(dshape);
+		for (unsigned char* dtexture : *p_all_textures)
+			cudaFree(dtexture);
+		for (model_data data : *p_all_models)
+			cudaFree(data.dmodel);
+		cudaFree(dcubemap);
+		cudaFree(pdirmatrix);
+		cudaFree(ppixels->data);
+		delete p_all_shapes;
+		delete p_all_textures;
+		delete p_all_models;
+		delete ppixels;
 	}
 }

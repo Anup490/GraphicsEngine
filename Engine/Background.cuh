@@ -1,4 +1,4 @@
-#include "EngineCore.cuh"
+#include "Box.cuh"
 #include "Texture.cuh"
 
 namespace Engine

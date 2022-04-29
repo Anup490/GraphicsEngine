@@ -1,3 +1,4 @@
+#pragma once
 #include "EngineCore.cuh"
 #include "Maths.cuh"
 #include "Vector.cuh"

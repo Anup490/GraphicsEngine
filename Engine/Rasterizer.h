@@ -15,7 +15,7 @@ namespace Engine
 		struct RasterizerCore* pcore;
 	public:
 		Rasterizer(std::shared_ptr<std::vector<Base::model*>> pmodels, Base::cubemap* pcubemap, int width, int height) throw(RasterizeException);
-		std::unique_ptr<rgb> render(raster_input i) throw(RasterizeException);
+		std::unique_ptr<rgb> render(const raster_input& i) throw(RasterizeException);
 		~Rasterizer();
 	};
 }
