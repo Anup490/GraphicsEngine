@@ -17,7 +17,7 @@ namespace Rasterize
 	int window_width = 1024, window_height = 768;
 	double fov = 90.0, near_plane = -1.0, far_plane = -100.0, last_x = 0.0, last_y = 0.0, yaw = 180.0, pitch = 0.0;
 	bool lmb_hold = false, first_lmb = true;
-	Base::vec3 translater{ 0, 0, 3 }, front{ 0, 0, -1}, right{ 1, 0, 0}, up{ 0, 1, 0};
+	Base::vec3 translater{ 0, 0, 3 }, front{ 0, 0, -1}, right{ -1, 0, 0}, up{ 0, 1, 0};
 
 	void check_btn_press(GLFWwindow* window);
 	void mouse_callback(GLFWwindow* window, double xpos, double ypos);

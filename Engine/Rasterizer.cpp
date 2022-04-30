@@ -156,9 +156,6 @@ namespace Engine
 				dirmatrix.pmatrix[c*4 + r] = ((m + 1) % 4 == 0) ? 0 : i.view.pmatrix[m];
 			}
 		}
-		dirmatrix.pmatrix[4] = -dirmatrix.pmatrix[4];
-		dirmatrix.pmatrix[5] = -dirmatrix.pmatrix[5];
-		dirmatrix.pmatrix[6] = -dirmatrix.pmatrix[6];
 		dirmatrix.pmatrix[15] = 1;
 		cudaMemcpy(pdirmatrix, dirmatrix.pmatrix, sizeof(double) * 16, cudaMemcpyHostToDevice);
 		delete[] dirmatrix.pmatrix;

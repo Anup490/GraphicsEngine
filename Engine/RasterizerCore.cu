@@ -36,9 +36,9 @@ void Engine::render_background(pixels pixels, Base::mat4 dirmatrix, Base::cubema
 {
 	int tx = blockIdx.x * blockDim.x + threadIdx.x;
 	int ty = blockIdx.y * blockDim.y + threadIdx.y;
-	double ndcx = (1.0 - (2.0 * ((tx + 0.5) / pixels.width)));
-	double ndcy = ((2.0 * ((ty + 0.5) / pixels.height)) - 1.0);
-	Base::vec3 dir = dirmatrix * Base::vec3{ ndcx, ndcy, -1 };
+	double ndcx = ((2.0 * ((tx + 0.5) / pixels.width)) - 1.0);
+	double ndcy = (1.0 - (2.0 * ((ty + 0.5) / pixels.height)));
+	Base::vec3 dir = dirmatrix * Base::vec3{ ndcx, ndcy, 1 };
 	Base::vec3 color = get_background_color(dcubemap, dir);
 	pixels.data[ty * pixels.width + tx] = rgb{ unsigned char(color.x * 255.0), unsigned char(color.y * 255.0), unsigned char(color.z * 255.0) };
 }
