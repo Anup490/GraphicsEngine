@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Private">
+      <UniqueIdentifier>{625076b0-ae74-4514-8b14-15c633a2df89}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Public">
+      <UniqueIdentifier>{bd0a724c-b3b7-4cc6-8129-71f7467dcee4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Private\Utils">
+      <UniqueIdentifier>{f6867798-beb2-43de-aef0-9948e51cf196}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Private\RayTracer">
+      <UniqueIdentifier>{22c0a8c7-221d-4299-9ec0-1bdebbebd531}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\RayTracer">
+      <UniqueIdentifier>{6666d684-137c-49e4-b7e0-4bf7117560b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Private\Rasterizer">
+      <UniqueIdentifier>{c6a40b6e-0c37-4e8a-9b74-e80201f77d9e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Rasterizer">
+      <UniqueIdentifier>{23640dbf-621c-44d6-b35f-a8c81cd77443}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="framework.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineCore.cuh">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="Background.cuh">
+      <Filter>Header Files\Private\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Box.cuh">
+      <Filter>Header Files\Private\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Maths.cuh">
+      <Filter>Header Files\Private\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Matrix.cuh">
+      <Filter>Header Files\Private\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Sphere.cuh">
+      <Filter>Header Files\Private\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.cuh">
+      <Filter>Header Files\Private\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Triangle.cuh">
+      <Filter>Header Files\Private\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector.cuh">
+      <Filter>Header Files\Private\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="RayTracerCore.cuh">
+      <Filter>Header Files\Private\RayTracer</Filter>
+    </ClInclude>
+    <ClInclude Include="RayTracerInterface.cuh">
+      <Filter>Header Files\Private\RayTracer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="RasterizerCore.cuh">
+      <Filter>Header Files\Private\Rasterizer</Filter>
+    </ClInclude>
+    <ClInclude Include="Rasterizer.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="RayTracer.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RayTracer.cpp">
+      <Filter>Source Files\RayTracer</Filter>
+    </ClCompile>
+    <ClCompile Include="Rasterizer.cpp">
+      <Filter>Source Files\Rasterizer</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="RayTracerCore.cu">
+      <Filter>Source Files\RayTracer</Filter>
+    </CudaCompile>
+    <CudaCompile Include="RasterizerCore.cu">
+      <Filter>Source Files\Rasterizer</Filter>
+    </CudaCompile>
+  </ItemGroup>
+</Project>

@@ -1,5 +1,5 @@
 #include "json.h"
-#include "Core.h"
+#include "Base.h"
 #include "FileReader.h"
 #include <fstream>
 #include <sstream>
@@ -7,24 +7,24 @@
 #include "stb_image.h"
 
 std::vector<unsigned char>* get_data(nlohmann::json& JSON, const char* file_path);
-void traverse_node(nlohmann::json& JSON, unsigned nextNode, std::vector<unsigned char>* pdata, Core::model* pmodel, Core::model_info& info);
-void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned char>* pdata, Core::model* pmodel, Core::model_info& info);
+void traverse_node(nlohmann::json& JSON, unsigned nextNode, std::vector<unsigned char>* pdata, Base::model* pmodel, Base::model_info& info);
+void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned char>* pdata, Base::model* pmodel, Base::model_info& info);
 std::vector<float>* get_floats(nlohmann::json& accessor, nlohmann::json& JSON, std::vector<unsigned char>* pdata);
-std::vector<Core::vec3>* group_floats_for_vec3(std::vector<float>* pfloatvec);
-std::vector<Core::vec3>* group_floats_for_vec2(std::vector<float>* pfloatvec);
-std::vector<Core::vertex>* get_vertices(std::vector<Core::vec3>* ppositions, std::vector<Core::vec3>* pnormals, std::vector<Core::vec3>* ptextUVs);
+std::vector<Base::vec3>* group_floats_for_vec3(std::vector<float>* pfloatvec);
+std::vector<Base::vec3>* group_floats_for_vec2(std::vector<float>* pfloatvec);
+std::vector<Base::vertex>* get_vertices(std::vector<Base::vec3>* ppositions, std::vector<Base::vec3>* pnormals, std::vector<Base::vec3>* ptextUVs);
 std::vector<unsigned>* get_indices(nlohmann::json& accessor, nlohmann::json& JSON, std::vector<unsigned char>* pdata);
-void set_diffuse_texture(const char* file, const nlohmann::json& JSON, Core::texture& texture_data);
-void set_specular_texture(const char* file, const nlohmann::json& JSON, Core::texture& texture_data);
-void triangulate(Core::model* pmodel, std::vector<Core::vertex>* pvertices, std::vector<unsigned>* pindices, Core::vec3& position);
+void set_diffuse_texture(const char* file, const nlohmann::json& JSON, Base::texture& texture_data);
+void set_specular_texture(const char* file, const nlohmann::json& JSON, Base::texture& texture_data);
+void triangulate(Base::model* pmodel, std::vector<Base::vertex>* pvertices, std::vector<unsigned>* pindices, Base::vec3& position);
 
-Core::model* prepare_gltf_model_data(Core::model_info info)
+Base::model* prepare_gltf_model_data(Base::model_info info)
 {
 	std::string json_string = extract_file(info.file_path);
 	if (json_string.empty()) throw FileReadException("Error reading gltf file");
 	nlohmann::json json_data = nlohmann::json::parse(json_string);
 	std::vector<unsigned char>* pdata = get_data(json_data, info.file_path);
-	Core::model* pmodel = new Core::model;
+	Base::model* pmodel = new Base::model;
 	traverse_node(json_data, 0, pdata, pmodel, info);
 	delete pdata;
 	if(!pmodel->diffuse.ptextures) throw FileReadException(std::string("Error loading textures at : ").append(info.file_path));
@@ -52,23 +52,23 @@ std::string extract_file(const char* path)
 	return contents;
 }
 
-void delete_texture(Core::model* pmodel)
+void delete_texture(Base::model* pmodel)
 {
 	if(pmodel->diffuse.ptextures) stbi_image_free(pmodel->diffuse.ptextures);
 	if(pmodel->specular.ptextures) stbi_image_free(pmodel->specular.ptextures);
 }
 
-Core::texture get_texture(const char* file_path)
+Base::texture get_texture(const char* file_path)
 {
-	Core::texture texture;
+	Base::texture texture;
 	stbi_set_flip_vertically_on_load(true);
 	texture.ptextures = stbi_load(file_path, &(texture.width), &(texture.height), &(texture.channels), 0);
 	return texture;
 }
 
-std::unique_ptr<Core::cubemap> prepare_cubemap(const char* file_path)
+std::unique_ptr<Base::cubemap> prepare_cubemap(const char* file_path)
 {
-	Core::cubemap* pcubemap = new Core::cubemap;
+	Base::cubemap* pcubemap = new Base::cubemap;
 	std::string path(file_path);
 	if (path.substr(path.length() - 1) != "/") path.append("/");
 	std::string faces[] = { "left.jpg", "right.jpg", "bottom.jpg", "top.jpg", "front.jpg", "back.jpg" };
@@ -78,10 +78,10 @@ std::unique_ptr<Core::cubemap> prepare_cubemap(const char* file_path)
 	pcubemap->top = get_texture((path + faces[3]).c_str());
 	pcubemap->front = get_texture((path + faces[4]).c_str());
 	pcubemap->back = get_texture((path + faces[5]).c_str());
-	return std::unique_ptr<Core::cubemap>(pcubemap);
+	return std::unique_ptr<Base::cubemap>(pcubemap);
 }
 
-void delete_cubemap(std::unique_ptr<Core::cubemap>& pcubemap)
+void delete_cubemap(std::unique_ptr<Base::cubemap>& pcubemap)
 {
 	if (pcubemap->left.ptextures) stbi_image_free(pcubemap->left.ptextures);
 	if (pcubemap->right.ptextures) stbi_image_free(pcubemap->right.ptextures);
@@ -102,7 +102,7 @@ std::vector<unsigned char>* get_data(nlohmann::json& JSON, const char* file_path
 	return pdata;
 }
 
-void traverse_node(nlohmann::json& JSON, unsigned nextNode, std::vector<unsigned char>* pdata, Core::model* pmodel, Core::model_info& info)
+void traverse_node(nlohmann::json& JSON, unsigned nextNode, std::vector<unsigned char>* pdata, Base::model* pmodel, Base::model_info& info)
 {
 	nlohmann::json node = JSON["nodes"][nextNode];
 	bool mesh_not_found = true;
@@ -117,7 +117,7 @@ void traverse_node(nlohmann::json& JSON, unsigned nextNode, std::vector<unsigned
 	}
 }
 
-void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned char>* pdata, Core::model* pmodel, Core::model_info& info)
+void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned char>* pdata, Base::model* pmodel, Base::model_info& info)
 {
 	unsigned int pos_acc_ind = JSON["meshes"][indMesh]["primitives"][0]["attributes"]["POSITION"];
 	unsigned int normal_acc_ind = JSON["meshes"][indMesh]["primitives"][0]["attributes"]["NORMAL"];
@@ -125,13 +125,13 @@ void load_mesh(nlohmann::json& JSON, unsigned int indMesh, std::vector<unsigned 
 	unsigned int ind_acc_ind = JSON["meshes"][indMesh]["primitives"][0]["indices"];
 
 	std::vector<float>* pposvec = get_floats(JSON["accessors"][pos_acc_ind], JSON, pdata);
-	std::vector<Core::vec3>* ppositions = group_floats_for_vec3(pposvec);
+	std::vector<Base::vec3>* ppositions = group_floats_for_vec3(pposvec);
 	std::vector<float>* pnormalvec = get_floats(JSON["accessors"][normal_acc_ind], JSON, pdata);
-	std::vector<Core::vec3>* pnormals = group_floats_for_vec3(pnormalvec);
+	std::vector<Base::vec3>* pnormals = group_floats_for_vec3(pnormalvec);
 	std::vector<float>* ptexvec = get_floats(JSON["accessors"][tex_acc_ind], JSON, pdata);
-	std::vector<Core::vec3>* ptexUVs = group_floats_for_vec2(ptexvec);
+	std::vector<Base::vec3>* ptexUVs = group_floats_for_vec2(ptexvec);
 
-	std::vector<Core::vertex>* pvertices = get_vertices(ppositions, pnormals, ptexUVs);
+	std::vector<Base::vertex>* pvertices = get_vertices(ppositions, pnormals, ptexUVs);
 	std::vector<unsigned>* pindices = get_indices(JSON["accessors"][ind_acc_ind], JSON, pdata);
 	triangulate(pmodel, pvertices, pindices, info.position);
 	set_diffuse_texture(info.file_path, JSON, pmodel->diffuse);
@@ -176,37 +176,37 @@ std::vector<float>* get_floats(nlohmann::json& accessor, nlohmann::json& JSON, s
 	return pfloatvec;
 }
 
-std::vector<Core::vec3>* group_floats_for_vec3(std::vector<float>* pfloatvec)
+std::vector<Base::vec3>* group_floats_for_vec3(std::vector<float>* pfloatvec)
 {
-	std::vector<Core::vec3>* pvectors = new std::vector<Core::vec3>();
+	std::vector<Base::vec3>* pvectors = new std::vector<Base::vec3>();
 	for (unsigned i = 0; i < pfloatvec->size();)
 	{
 		float x = pfloatvec->at(i++);
 		float y = pfloatvec->at(i++);
 		float z = pfloatvec->at(i++);
-		pvectors->push_back(Core::vec3{ x, y, z });
+		pvectors->push_back(Base::vec3{ x, y, z });
 	}
 	return pvectors;
 }
 
-std::vector<Core::vec3>* group_floats_for_vec2(std::vector<float>* pfloatvec)
+std::vector<Base::vec3>* group_floats_for_vec2(std::vector<float>* pfloatvec)
 {
-	std::vector<Core::vec3>* pvectors = new std::vector<Core::vec3>();
+	std::vector<Base::vec3>* pvectors = new std::vector<Base::vec3>();
 	for (unsigned i = 0; i < pfloatvec->size();)
 	{
 		float x = pfloatvec->at(i++);
 		float y = pfloatvec->at(i++);
-		pvectors->push_back(Core::vec3{ x, y, 0.0 });
+		pvectors->push_back(Base::vec3{ x, y, 0.0 });
 	}
 	return pvectors;
 }
 
-std::vector<Core::vertex>* get_vertices(std::vector<Core::vec3>* ppositions, std::vector<Core::vec3>* pnormals, std::vector<Core::vec3>* ptextUVs)
+std::vector<Base::vertex>* get_vertices(std::vector<Base::vec3>* ppositions, std::vector<Base::vec3>* pnormals, std::vector<Base::vec3>* ptextUVs)
 {
-	std::vector<Core::vertex>* pvertices = new std::vector<Core::vertex>();;
+	std::vector<Base::vertex>* pvertices = new std::vector<Base::vertex>();;
 	for (unsigned i = 0; i < ppositions->size(); i++)
 	{
-		pvertices->push_back(Core::vertex{ ppositions->at(i), pnormals->at(i), ptextUVs->at(i) });
+		pvertices->push_back(Base::vertex{ ppositions->at(i), pnormals->at(i), ptextUVs->at(i) });
 	}
 	return pvertices;
 }
@@ -257,7 +257,7 @@ std::vector<unsigned>* get_indices(nlohmann::json& accessor, nlohmann::json& JSO
 	return pindices;
 }
 
-void set_diffuse_texture(const char* file, const nlohmann::json& JSON, Core::texture& texture_data)
+void set_diffuse_texture(const char* file, const nlohmann::json& JSON, Base::texture& texture_data)
 {
 	std::vector<float>* ptextures = new std::vector<float>();
 	std::string fileStr = std::string(file);
@@ -274,7 +274,7 @@ void set_diffuse_texture(const char* file, const nlohmann::json& JSON, Core::tex
 	}
 }
 
-void set_specular_texture(const char* file, const nlohmann::json& JSON, Core::texture& texture_data)
+void set_specular_texture(const char* file, const nlohmann::json& JSON, Base::texture& texture_data)
 {
 	std::vector<float>* ptextures = new std::vector<float>();
 	std::string fileStr = std::string(file);
@@ -291,22 +291,22 @@ void set_specular_texture(const char* file, const nlohmann::json& JSON, Core::te
 	}
 }
 
-void triangulate(Core::model* pmodel, std::vector<Core::vertex>* pvertices, std::vector<unsigned>* pindices, Core::vec3& position)
+void triangulate(Base::model* pmodel, std::vector<Base::vertex>* pvertices, std::vector<unsigned>* pindices, Base::vec3& position)
 {
 	if (!pvertices || !pindices) return;
 	pmodel->shapes_size = pindices->size() / 3;
-	pmodel->pshapes = new Core::triangle[pmodel->shapes_size];
-	pmodel->s_type = Core::shape_type::TRIANGLE;
-	pmodel->m_type = Core::model_type::OBJECT;
-	pmodel->surface_color = Core::vec3{ 1.0, 1.0, 1.0 };
+	pmodel->pshapes = new Base::triangle[pmodel->shapes_size];
+	pmodel->s_type = Base::shape_type::TRIANGLE;
+	pmodel->m_type = Base::model_type::OBJECT;
+	pmodel->surface_color = Base::vec3{ 1.0, 1.0, 1.0 };
 	pmodel->position = position;
 	unsigned t = 0;
 	for (unsigned i = 0; i < pindices->size();)
 	{
-		Core::vertex a = (*pvertices)[(*pindices)[i++]];
-		Core::vertex b = (*pvertices)[(*pindices)[i++]];
-		Core::vertex c = (*pvertices)[(*pindices)[i++]];
-		Core::triangle* ptriangles = (Core::triangle*)(pmodel->pshapes);
-		ptriangles[t++] = Core::triangle{ a, b, c };
+		Base::vertex a = (*pvertices)[(*pindices)[i++]];
+		Base::vertex b = (*pvertices)[(*pindices)[i++]];
+		Base::vertex c = (*pvertices)[(*pindices)[i++]];
+		Base::triangle* ptriangles = (Base::triangle*)(pmodel->pshapes);
+		ptriangles[t++] = Base::triangle{ a, b, c };
 	}
 }
