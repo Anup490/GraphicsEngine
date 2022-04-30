@@ -20,6 +20,8 @@ namespace Engine
 		pixels* ppixels = 0;
 		Base::cubemap* dcubemap = 0;
 		double* pdirmatrix = 0;
+		rgb* prgbs = 0;
+		RasterizerCore(std::shared_ptr<std::vector<Base::model*>> pmodels, Base::cubemap* pcubemap, int width, int height);
 		void prepare_data(const std::shared_ptr<std::vector<Base::model*>> pmodels);
 		void prepare_triangles(const Base::model* pmodel, std::vector<triangle>* ptriangles);
 		triangle make_triangle(Base::vertex a, Base::vertex b, Base::vertex c);

@@ -152,8 +152,8 @@ namespace Rasterize
 				try
 				{
 					prepare_raster_input(i);
-					std::unique_ptr<Engine::rgb> ppixels = prasterizer->render(i);
-					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, ppixels.get());
+					Engine::rgb* ppixels = prasterizer->render(i);
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, ppixels);
 				}
 				catch (Engine::RasterizeException& e)
 				{

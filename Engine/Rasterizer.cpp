@@ -11,20 +11,10 @@ namespace Engine
 	{
 		if (((width % 32) != 0) || ((height % 32) != 0)) throw RasterizeException("width or height is not a multiple of 32");
 		if (((width < 640) != 0) || ((height < 480) != 0)) throw RasterizeException("minimum acceptable resolution is 640x480");
-		pcore = new RasterizerCore;
-		pcore->p_all_models = new std::vector<model_data>;
-		pcore->p_all_shapes = new std::vector<void*>;
-		pcore->p_all_textures = new std::vector<unsigned char*>();
-		pcore->prepare_data(pmodels);
-		pcore->prepare_cubemap(pcubemap);
-		cudaMalloc(&pcore->pdirmatrix, sizeof(double) * 16);
-		rgb* drgbs;
-		cudaMalloc(&drgbs, sizeof(rgb) * width * height);
-		pcore->ppixels = new pixels(width, height);
-		pcore->ppixels->data = drgbs;
+		pcore = new RasterizerCore(pmodels, pcubemap, width, height);
 	}
 
-	std::unique_ptr<Engine::rgb> Rasterizer::render(const raster_input& i)
+	Engine::rgb* Rasterizer::render(const raster_input& i)
 	{
 		if (!pcore->ppixels) throw RasterizeException("init function not called");
 		Base::mat4 dirmatrix = pcore->prepare_dirmatrix(i);
@@ -37,16 +27,31 @@ namespace Engine
 			cudaDeviceSynchronize();
 		}
 		int size = (pcore->ppixels->width) * (pcore->ppixels->height);
-		rgb* prgbs = new rgb[size];
-		cudaMemcpy(prgbs, pcore->ppixels->data, sizeof(rgb) * size, cudaMemcpyDeviceToHost);
+		cudaMemcpy(pcore->prgbs, pcore->ppixels->data, sizeof(rgb) * size, cudaMemcpyDeviceToHost);
 		cudaFree(input.view.pmatrix);
 		cudaFree(input.projection.pmatrix);
-		return std::unique_ptr<rgb>(prgbs);
+		return pcore->prgbs;
 	}
 
 	Rasterizer::~Rasterizer()
 	{
 		delete pcore;
+	}
+
+	RasterizerCore::RasterizerCore(std::shared_ptr<std::vector<Base::model*>> pmodels, Base::cubemap* pcubemap, int width, int height)
+	{
+		p_all_models = new std::vector<model_data>;
+		p_all_shapes = new std::vector<void*>;
+		p_all_textures = new std::vector<unsigned char*>();
+		prepare_data(pmodels);
+		prepare_cubemap(pcubemap);
+		cudaMalloc(&pdirmatrix, sizeof(double) * 16);
+		rgb* drgbs;
+		cudaMalloc(&drgbs, sizeof(rgb) * width * height);
+		ppixels = new pixels(width, height);
+		ppixels->data = drgbs;
+		int size = width * height;
+		prgbs = new rgb[size];
 	}
 
 	void RasterizerCore::prepare_data(const std::shared_ptr<std::vector<Base::model*>> pmodels)
@@ -178,5 +183,6 @@ namespace Engine
 		delete p_all_textures;
 		delete p_all_models;
 		delete ppixels;
+		delete prgbs;
 	}
 }
