@@ -102,7 +102,7 @@ namespace Engine
 		Base::vec3 bc = c.position - b.position;
 		Base::vec3 ca = a.position - c.position;
 		Base::vec3 normal = cross(ab, bc);
-		double area = length(normal);
+		double area = length(normal) / 2.0;
 		Base::vec3 emission{ 0.0, 0.0, 0.0 };
 		normalize(normal);
 		double plane_distance = dot(-normal, a.position);
