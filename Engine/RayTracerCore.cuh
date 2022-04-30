@@ -14,7 +14,9 @@ namespace Engine
 		pixels* ppixels = 0;
 		std::vector<void*>* p_all_shapes = 0;
 		std::vector<unsigned char*>* p_all_textures = 0;
+		rgb* prgbs = 0;
 		int camera_index = -1;
+		RayTracerCore(std::shared_ptr<std::vector<Base::model*>> pmodels, Base::cubemap* pcubemap, int width, int height);
 		void prepare_data(const std::shared_ptr<std::vector<Base::model*>> pmodels, std::vector<model>& dmodels);
 		Base::texture get_texture(Base::texture Base_texture);
 		void prepare_triangles(const Base::model* pmodel, std::vector<triangle>* ptriangles);

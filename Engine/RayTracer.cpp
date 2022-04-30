@@ -12,42 +12,47 @@ namespace Engine
 	{
 		if (((width % 32) != 0) || ((height % 32) != 0)) throw RayTraceException("width or height is not a multiple of 32");
 		if (((width < 640) != 0) || ((height < 480) != 0)) throw RayTraceException("minimum acceptable resolution is 640x480");
-		pcore = new RayTracerCore;
-		std::vector<model> dmodels;
-		pcore->p_all_shapes = new std::vector<void*>;
-		pcore->p_all_textures = new std::vector<unsigned char*>();
-		pcore->prepare_data(pmodels, dmodels);
-		cudaMalloc(&pcore->dgpumodels, sizeof(model) * dmodels.size());
-		cudaMemcpy(pcore->dgpumodels, dmodels.data(), sizeof(model) * dmodels.size(), cudaMemcpyHostToDevice);
-		pcore->models_size = dmodels.size();
-		world w{ pcore->dgpumodels, pcore->models_size };
-		w.dcubemap = pcore->prepare_cubemap(pcubemap);
-		cudaMalloc(&pcore->dworld, sizeof(world));
-		cudaMemcpy(pcore->dworld, &w, sizeof(world), cudaMemcpyHostToDevice);
-		rgb* drgbs;
-		cudaMalloc(&drgbs, sizeof(rgb) * width * height);
-		pcore->ppixels = new pixels(width, height);
-		pcore->ppixels->data = drgbs;
+		pcore = new RayTracerCore(pmodels, pcubemap, width, height);
 	}
 
-	std::unique_ptr<rgb> RayTracer::render(const raytrace_input& i, Projection proj_type) throw(RayTraceException)
+	rgb* RayTracer::render(const raytrace_input& i, Projection proj_type) throw(RayTraceException)
 	{
 		if (!pcore->dgpumodels || !pcore->ppixels) throw RayTraceException("init function not called");
 		pcore->update_camera(i);
 		raytrace_input input = pcore->prepare_input(i);
 		draw_frame(*pcore->ppixels, pcore->dworld, input);
 		cudaDeviceSynchronize();
-		int size = (pcore->ppixels->width) * (pcore->ppixels->height);
-		rgb* prgbs = new rgb[size];
-		cudaMemcpy(prgbs, pcore->ppixels->data, sizeof(rgb) * size, cudaMemcpyDeviceToHost);
+		int size = (pcore->ppixels->width) * (pcore->ppixels->height);		
+		cudaMemcpy(pcore->prgbs, pcore->ppixels->data, sizeof(rgb) * size, cudaMemcpyDeviceToHost);
 		cudaFree(input.translator.pmatrix);
 		cudaFree(input.rotator.pmatrix);
-		return std::unique_ptr<rgb>(prgbs);
+		return pcore->prgbs;
 	}
 
 	RayTracer::~RayTracer()
 	{
 		delete pcore;
+	}
+
+	RayTracerCore::RayTracerCore(std::shared_ptr<std::vector<Base::model*>> pmodels, Base::cubemap* pcubemap, int width, int height)
+	{
+		std::vector<model> dmodels;
+		p_all_shapes = new std::vector<void*>;
+		p_all_textures = new std::vector<unsigned char*>();
+		prepare_data(pmodels, dmodels);
+		cudaMalloc(&dgpumodels, sizeof(model) * dmodels.size());
+		cudaMemcpy(dgpumodels, dmodels.data(), sizeof(model) * dmodels.size(), cudaMemcpyHostToDevice);
+		models_size = dmodels.size();
+		world w{ dgpumodels, models_size };
+		w.dcubemap = prepare_cubemap(pcubemap);
+		cudaMalloc(&dworld, sizeof(world));
+		cudaMemcpy(dworld, &w, sizeof(world), cudaMemcpyHostToDevice);
+		rgb* drgbs;
+		cudaMalloc(&drgbs, sizeof(rgb) * width * height);
+		ppixels = new pixels(width, height);
+		ppixels->data = drgbs;
+		int size = width * height;
+		prgbs = new rgb[size];
 	}
 
 	void RayTracerCore::prepare_data(const std::shared_ptr<std::vector<Base::model*>> pmodels, std::vector<model>& dmodels)
@@ -202,6 +207,7 @@ namespace Engine
 		cudaFree(ppixels->data);
 		delete p_all_shapes;
 		delete ppixels;
+		delete prgbs;
 	}
 }
 

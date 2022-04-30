@@ -149,8 +149,8 @@ namespace RayTrace
 				try
 				{
 					prepare_raytrace_input(i);
-					std::unique_ptr<Engine::rgb> ppixels = praytracer->render(i, proj_type);
-					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, ppixels.get());
+					Engine::rgb* ppixels = praytracer->render(i, proj_type);
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, ppixels);
 				}
 				catch (Engine::RayTraceException& e)
 				{
