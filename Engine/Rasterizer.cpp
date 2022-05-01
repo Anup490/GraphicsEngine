@@ -60,19 +60,19 @@ namespace Engine
 		{
 			Base::model* pmodel = (*pmodels)[i];
 			model model, * dmodel;
+			std::vector<triangle> triangles;
 			if (pmodel->s_type == Base::shape_type::TRIANGLE)
 			{
-				std::vector<triangle> triangles;
 				prepare_triangles(pmodel, &triangles);
-				cudaMalloc(&model.dshapes, sizeof(triangle) * pmodel->shapes_size);
-				cudaMemcpy(model.dshapes, triangles.data(), sizeof(triangle) * pmodel->shapes_size, cudaMemcpyHostToDevice);
+				cudaMalloc(&model.dshapes, sizeof(triangle) * triangles.size());
+				cudaMemcpy(model.dshapes, triangles.data(), sizeof(triangle) * triangles.size(), cudaMemcpyHostToDevice);
 			}
 			model.emissive_color = pmodel->emissive_color;
 			model.position = pmodel->position;
 			model.smoothness = pmodel->smoothness;
 			model.transparency = pmodel->transparency;
 			model.metallicity = pmodel->metallicity;
-			model.shapes_size = pmodel->shapes_size;
+			model.shapes_size = triangles.size();
 			model.s_type = pmodel->s_type;
 			model.diffuse = get_texture(pmodel->diffuse);
 			model.specular = get_texture(pmodel->specular);
@@ -80,7 +80,7 @@ namespace Engine
 			model.m_type = pmodel->m_type;
 			cudaMalloc(&dmodel, sizeof(model));
 			cudaMemcpy(dmodel, &model, sizeof(model), cudaMemcpyHostToDevice);
-			p_all_models->push_back(model_data{ dmodel, model.shapes_size });
+			p_all_models->push_back(model_data{ dmodel, unsigned(triangles.size()) });
 			p_all_shapes->push_back(model.dshapes);
 		}
 	}
@@ -97,7 +97,53 @@ namespace Engine
 			p_vertex_b->position += pmodel->position;
 			Base::vertex* p_vertex_c = &c_triangles[i].c;
 			p_vertex_c->position += pmodel->position;
-			ptriangles->push_back(make_triangle(*p_vertex_a, *p_vertex_b, *p_vertex_c));
+			triangle t = make_triangle(*p_vertex_a, *p_vertex_b, *p_vertex_c);
+			split_and_store_triangle(t, ptriangles);
+		}
+	}
+
+	void RasterizerCore::split_and_store_triangle(triangle& t, std::vector<triangle>* ptriangles)
+	{
+		if (t.area > triangle_min_area)
+		{
+			double ab_length = length(t.ab);
+			double bc_length = length(t.bc);
+			double ca_length = length(t.ca);
+			double max_length = maximum(ab_length, bc_length, ca_length);
+			Base::vertex a_vertex{ t.a, t.normal, t.a_tex };
+			Base::vertex b_vertex{ t.b, t.normal, t.b_tex };
+			Base::vertex c_vertex{ t.c, t.normal, t.c_tex };
+			if (equal(ab_length, max_length))
+			{
+				Base::vec3 m{ (t.a.x + t.b.x) / 2.0, (t.a.y + t.b.y) / 2.0, (t.a.z + t.b.z) / 2.0, };
+				Base::vertex m_vertex{ m, t.normal, t.a_tex };
+				triangle t1 = make_triangle(a_vertex, m_vertex, c_vertex);
+				split_and_store_triangle(t1, ptriangles);
+				triangle t2 = make_triangle(m_vertex, b_vertex, c_vertex);
+				split_and_store_triangle(t2, ptriangles);
+			}
+			else if (equal(bc_length, max_length))
+			{
+				Base::vec3 m{ (t.b.x + t.c.x) / 2.0, (t.b.y + t.c.y) / 2.0, (t.b.z + t.c.z) / 2.0, };
+				Base::vertex m_vertex{ m, t.normal, t.b_tex };
+				triangle t1 = make_triangle(a_vertex, b_vertex, m_vertex);
+				split_and_store_triangle(t1, ptriangles);
+				triangle t2 = make_triangle(a_vertex, m_vertex, c_vertex);
+				split_and_store_triangle(t2, ptriangles);
+			}
+			else
+			{
+				Base::vec3 m{ (t.c.x + t.a.x) / 2.0, (t.c.y + t.a.y) / 2.0, (t.c.z + t.a.z) / 2.0, };
+				Base::vertex m_vertex{ m, t.normal, t.c_tex };
+				triangle t1 = make_triangle(a_vertex, b_vertex, m_vertex);
+				split_and_store_triangle(t1, ptriangles);
+				triangle t2 = make_triangle(m_vertex, b_vertex, c_vertex);
+				split_and_store_triangle(t2, ptriangles);
+			}
+		}
+		else
+		{
+			ptriangles->push_back(t);
 		}
 	}
 
