@@ -9,7 +9,7 @@
 namespace Engine
 {
 	RUN_ON_GPU_CALL_FROM_CPU void render_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap* dcubemap);
-	RUN_ON_GPU_CALL_FROM_CPU void render_frame(pixels pixels, const raster_input input, Engine::model* dmodel);
+	RUN_ON_GPU_CALL_FROM_CPU void render_frame(pixels pixels, const raster_input input, model* dmodel);
 	RUN_ON_GPU bool is_visible(const Base::vec3& p);
 	RUN_ON_GPU Base::vec3 to_raster(const pixels& pixels, const Base::vec3& ndc);
 }
@@ -44,7 +44,7 @@ void Engine::render_background(pixels pixels, Base::mat4 dirmatrix, Base::cubema
 }
 
 RUN_ON_GPU_CALL_FROM_CPU 
-void Engine::render_frame(pixels pixels, const raster_input input, Engine::model* dmodel)
+void Engine::render_frame(pixels pixels, const raster_input input, model* dmodel)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= (dmodel->shapes_size)) return;
@@ -54,21 +54,19 @@ void Engine::render_frame(pixels pixels, const raster_input input, Engine::model
 	Base::vec3 b_ndc = input.projection * (input.view * ptriangle->b);
 	Base::vec3 c_ndc = input.projection * (input.view * ptriangle->c);
 	if (!is_visible(a_ndc) && !is_visible(b_ndc) && !is_visible(c_ndc)) return;
-	double max_ndc_x = Engine::maximum(a_ndc.x, b_ndc.x, c_ndc.x);
-	double max_ndc_y = Engine::maximum(a_ndc.y, b_ndc.y, c_ndc.y);
-	double min_ndc_x = Engine::minimum(a_ndc.x, b_ndc.x, c_ndc.x);
-	double min_ndc_y = Engine::minimum(a_ndc.y, b_ndc.y, c_ndc.y);
-	Base::vec3 min_raster = to_raster(pixels, Base::vec3{ min_ndc_x, max_ndc_y });
-	Base::vec3 max_raster = to_raster(pixels, Base::vec3{ max_ndc_x, min_ndc_y });
 	Base::vec3 a_raster = to_raster(pixels, a_ndc);
 	Base::vec3 b_raster = to_raster(pixels, b_ndc);
 	Base::vec3 c_raster = to_raster(pixels, c_ndc);
+	int min_raster_x = minimum(a_raster.x, b_raster.x, c_raster.x);
+	int min_raster_y = minimum(a_raster.y, b_raster.y, c_raster.y);
+	int max_raster_x = maximum(a_raster.x, b_raster.x, c_raster.x);
+	int max_raster_y = maximum(a_raster.y, b_raster.y, c_raster.y);
 	triangle t_raster{ a_raster, b_raster, c_raster };
-	for (int j = min_raster.y; j <= max_raster.y; j++)
+	for (int j = min_raster_y; j <= max_raster_y; j++)
 	{
 		if (j >= 0 && j < pixels.height)
 		{
-			for (int i = min_raster.x; i <= max_raster.x; i++)
+			for (int i = min_raster_x; i <= max_raster_x; i++)
 			{
 				if (i >= 0 && i < pixels.width)
 				{
