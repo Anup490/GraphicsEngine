@@ -36,7 +36,14 @@ namespace Rasterize
 		{
 			std::shared_ptr<std::vector<Base::model*>> pmodels(new std::vector<Base::model*>);
 			Base::model* pmodel = prepare_gltf_model_data({ "D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf", Base::vec3{} });
+
+			Base::model* plight = new Base::model;
+			plight->position = Base::vec3{ 0.0, 0.0, 0.0 };
+			plight->emissive_color = Base::vec3{ 1.0, 1.0, 1.0 };
+			plight->m_type = Base::model_type::LIGHT;
+			
 			pmodels->push_back(pmodel);
+			pmodels->push_back(plight);
 			std::unique_ptr<Base::cubemap> pcubemap = prepare_cubemap("D:/Projects/C++/3DImporter/Assets/skybox");
 			prasterizer = new Engine::Rasterizer(pmodels, pcubemap.get(), window_width, window_height);
 			delete_cubemap(pcubemap);

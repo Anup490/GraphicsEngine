@@ -23,7 +23,7 @@ namespace Engine
 		cudaDeviceSynchronize();
 		for (model_data data : *pcore->p_all_models)
 		{
-			draw_frame(*pcore->ppixels, input, data);
+			draw_frame(*pcore->ppixels, input, data, pcore->dlights, pcore->lights_count);
 			cudaDeviceSynchronize();
 		}
 		int size = (pcore->ppixels->width) * (pcore->ppixels->height);
@@ -44,6 +44,7 @@ namespace Engine
 		p_all_shapes = new std::vector<void*>;
 		p_all_textures = new std::vector<unsigned char*>();
 		prepare_data(pmodels);
+		prepare_lights(pmodels);
 		prepare_cubemap(pcubemap);
 		cudaMalloc(&pdirmatrix, sizeof(double) * 16);
 		rgb* drgbs;
@@ -59,6 +60,7 @@ namespace Engine
 		for (unsigned i = 0; i < pmodels->size(); i++)
 		{
 			Base::model* pmodel = (*pmodels)[i];
+			if (pmodel->m_type != Base::model_type::OBJECT) continue;
 			model model, * dmodel;
 			std::vector<triangle> triangles;
 			if (pmodel->s_type == Base::shape_type::TRIANGLE)
@@ -83,6 +85,26 @@ namespace Engine
 			p_all_models->push_back(model_data{ dmodel, unsigned(triangles.size()) });
 			p_all_shapes->push_back(model.dshapes);
 		}
+	}
+
+	void RasterizerCore::prepare_lights(const std::shared_ptr<std::vector<Base::model*>> pmodels)
+	{
+		if (pmodels->size() == 0) return;
+		std::vector<model> lights;
+		for (unsigned i = 0; i < pmodels->size(); i++)
+		{
+			Base::model* pmodel = (*pmodels)[i];
+			if (pmodel->m_type != Base::model_type::LIGHT) continue;
+			model model;
+			model.emissive_color = pmodel->emissive_color;
+			model.position = pmodel->position;
+			model.surface_color = pmodel->surface_color;
+			model.m_type = pmodel->m_type;
+			lights.push_back(model);
+		}
+		cudaMalloc(&dlights, sizeof(model) * lights.size());
+		cudaMemcpy(dlights, lights.data(), sizeof(model) * lights.size(), cudaMemcpyHostToDevice);
+		lights_count = lights.size();
 	}
 
 	void RasterizerCore::prepare_triangles(const Base::model* pmodel, std::vector<triangle>* ptriangles)
@@ -116,7 +138,8 @@ namespace Engine
 			if (equal(ab_length, max_length))
 			{
 				Base::vec3 m{ (t.a.x + t.b.x) / 2.0, (t.a.y + t.b.y) / 2.0, (t.a.z + t.b.z) / 2.0, };
-				Base::vertex m_vertex{ m, t.normal, t.a_tex };
+				Base::vec3 m_tex{ (t.a_tex.x + t.b_tex.x) / 2.0, (t.a_tex.y + t.b_tex.y) / 2.0, (t.a_tex.z + t.b_tex.z) / 2.0, };
+				Base::vertex m_vertex{ m, t.normal, m_tex };
 				triangle t1 = make_triangle(a_vertex, m_vertex, c_vertex);
 				split_and_store_triangle(t1, ptriangles);
 				triangle t2 = make_triangle(m_vertex, b_vertex, c_vertex);
@@ -125,7 +148,8 @@ namespace Engine
 			else if (equal(bc_length, max_length))
 			{
 				Base::vec3 m{ (t.b.x + t.c.x) / 2.0, (t.b.y + t.c.y) / 2.0, (t.b.z + t.c.z) / 2.0, };
-				Base::vertex m_vertex{ m, t.normal, t.b_tex };
+				Base::vec3 m_tex{ (t.b_tex.x + t.c_tex.x) / 2.0, (t.b_tex.y + t.c_tex.y) / 2.0, (t.b_tex.z + t.c_tex.z) / 2.0, };
+				Base::vertex m_vertex{ m, t.normal, m_tex };
 				triangle t1 = make_triangle(a_vertex, b_vertex, m_vertex);
 				split_and_store_triangle(t1, ptriangles);
 				triangle t2 = make_triangle(a_vertex, m_vertex, c_vertex);
@@ -134,7 +158,8 @@ namespace Engine
 			else
 			{
 				Base::vec3 m{ (t.c.x + t.a.x) / 2.0, (t.c.y + t.a.y) / 2.0, (t.c.z + t.a.z) / 2.0, };
-				Base::vertex m_vertex{ m, t.normal, t.c_tex };
+				Base::vec3 m_tex{ (t.c_tex.x + t.a_tex.x) / 2.0, (t.c_tex.y + t.a_tex.y) / 2.0, (t.c_tex.z + t.a_tex.z) / 2.0, };
+				Base::vertex m_vertex{ m, t.normal, m_tex };
 				triangle t1 = make_triangle(a_vertex, b_vertex, m_vertex);
 				split_and_store_triangle(t1, ptriangles);
 				triangle t2 = make_triangle(m_vertex, b_vertex, c_vertex);
@@ -225,6 +250,7 @@ namespace Engine
 		cudaFree(dcubemap);
 		cudaFree(pdirmatrix);
 		cudaFree(ppixels->data);
+		cudaFree(dlights);
 		delete p_all_shapes;
 		delete p_all_textures;
 		delete p_all_models;
