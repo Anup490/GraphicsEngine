@@ -10,6 +10,7 @@ namespace Engine
 {
 	RUN_ON_GPU_CALL_FROM_CPU void render_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap* dcubemap);
 	RUN_ON_GPU_CALL_FROM_CPU void render_frame(pixels pixels, const raster_input input, model* dmodel, model* dcamera, model* dlights, unsigned lights_count);
+	RUN_ON_GPU bool cull_back_face(const model* dcamera, const triangle* ptriangle);
 	RUN_ON_GPU bool is_visible(const Base::vec3& p);
 	RUN_ON_GPU Base::vec3 to_raster(const pixels& pixels, const Base::vec3& ndc);
 	RUN_ON_GPU Base::vec3 calculate_color(triangle* ptriangle, model* pmodel, model* dcamera, model* dlights, unsigned lights_count);
@@ -51,6 +52,7 @@ void Engine::render_frame(pixels pixels, const raster_input input, model* dmodel
 	if (index >= (dmodel->shapes_size)) return;
 	triangle* ptriangles = (triangle*)dmodel->dshapes;
 	triangle* ptriangle = ptriangles + index;
+	if (cull_back_face(dcamera, ptriangle)) return;
 	Base::vec3 a_ndc = input.projection * (input.view * ptriangle->a);
 	Base::vec3 b_ndc = input.projection * (input.view * ptriangle->b);
 	Base::vec3 c_ndc = input.projection * (input.view * ptriangle->c);
@@ -80,6 +82,14 @@ void Engine::render_frame(pixels pixels, const raster_input input, model* dmodel
 			}
 		}
 	}
+}
+
+RUN_ON_GPU 
+bool Engine::cull_back_face(const model* dcamera, const triangle* ptriangle)
+{
+	Base::vec3 view_dir = dcamera->position - ptriangle->a;
+	normalize(view_dir);
+	return dot(view_dir, ptriangle->normal) < 0.0;
 }
 
 RUN_ON_GPU 
