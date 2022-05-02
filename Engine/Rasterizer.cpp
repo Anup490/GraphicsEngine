@@ -14,16 +14,17 @@ namespace Engine
 		pcore = new RasterizerCore(pmodels, pcubemap, width, height);
 	}
 
-	Engine::rgb* Rasterizer::render(const raster_input& i)
+	Engine::rgb* Rasterizer::render(const raster_input& i, const Base::model* pcamera)
 	{
 		if (!pcore->ppixels) throw RasterizeException("init function not called");
 		Base::mat4 dirmatrix = pcore->prepare_dirmatrix(i);
 		raster_input input = pcore->prepare_input(i);
+		pcore->update_camera(pcamera);
 		draw_background(*pcore->ppixels, dirmatrix, pcore->dcubemap);
 		cudaDeviceSynchronize();
 		for (model_data data : *pcore->p_all_models)
 		{
-			draw_frame(*pcore->ppixels, input, data, pcore->dlights, pcore->lights_count);
+			draw_frame(*pcore->ppixels, input, data, pcore->dcamera, pcore->dlights, pcore->lights_count);
 			cudaDeviceSynchronize();
 		}
 		int size = (pcore->ppixels->width) * (pcore->ppixels->height);
@@ -45,6 +46,7 @@ namespace Engine
 		p_all_textures = new std::vector<unsigned char*>();
 		prepare_data(pmodels);
 		prepare_lights(pmodels);
+		prepare_camera(pmodels);
 		prepare_cubemap(pcubemap);
 		cudaMalloc(&pdirmatrix, sizeof(double) * 16);
 		rgb* drgbs;
@@ -105,6 +107,23 @@ namespace Engine
 		cudaMalloc(&dlights, sizeof(model) * lights.size());
 		cudaMemcpy(dlights, lights.data(), sizeof(model) * lights.size(), cudaMemcpyHostToDevice);
 		lights_count = lights.size();
+	}
+
+
+	void RasterizerCore::prepare_camera(const std::shared_ptr<std::vector<Base::model*>> pmodels)
+	{
+		for (Base::model* pmodel : *pmodels)
+		{
+			if (pmodel->m_type == Base::model_type::CAMERA)
+			{
+				model camera;
+				camera.position = pmodel->position;
+				camera.m_type = pmodel->m_type;
+				cudaMalloc(&dcamera, sizeof(model));
+				cudaMemcpy(dcamera, &camera, sizeof(model), cudaMemcpyHostToDevice);
+				break;
+			}
+		}
 	}
 
 	void RasterizerCore::prepare_triangles(const Base::model* pmodel, std::vector<triangle>* ptriangles)
@@ -239,6 +258,17 @@ namespace Engine
 		return dirmatrix;
 	}
 
+	void RasterizerCore::update_camera(const Base::model* pcamera)
+	{
+		if (dcamera)
+		{
+			model camera;
+			camera.position = pcamera->position;
+			camera.m_type = pcamera->m_type;
+			cudaMemcpy(dcamera, &camera, sizeof(model), cudaMemcpyHostToDevice);
+		}
+	}
+
 	RasterizerCore::~RasterizerCore()
 	{
 		for (void* dshape : *p_all_shapes)
@@ -251,6 +281,7 @@ namespace Engine
 		cudaFree(pdirmatrix);
 		cudaFree(ppixels->data);
 		cudaFree(dlights);
+		cudaFree(dcamera);
 		delete p_all_shapes;
 		delete p_all_textures;
 		delete p_all_models;

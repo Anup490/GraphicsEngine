@@ -9,10 +9,10 @@
 namespace Engine
 {
 	RUN_ON_GPU_CALL_FROM_CPU void render_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap* dcubemap);
-	RUN_ON_GPU_CALL_FROM_CPU void render_frame(pixels pixels, const raster_input input, model* dmodel, model* dlights, unsigned lights_count);
+	RUN_ON_GPU_CALL_FROM_CPU void render_frame(pixels pixels, const raster_input input, model* dmodel, model* dcamera, model* dlights, unsigned lights_count);
 	RUN_ON_GPU bool is_visible(const Base::vec3& p);
 	RUN_ON_GPU Base::vec3 to_raster(const pixels& pixels, const Base::vec3& ndc);
-	RUN_ON_GPU Base::vec3 calculate_color(triangle* ptriangle, model* pmodel, model* dlights, unsigned lights_count);
+	RUN_ON_GPU Base::vec3 calculate_color(triangle* ptriangle, model* pmodel, model* dcamera, model* dlights, unsigned lights_count);
 }
 
 void Engine::draw_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap* dcubemap)
@@ -22,14 +22,14 @@ void Engine::draw_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap*
 	render_background << < grid_size, block_size >> > (pixels, dirmatrix, dcubemap);
 }
 
-void Engine::draw_frame(pixels pixels, const raster_input& input, model_data data, model* dlights, unsigned lights_count)
+void Engine::draw_frame(pixels pixels, const raster_input& input, model_data data, model* dcamera, model* dlights, unsigned lights_count)
 {
 	unsigned threads = nearest_high_multiple(data.shape_count, 32);
 	unsigned threads_per_block = (threads < 1024) ? threads : 1024;
 	unsigned blocks = threads/1024 + 1;
 	dim3 block_size(threads_per_block, 1, 1);
 	dim3 grid_size(blocks, 1, 1);
-	render_frame << < grid_size, block_size >> > (pixels, input, data.dmodel, dlights, lights_count);
+	render_frame << < grid_size, block_size >> > (pixels, input, data.dmodel, dcamera, dlights, lights_count);
 }
 
 RUN_ON_GPU_CALL_FROM_CPU 
@@ -45,7 +45,7 @@ void Engine::render_background(pixels pixels, Base::mat4 dirmatrix, Base::cubema
 }
 
 RUN_ON_GPU_CALL_FROM_CPU 
-void Engine::render_frame(pixels pixels, const raster_input input, model* dmodel, model* dlights, unsigned lights_count)
+void Engine::render_frame(pixels pixels, const raster_input input, model* dmodel, model* dcamera, model* dlights, unsigned lights_count)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= (dmodel->shapes_size)) return;
@@ -73,7 +73,7 @@ void Engine::render_frame(pixels pixels, const raster_input input, model* dmodel
 				{
 					if (Triangle::is_inside(t_raster, Base::vec3{ double(i), double(j) }))
 					{
-						Base::vec3 color = calculate_color(ptriangle, dmodel, dlights, lights_count);
+						Base::vec3 color = calculate_color(ptriangle, dmodel, dcamera, dlights, lights_count);
 						pixels.data[j * pixels.width + i] = rgb{ unsigned char(color.x * 255), unsigned char(color.y * 255), unsigned char(color.z * 255) };
 					}
 				}
@@ -101,18 +101,27 @@ Base::vec3 Engine::to_raster(const pixels& pixels, const Base::vec3& ndc)
 }
 
 RUN_ON_GPU 
-Base::vec3 Engine::calculate_color(triangle* ptriangle, model* pmodel, model* dlights, unsigned lights_count)
+Base::vec3 Engine::calculate_color(triangle* ptriangle, model* pmodel, model* dcamera, model* dlights, unsigned lights_count)
 {
-	Base::vec3 color = Texture::get_color(ptriangle->a_tex, pmodel->diffuse);
-	Base::vec3 specularity; 
+	Base::vec3 color;
+	Base::vec3 diffuse_color = Texture::get_color(ptriangle->a_tex, pmodel->diffuse);
+	Base::vec3 specularity;
+	Base::vec3 ambient_color{ 0.25, 0.25, 0.25 };
+	Base::vec3 ambient = diffuse_color * ambient_color;
 	if (!pmodel->specular.ptextures) specularity = Base::vec3{ pmodel->smoothness, pmodel->smoothness, pmodel->smoothness };
 	else specularity = Texture::get_color(ptriangle->a_tex, pmodel->specular);
-	Base::vec3 light_vec;
 	for (unsigned i = 0; i < lights_count; i++)
 	{
-		light_vec = dlights->position - ptriangle->a;
-		double light_triangle_dot = dot(light_vec, ptriangle->normal);
-		color += (color * max_val(0.0, light_triangle_dot));
+		Base::vec3 light_dir = dlights->position - ptriangle->a;
+		normalize(light_dir);
+		double light_triangle_dot = max_val(0, dot(light_dir, ptriangle->normal));
+		Base::vec3 diffuse = diffuse_color * light_triangle_dot;
+		Base::vec3 reflect_dir = get_reflect_dir(-light_dir, ptriangle->normal);
+		normalize(reflect_dir);
+		Base::vec3 view_dir = dcamera->position - ptriangle->a;
+		normalize(view_dir);
+		Base::vec3 specular = specularity * light_triangle_dot * pow(max_val(0.0, dot(view_dir, reflect_dir)), to_1_to_256(specularity.x));
+		color += diffuse + specular;
 	}
-	return get_clamped(color);
+	return get_clamped(color + ambient);
 }

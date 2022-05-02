@@ -17,7 +17,7 @@ namespace Rasterize
 	int window_width = 1024, window_height = 768;
 	double fov = 90.0, near_plane = -1.0, far_plane = -100.0, last_x = 0.0, last_y = 0.0, yaw = 180.0, pitch = 0.0;
 	bool lmb_hold = false, first_lmb = true;
-	Base::vec3 translater{ 0, 0, 3 }, front{ 0, 0, -1}, right{ -1, 0, 0}, up{ 0, 1, 0};
+	Base::model* pcamera = 0;
 
 	void check_btn_press(GLFWwindow* window);
 	void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -38,12 +38,21 @@ namespace Rasterize
 			Base::model* pmodel = prepare_gltf_model_data({ "D:/Projects/C++/3DImporter/Assets/airplane/scene.gltf", Base::vec3{} });
 
 			Base::model* plight = new Base::model;
-			plight->position = Base::vec3{ 0.0, 0.0, 0.0 };
+			plight->position = Base::vec3{ 75.0, 100.0, -100.0 };
 			plight->emissive_color = Base::vec3{ 1.0, 1.0, 1.0 };
 			plight->m_type = Base::model_type::LIGHT;
+
+			pcamera = new Base::model;
+			pcamera->position = Base::vec3{ 0, 0, 3 };
+			pcamera->front = Base::vec3{ 0, 0, -1 };
+			pcamera->right = Base::vec3{ -1, 0, 0 };
+			pcamera->up = Base::vec3{ 0, 1, 0 };
+			pcamera->m_type = Base::model_type::CAMERA;
 			
 			pmodels->push_back(pmodel);
 			pmodels->push_back(plight);
+			pmodels->push_back(pcamera);
+
 			std::unique_ptr<Base::cubemap> pcubemap = prepare_cubemap("D:/Projects/C++/3DImporter/Assets/skybox");
 			prasterizer = new Engine::Rasterizer(pmodels, pcubemap.get(), window_width, window_height);
 			delete_cubemap(pcubemap);
@@ -159,7 +168,7 @@ namespace Rasterize
 				try
 				{
 					prepare_raster_input(i);
-					Engine::rgb* ppixels = prasterizer->render(i);
+					Engine::rgb* ppixels = prasterizer->render(i, pcamera);
 					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, ppixels);
 				}
 				catch (Engine::RasterizeException& e)
@@ -183,33 +192,34 @@ namespace Rasterize
 		if (prasterizer) delete prasterizer;
 		if (i.view.pmatrix) delete[] i.view.pmatrix;
 		if (i.projection.pmatrix) delete[] i.projection.pmatrix;
+		if (pcamera) delete pcamera;
 	}
 
 	void check_btn_press(GLFWwindow* window)
 	{
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		{
-			translater.x += front.x;
-			translater.y += front.y;
-			translater.z += front.z;
+			pcamera->position.x += pcamera->front.x;
+			pcamera->position.y += pcamera->front.y;
+			pcamera->position.z += pcamera->front.z;
 		}
 		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 		{
-			translater.x += right.x;
-			translater.y += right.y;
-			translater.z += right.z;
+			pcamera->position.x += pcamera->right.x;
+			pcamera->position.y += pcamera->right.y;
+			pcamera->position.z += pcamera->right.z;
 		}
 		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 		{
-			translater.x -= front.x;
-			translater.y -= front.y;
-			translater.z -= front.z;
+			pcamera->position.x -= pcamera->front.x;
+			pcamera->position.y -= pcamera->front.y;
+			pcamera->position.z -= pcamera->front.z;
 		}
 		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		{
-			translater.x -= right.x;
-			translater.y -= right.y;
-			translater.z -= right.z;
+			pcamera->position.x -= pcamera->right.x;
+			pcamera->position.y -= pcamera->right.y;
+			pcamera->position.z -= pcamera->right.z;
 		}
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
 		{
@@ -247,17 +257,17 @@ namespace Rasterize
 
 				double pitch_in_rad = (pitch * M_PI) / 180.0;
 
-				right.x = cos(yaw_in_rad);
-				right.y = 0;
-				right.z = sin(yaw_in_rad);
+				pcamera->right.x = cos(yaw_in_rad);
+				pcamera->right.y = 0;
+				pcamera->right.z = sin(yaw_in_rad);
 
-				up.x = -sin(yaw_in_rad) * sin(pitch_in_rad);
-				up.y = cos(pitch_in_rad);
-				up.z = cos(yaw_in_rad) * sin(pitch_in_rad);
+				pcamera->up.x = -sin(yaw_in_rad) * sin(pitch_in_rad);
+				pcamera->up.y = cos(pitch_in_rad);
+				pcamera->up.z = cos(yaw_in_rad) * sin(pitch_in_rad);
 
-				front.x = -sin(yaw_in_rad) * cos(pitch_in_rad);
-				front.y = -sin(pitch_in_rad);
-				front.z = cos(yaw_in_rad) * cos(pitch_in_rad);
+				pcamera->front.x = -sin(yaw_in_rad) * cos(pitch_in_rad);
+				pcamera->front.y = -sin(pitch_in_rad);
+				pcamera->front.z = cos(yaw_in_rad) * cos(pitch_in_rad);
 			}
 		}
 	}
@@ -270,18 +280,18 @@ namespace Rasterize
 
 	void prepare_raster_input(Engine::raster_input& i)
 	{
-		i.view.pmatrix[0] = right.x;
-		i.view.pmatrix[1] = right.y;
-		i.view.pmatrix[2] = right.z;
-		i.view.pmatrix[3] = -(translater.x * right.x + translater.y * right.y + translater.z * right.z);
-		i.view.pmatrix[4] = up.x;
-		i.view.pmatrix[5] = up.y;
-		i.view.pmatrix[6] = up.z;
-		i.view.pmatrix[7] = -(translater.x * up.x + translater.y * up.y + translater.z * up.z);
-		i.view.pmatrix[8] = front.x;
-		i.view.pmatrix[9] = front.y;
-		i.view.pmatrix[10] = front.z;
-		i.view.pmatrix[11] = -(translater.x * front.x + translater.y * front.y + translater.z * front.z);
+		i.view.pmatrix[0] = pcamera->right.x;
+		i.view.pmatrix[1] = pcamera->right.y;
+		i.view.pmatrix[2] = pcamera->right.z;
+		i.view.pmatrix[3] = -(pcamera->position.x * pcamera->right.x + pcamera->position.y * pcamera->right.y + pcamera->position.z * pcamera->right.z);
+		i.view.pmatrix[4] = pcamera->up.x;
+		i.view.pmatrix[5] = pcamera->up.y;
+		i.view.pmatrix[6] = pcamera->up.z;
+		i.view.pmatrix[7] = -(pcamera->position.x * pcamera->up.x + pcamera->position.y * pcamera->up.y + pcamera->position.z * pcamera->up.z);
+		i.view.pmatrix[8] = pcamera->front.x;
+		i.view.pmatrix[9] = pcamera->front.y;
+		i.view.pmatrix[10] = pcamera->front.z;
+		i.view.pmatrix[11] = -(pcamera->position.x * pcamera->front.x + pcamera->position.y * pcamera->front.y + pcamera->position.z * pcamera->front.z);
 		i.view.pmatrix[12] = 0;
 		i.view.pmatrix[13] = 0;
 		i.view.pmatrix[14] = 0;
