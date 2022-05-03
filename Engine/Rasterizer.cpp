@@ -198,7 +198,6 @@ namespace Engine
 		Base::vec3 ca = a.position - c.position;
 		Base::vec3 normal = cross(ab, bc);
 		double area = length(normal) / 2.0;
-		Base::vec3 emission{ 0.0, 0.0, 0.0 };
 		normalize(normal);
 		double plane_distance = dot(-normal, a.position);
 		return triangle{ a.position,b.position,c.position,ab,bc,ca,a.texcoord,b.texcoord,c.texcoord,normal,plane_distance,area };
