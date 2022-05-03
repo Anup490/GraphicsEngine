@@ -15,7 +15,7 @@ namespace Engine
 		pcore = new RayTracerCore(pmodels, pcubemap, width, height);
 	}
 
-	rgb* RayTracer::render(const raytrace_input& i, Projection proj_type) throw(RayTraceException)
+	pixels RayTracer::render(const raytrace_input& i, Projection proj_type) throw(RayTraceException)
 	{
 		if (!pcore->dgpumodels || !pcore->ppixels) throw RayTraceException("init function not called");
 		pcore->update_camera(i);
@@ -26,7 +26,10 @@ namespace Engine
 		cudaMemcpy(pcore->prgbs, pcore->ppixels->data, sizeof(rgb) * size, cudaMemcpyDeviceToHost);
 		cudaFree(input.translator.pmatrix);
 		cudaFree(input.rotator.pmatrix);
-		return pcore->prgbs;
+		pixels p(pcore->ppixels->width, pcore->ppixels->height);
+		p.data = pcore->prgbs;
+		p.depth = pcore->ppixels->depth;
+		return p;
 	}
 
 	RayTracer::~RayTracer()
@@ -51,6 +54,9 @@ namespace Engine
 		cudaMalloc(&drgbs, sizeof(rgb) * width * height);
 		ppixels = new pixels(width, height);
 		ppixels->data = drgbs;
+		double* ddepth;
+		cudaMalloc(&ddepth, sizeof(double) * width * height);
+		ppixels->depth = ddepth;
 		int size = width * height;
 		prgbs = new rgb[size];
 	}
@@ -204,6 +210,7 @@ namespace Engine
 		cudaFree(dcubemap);
 		cudaFree(dworld);
 		cudaFree(ppixels->data);
+		cudaFree(ppixels->depth);
 		delete p_all_shapes;
 		delete ppixels;
 		delete prgbs;

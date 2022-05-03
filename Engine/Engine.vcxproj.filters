@@ -106,5 +106,8 @@
     <CudaCompile Include="RasterizerCore.cu">
       <Filter>Source Files\Rasterizer</Filter>
     </CudaCompile>
+    <CudaCompile Include="Engine.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>

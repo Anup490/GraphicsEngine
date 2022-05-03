@@ -14,7 +14,7 @@ namespace Engine
 		pcore = new RasterizerCore(pmodels, pcubemap, width, height);
 	}
 
-	Engine::rgb* Rasterizer::render(const raster_input& i, const Base::model* pcamera)
+	pixels Rasterizer::render(const raster_input& i, const Base::model* pcamera)
 	{
 		if (!pcore->ppixels) throw RasterizeException("init function not called");
 		Base::mat4 dirmatrix = pcore->prepare_dirmatrix(i);
@@ -31,7 +31,10 @@ namespace Engine
 		cudaMemcpy(pcore->prgbs, pcore->ppixels->data, sizeof(rgb) * size, cudaMemcpyDeviceToHost);
 		cudaFree(input.view.pmatrix);
 		cudaFree(input.projection.pmatrix);
-		return pcore->prgbs;
+		pixels p(pcore->ppixels->width, pcore->ppixels->height);
+		p.data = pcore->prgbs;
+		p.depth = pcore->ppixels->depth;
+		return p;
 	}
 
 	Rasterizer::~Rasterizer()

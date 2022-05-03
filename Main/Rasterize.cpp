@@ -168,8 +168,8 @@ namespace Rasterize
 				try
 				{
 					prepare_raster_input(i);
-					Engine::rgb* ppixels = prasterizer->render(i, pcamera);
-					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, ppixels);
+					Engine::pixels ppixels = prasterizer->render(i, pcamera);
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, ppixels.data);
 				}
 				catch (Engine::RasterizeException& e)
 				{

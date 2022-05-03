@@ -157,6 +157,7 @@
     <ClCompile Include="Libraries\lib\stb_image.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Data.cpp" />
+    <ClCompile Include="Mixer.cpp" />
     <ClCompile Include="Rasterize.cpp" />
     <ClCompile Include="RayTrace.cpp" />
   </ItemGroup>

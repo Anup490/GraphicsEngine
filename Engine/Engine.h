@@ -9,7 +9,7 @@ namespace std
 	template <class _Ty>
 	class shared_ptr;
 
-	template <class _Ty, class _Dx = std::default_delete<_Ty>>
+	template <class _Ty, class _Dx = default_delete<_Ty>>
 	class unique_ptr;
 }
 
@@ -46,4 +46,5 @@ namespace Engine
 		Base::mat4 projection;
 	};
 	
+	rgb* mix(const pixels& pixels1, const pixels& pixels2);
 }

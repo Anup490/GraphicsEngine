@@ -13,7 +13,7 @@ namespace Engine
 	enum class ColorType { REFLECTION, REFRACTION };
 
 	RUN_ON_GPU_CALL_FROM_CPU void render(pixels pixels, const world* dworld, const raytrace_input input);
-	RUN_ON_GPU Base::vec3 cast_primary_ray(const world& models, ray& ray);
+	RUN_ON_GPU Base::vec3 cast_primary_ray(pixels& pixels, int index, const world& models, ray& ray);
 	RUN_ON_GPU Base::vec3 cast_second_ray(const ColorType type, const world& models, const hit& first_hit, ray& ray);
 	RUN_ON_GPU Base::vec3 cast_shadow_ray(const world& models, const hit& hit, ray& rray);
 	RUN_ON_GPU model* get_camera(const world* dworld);
@@ -44,16 +44,18 @@ void Engine::render(Engine::pixels pixels, const world* dworld, const raytrace_i
 	if (input.proj_type == Projection::PERSPECTIVE) dir = input.rotator * dir;
 	origin = pcamera->position;
 	ray pray{ origin, dir };
-	Base::vec3 color = cast_primary_ray(*dworld, pray);
+	pixels.depth[index] = get_infinity();
+	Base::vec3 color = cast_primary_ray(pixels, index, *dworld, pray);
 	pixels.data[index] = rgb{ unsigned char(color.x * 255.0), unsigned char(color.y * 255.0), unsigned char(color.z * 255.0) };
 }
 
 RUN_ON_GPU
-Base::vec3 Engine::cast_primary_ray(const world& models, ray& ray)
+Base::vec3 Engine::cast_primary_ray(pixels& pixels, int index, const world& models, ray& ray)
 {
 	Base::vec3 surface_color{};
 	hit hit_item;
 	if (!detect_hit(models, ray, hit_item)) return get_background_color(models.dcubemap, ray.dir);
+	pixels.depth[index] = length(pcamera->position - ray.phit);
 	if (hit_item.pmodel->smoothness > 0.0 || hit_item.pmodel->transparency > 0.0)
 	{
 		Base::vec3 reflect_color = (hit_item.pmodel->smoothness > 0.0) ? cast_second_ray(ColorType::REFLECTION,models,hit_item,ray) : Base::vec3{};
