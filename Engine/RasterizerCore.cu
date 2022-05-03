@@ -43,6 +43,7 @@ void Engine::render_background(pixels pixels, Base::mat4 dirmatrix, Base::cubema
 	Base::vec3 dir = dirmatrix * Base::vec3{ ndcx, ndcy, 1 };
 	Base::vec3 color = get_background_color(dcubemap, dir);
 	pixels.data[ty * pixels.width + tx] = rgb{ unsigned char(color.x * 255.0), unsigned char(color.y * 255.0), unsigned char(color.z * 255.0) };
+	pixels.depth[ty * pixels.width + tx] = get_infinity();
 }
 
 RUN_ON_GPU_CALL_FROM_CPU 
@@ -53,18 +54,24 @@ void Engine::render_frame(pixels pixels, const raster_input input, model* dmodel
 	triangle* ptriangles = (triangle*)dmodel->dshapes;
 	triangle* ptriangle = ptriangles + index;
 	if (cull_back_face(dcamera, ptriangle)) return;
-	Base::vec3 a_ndc = input.projection * (input.view * ptriangle->a);
-	Base::vec3 b_ndc = input.projection * (input.view * ptriangle->b);
-	Base::vec3 c_ndc = input.projection * (input.view * ptriangle->c);
+	Base::vec3 a_view = input.view * ptriangle->a;
+	Base::vec3 b_view = input.view * ptriangle->b;
+	Base::vec3 c_view = input.view * ptriangle->c;
+	Base::vec3 a_ndc = input.projection * a_view;
+	Base::vec3 b_ndc = input.projection * b_view;
+	Base::vec3 c_ndc = input.projection * c_view;
 	if (!is_visible(a_ndc) && !is_visible(b_ndc) && !is_visible(c_ndc)) return;
+	triangle t_view;
+	Triangle::make_triangle(a_view, b_view, c_view, t_view);
 	Base::vec3 a_raster = to_raster(pixels, a_ndc);
 	Base::vec3 b_raster = to_raster(pixels, b_ndc);
 	Base::vec3 c_raster = to_raster(pixels, c_ndc);
-	int min_raster_x = minimum(a_raster.x, b_raster.x, c_raster.x);
-	int min_raster_y = minimum(a_raster.y, b_raster.y, c_raster.y);
-	int max_raster_x = maximum(a_raster.x, b_raster.x, c_raster.x);
-	int max_raster_y = maximum(a_raster.y, b_raster.y, c_raster.y);
-	triangle t_raster{ a_raster, b_raster, c_raster };
+	triangle t_raster;
+	Triangle::make_triangle(a_raster, b_raster, c_raster, t_raster);
+	int min_raster_x = minimum(t_raster.a.x, t_raster.b.x, t_raster.c.x);
+	int min_raster_y = minimum(t_raster.a.y, t_raster.b.y, t_raster.c.y);
+	int max_raster_x = maximum(t_raster.a.x, t_raster.b.x, t_raster.c.x);
+	int max_raster_y = maximum(t_raster.a.y, t_raster.b.y, t_raster.c.y);
 	for (int j = min_raster_y; j <= max_raster_y; j++)
 	{
 		if (j >= 0 && j < pixels.height)
@@ -73,10 +80,17 @@ void Engine::render_frame(pixels pixels, const raster_input input, model* dmodel
 			{
 				if (i >= 0 && i < pixels.width)
 				{
-					if (Triangle::is_inside(t_raster, Base::vec3{ double(i), double(j) }))
+					Base::vec3 raster_coord{ double(i), double(j) };
+					if (Triangle::is_inside(t_raster, raster_coord))
 					{
 						Base::vec3 color = calculate_color(ptriangle, dmodel, dcamera, dlights, lights_count);
-						pixels.data[j * pixels.width + i] = rgb{ unsigned char(color.x * 255), unsigned char(color.y * 255), unsigned char(color.z * 255) };
+						double depth = Triangle::interpolate_depth(t_raster, t_view, raster_coord);
+						int index = j * pixels.width + i;
+						if (depth < pixels.depth[index])
+						{
+							pixels.data[index] = rgb{ unsigned char(color.x * 255), unsigned char(color.y * 255), unsigned char(color.z * 255) };
+							pixels.depth[index] = depth;
+						}
 					}
 				}
 			}

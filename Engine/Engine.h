@@ -23,6 +23,7 @@ namespace Engine
 	struct pixels
 	{
 		rgb* data = 0;
+		double* depth = 0;
 		int width = 0, height = 0;
 		pixels(int width, int height) : width(width), height(height) {}
 	};

@@ -19,6 +19,35 @@ namespace Engine
 		}
 
 		RUN_ON_CPU_AND_GPU
+		static void make_triangle(const Base::vec3& a, const Base::vec3& b, const Base::vec3& c, triangle& t)
+		{
+			t.ab = b - a;
+			t.bc = c - b;
+			t.ca = a - c;
+			t.normal = cross(t.ab, t.bc);
+			t.area = length(t.normal) / 2.0;
+			normalize(t.normal);
+			t.plane_distance = dot(-t.normal, a);
+			t.a = a;
+			t.b = b;
+			t.c = c;
+		}
+
+		RUN_ON_CPU_AND_GPU
+		static double interpolate_depth(const triangle& t_raster, const triangle& t_view, const Base::vec3& raster_coord)
+		{
+			double cap_area = length(cross(t_raster.ca, raster_coord - t_raster.a));
+			double abp_area = length(cross(t_raster.ab, raster_coord - t_raster.b));
+			double bcp_area = length(cross(t_raster.bc, raster_coord - t_raster.c));
+			double u = cap_area / t_raster.area;
+			double v = abp_area / t_raster.area;
+			double w = bcp_area / t_raster.area;
+			double invz = (u / t_view.a.z) + (v / t_view.b.z) + (w / t_view.c.z);
+			double z = 1 / invz;
+			return (z < 0.0) ? (z * -1.0) : z;
+		}
+
+		RUN_ON_CPU_AND_GPU
 		static bool does_intersect(const triangle& t, const ray& r, double& distance)
 		{
 			double dir_normal_dot = dot(r.dir, t.normal);

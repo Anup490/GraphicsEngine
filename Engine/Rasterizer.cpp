@@ -51,8 +51,11 @@ namespace Engine
 		cudaMalloc(&pdirmatrix, sizeof(double) * 16);
 		rgb* drgbs;
 		cudaMalloc(&drgbs, sizeof(rgb) * width * height);
+		double* ddepth;
+		cudaMalloc(&ddepth, sizeof(double) * width * height);
 		ppixels = new pixels(width, height);
 		ppixels->data = drgbs;
+		ppixels->depth = ddepth;
 		int size = width * height;
 		prgbs = new rgb[size];
 	}
@@ -279,6 +282,7 @@ namespace Engine
 		cudaFree(dcubemap);
 		cudaFree(pdirmatrix);
 		cudaFree(ppixels->data);
+		cudaFree(ppixels->depth);
 		cudaFree(dlights);
 		cudaFree(dcamera);
 		delete p_all_shapes;
