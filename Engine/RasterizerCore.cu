@@ -13,7 +13,7 @@ namespace Engine
 	RUN_ON_GPU bool cull_back_face(const model* dcamera, const triangle* ptriangle);
 	RUN_ON_GPU bool is_visible(const Base::vec3& p);
 	RUN_ON_GPU Base::vec3 to_raster(const pixels& pixels, const Base::vec3& ndc);
-	RUN_ON_GPU Base::vec3 calculate_color(const triangle& t_raster, const triangle& t_view, const triangle* ptriangle, const Base::vec3& raster_coord, const double& depth, model* pmodel, model* dcamera, model* dlights, unsigned lights_count);
+	RUN_ON_GPU Base::vec3 calculate_color(const triangle& t_raster, const triangle& t_view, const triangle* ptriangle, const Base::vec3& raster_coord, const Base::mat4& view_mat, const Base::vec3& p, model* pmodel, model* dlights, unsigned lights_count);
 }
 
 void Engine::draw_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap* dcubemap)
@@ -83,13 +83,13 @@ void Engine::render_frame(pixels pixels, const raster_input input, model* dmodel
 					Base::vec3 raster_coord{ double(i), double(j) };
 					if (Triangle::is_inside(t_raster, raster_coord))
 					{
-						double depth = Triangle::interpolate_depth(t_raster, t_view, raster_coord);
-						Base::vec3 color = calculate_color(t_raster, t_view, ptriangle, raster_coord, depth, dmodel, dcamera, dlights, lights_count);
+						Base::vec3 p = Triangle::interpolate_point(t_raster, t_view, raster_coord);
+						Base::vec3 color = calculate_color(t_raster, t_view, ptriangle, raster_coord, input.view, p, dmodel, dlights, lights_count);
 						int index = j * pixels.width + i;
-						if (depth < pixels.depth[index])
+						if (p.z < pixels.depth[index])
 						{
 							pixels.data[index] = rgb{ unsigned char(color.x * 255), unsigned char(color.y * 255), unsigned char(color.z * 255) };
-							pixels.depth[index] = depth;
+							pixels.depth[index] = p.z;
 						}
 					}
 				}
@@ -125,9 +125,9 @@ Base::vec3 Engine::to_raster(const pixels& pixels, const Base::vec3& ndc)
 }
 
 RUN_ON_GPU 
-Base::vec3 Engine::calculate_color(const triangle& t_raster, const triangle& t_view, const triangle* ptriangle, const Base::vec3& raster_coord, const double& depth, model* pmodel, model* dcamera, model* dlights, unsigned lights_count)
+Base::vec3 Engine::calculate_color(const triangle& t_raster, const triangle& t_view, const triangle* ptriangle, const Base::vec3& raster_coord, const Base::mat4& view_mat, const Base::vec3& p, model* pmodel, model* dlights, unsigned lights_count)
 {
-	Base::vec3 texcoord = Triangle::interpolate_texcoord(t_raster, t_view, ptriangle, raster_coord, depth);
+	Base::vec3 texcoord = Triangle::interpolate_texcoord(t_raster, t_view, ptriangle, raster_coord, p.z);
 	Base::vec3 color;
 	Base::vec3 diffuse_color = Texture::get_color(texcoord, pmodel->diffuse);
 	Base::vec3 specularity;
@@ -137,13 +137,14 @@ Base::vec3 Engine::calculate_color(const triangle& t_raster, const triangle& t_v
 	else specularity = Texture::get_color(texcoord, pmodel->specular);
 	for (unsigned i = 0; i < lights_count; i++)
 	{
-		Base::vec3 light_dir = dlights->position - ptriangle->a;
+		Base::vec3 view_light_pos = view_mat * dlights->position;
+		Base::vec3 light_dir = view_light_pos - p;
 		normalize(light_dir);
-		double light_triangle_dot = max_val(0, dot(light_dir, ptriangle->normal));
+		double light_triangle_dot = max_val(0, dot(light_dir, t_view.normal));
 		Base::vec3 diffuse = diffuse_color * light_triangle_dot;
-		Base::vec3 reflect_dir = get_reflect_dir(-light_dir, ptriangle->normal);
+		Base::vec3 reflect_dir = get_reflect_dir(-light_dir, t_view.normal);
 		normalize(reflect_dir);
-		Base::vec3 view_dir = dcamera->position - ptriangle->a;
+		Base::vec3 view_dir = -p;
 		normalize(view_dir);
 		Base::vec3 specular = specularity * light_triangle_dot * pow(max_val(0.0, dot(view_dir, reflect_dir)), to_1_to_256(specularity.x));
 		color += diffuse + specular;
