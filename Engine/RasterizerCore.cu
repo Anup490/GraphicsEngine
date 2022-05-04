@@ -13,7 +13,7 @@ namespace Engine
 	RUN_ON_GPU bool cull_back_face(const model* dcamera, const triangle* ptriangle);
 	RUN_ON_GPU bool is_visible(const Base::vec3& p);
 	RUN_ON_GPU Base::vec3 to_raster(const pixels& pixels, const Base::vec3& ndc);
-	RUN_ON_GPU Base::vec3 calculate_color(triangle* ptriangle, model* pmodel, model* dcamera, model* dlights, unsigned lights_count);
+	RUN_ON_GPU Base::vec3 calculate_color(const triangle& t_raster, const triangle& t_view, const triangle* ptriangle, const Base::vec3& raster_coord, const double& depth, model* pmodel, model* dcamera, model* dlights, unsigned lights_count);
 }
 
 void Engine::draw_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap* dcubemap)
@@ -83,8 +83,8 @@ void Engine::render_frame(pixels pixels, const raster_input input, model* dmodel
 					Base::vec3 raster_coord{ double(i), double(j) };
 					if (Triangle::is_inside(t_raster, raster_coord))
 					{
-						Base::vec3 color = calculate_color(ptriangle, dmodel, dcamera, dlights, lights_count);
 						double depth = Triangle::interpolate_depth(t_raster, t_view, raster_coord);
+						Base::vec3 color = calculate_color(t_raster, t_view, ptriangle, raster_coord, depth, dmodel, dcamera, dlights, lights_count);
 						int index = j * pixels.width + i;
 						if (depth < pixels.depth[index])
 						{
@@ -125,15 +125,16 @@ Base::vec3 Engine::to_raster(const pixels& pixels, const Base::vec3& ndc)
 }
 
 RUN_ON_GPU 
-Base::vec3 Engine::calculate_color(triangle* ptriangle, model* pmodel, model* dcamera, model* dlights, unsigned lights_count)
+Base::vec3 Engine::calculate_color(const triangle& t_raster, const triangle& t_view, const triangle* ptriangle, const Base::vec3& raster_coord, const double& depth, model* pmodel, model* dcamera, model* dlights, unsigned lights_count)
 {
+	Base::vec3 texcoord = Triangle::interpolate_texcoord(t_raster, t_view, ptriangle, raster_coord, depth);
 	Base::vec3 color;
-	Base::vec3 diffuse_color = Texture::get_color(ptriangle->a_tex, pmodel->diffuse);
+	Base::vec3 diffuse_color = Texture::get_color(texcoord, pmodel->diffuse);
 	Base::vec3 specularity;
 	Base::vec3 ambient_color{ 0.25, 0.25, 0.25 };
 	Base::vec3 ambient = diffuse_color * ambient_color;
 	if (!pmodel->specular.ptextures) specularity = Base::vec3{ pmodel->smoothness, pmodel->smoothness, pmodel->smoothness };
-	else specularity = Texture::get_color(ptriangle->a_tex, pmodel->specular);
+	else specularity = Texture::get_color(texcoord, pmodel->specular);
 	for (unsigned i = 0; i < lights_count; i++)
 	{
 		Base::vec3 light_dir = dlights->position - ptriangle->a;

@@ -6,19 +6,19 @@ namespace Engine
 {
 	namespace Triangle
 	{
-		RUN_ON_CPU_AND_GPU
+		RUN_ON_GPU
 		static double edge_function(const Base::vec3& a, const Base::vec3& b, const Base::vec3& c)
 		{
 			return ((a.x - b.x) * (c.y - a.y)) - ((a.y - b.y) * (c.x - a.x));
 		}
 
-		RUN_ON_CPU_AND_GPU
+		RUN_ON_GPU
 		static bool is_inside(const triangle& t, const Base::vec3& p)
 		{
 			return (edge_function(t.c, t.a, p) <= 0.0) && (edge_function(p, t.a, t.b) <= 0.0) && (edge_function(t.c, p, t.b) <= 0.0);
 		}
 
-		RUN_ON_CPU_AND_GPU
+		RUN_ON_GPU
 		static void make_triangle(const Base::vec3& a, const Base::vec3& b, const Base::vec3& c, triangle& t)
 		{
 			t.ab = b - a;
@@ -33,7 +33,22 @@ namespace Engine
 			t.c = c;
 		}
 
-		RUN_ON_CPU_AND_GPU
+		RUN_ON_GPU
+		static Base::vec3 interpolate_texcoord(const triangle& t_raster, const triangle& t_view, const triangle* ptriangle, const Base::vec3& raster_coord, const double& depth)
+		{
+			double cap_area = length(cross(t_raster.ca, raster_coord - t_raster.a));
+			double abp_area = length(cross(t_raster.ab, raster_coord - t_raster.b));
+			double bcp_area = length(cross(t_raster.bc, raster_coord - t_raster.c));
+			double u = cap_area / t_raster.area;
+			double v = abp_area / t_raster.area;
+			double w = bcp_area / t_raster.area;
+			Base::vec3 texcoord;
+			texcoord.x = depth * (((u * ptriangle->a_tex.x) / t_view.a.z) + ((v * ptriangle->b_tex.x) / t_view.b.z) + ((w * ptriangle->c_tex.x) / t_view.c.z));
+			texcoord.y = depth * (((u * ptriangle->a_tex.y) / t_view.a.z) + ((v * ptriangle->b_tex.y) / t_view.b.z) + ((w * ptriangle->c_tex.y) / t_view.c.z));
+			return texcoord;
+		}
+
+		RUN_ON_GPU
 		static double interpolate_depth(const triangle& t_raster, const triangle& t_view, const Base::vec3& raster_coord)
 		{
 			double cap_area = length(cross(t_raster.ca, raster_coord - t_raster.a));
@@ -47,7 +62,7 @@ namespace Engine
 			return (z < 0.0) ? (z * -1.0) : z;
 		}
 
-		RUN_ON_CPU_AND_GPU
+		RUN_ON_GPU
 		static bool does_intersect(const triangle& t, const ray& r, double& distance)
 		{
 			double dir_normal_dot = dot(r.dir, t.normal);
@@ -60,7 +75,7 @@ namespace Engine
 			return true;
 		}
 
-		RUN_ON_CPU_AND_GPU
+		RUN_ON_GPU
 		static Base::vec3 get_texcoord(const triangle& t, const Base::vec3& p)
 		{
 			double cap_area = length(cross(t.ca, p - t.a));
@@ -72,7 +87,7 @@ namespace Engine
 			return t.a_tex * u + t.b_tex * v + t.c_tex * w;
 		}
 
-		RUN_ON_CPU_AND_GPU
+		RUN_ON_GPU
 		static bool detect_hit(model& model, ray& ray, hit& hit_item, double& tnear)
 		{
 			double t0 = INFINITY;
