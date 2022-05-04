@@ -46,5 +46,5 @@ namespace Engine
 		Base::mat4 projection;
 	};
 	
-	rgb* mix(const pixels& pixels1, const pixels& pixels2);
+	void mix(const pixels& pixels1, const pixels& pixels2, rgb* prgb);
 }

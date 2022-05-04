@@ -6,10 +6,10 @@ namespace Engine
 	RUN_ON_GPU_CALL_FROM_CPU void mix_frames(const pixels p1, const pixels p2, pixels p3);
 }
 
-Engine::rgb* Engine::mix(const pixels& pixels1, const pixels& pixels2)
+void Engine::mix(const pixels& pixels1, const pixels& pixels2, rgb* prgb)
 {
-	if (pixels1.width != pixels2.width) return nullptr;
-	if (pixels1.height != pixels2.height) return nullptr;
+	if (pixels1.width != pixels2.width) return;
+	if (pixels1.height != pixels2.height) return;
 	pixels p1(pixels1.width, pixels1.height);
 	pixels p2(pixels2.width, pixels2.height);
 	pixels p3(pixels1.width, pixels2.height);
@@ -23,12 +23,10 @@ Engine::rgb* Engine::mix(const pixels& pixels1, const pixels& pixels2)
 	dim3 block_size(32,32,1);
 	dim3 grid_size(pixels1.width / 32, pixels2.height / 32, 1);
 	mix_frames << < grid_size, block_size >> > (p1, p2, p3);
-	rgb* colors = new rgb[p3.width * p3.height];
-	cudaMemcpy(colors, p3.data, sizeof(rgb) * p3.width * p3.height, cudaMemcpyDeviceToHost);
+	cudaMemcpy(prgb, p3.data, sizeof(rgb) * p3.width * p3.height, cudaMemcpyDeviceToHost);
 	cudaFree(p1.data);
 	cudaFree(p2.data);
 	cudaFree(p3.data);
-	return colors;
 }
 
 RUN_ON_GPU_CALL_FROM_CPU 

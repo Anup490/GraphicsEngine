@@ -36,11 +36,11 @@ void mixer()
 	ray_i.translator.pmatrix = new double[16];
 	ray_i.rotator.pmatrix = new double[16];
 	Engine::RayTracer* praytracer = 0;
-
 	Engine::raster_input ras_i;
 	ras_i.view.pmatrix = new double[16];
 	ras_i.projection.pmatrix = new double[16];
 	Engine::Rasterizer* prasterizer = 0;
+	Engine::rgb* prgb = 0;
 	try
 	{
 		std::shared_ptr<std::vector<Base::model*>> praymodels = prepare_data(p_ray_camera);
@@ -176,6 +176,8 @@ void mixer()
 		glfwSetScrollCallback(window, scroll_callback);
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
+		prgb = new Engine::rgb[window_width * window_height];
+
 		while (!glfwWindowShouldClose(window))
 		{
 			glClearColor(0.23f, 0.11f, 0.32f, 1.0f);
@@ -186,9 +188,8 @@ void mixer()
 				prepare_raster_input(ras_i);
 				Engine::pixels raytrace_pixels = praytracer->render(ray_i, proj_type);
 				Engine::pixels raster_pixels = prasterizer->render(ras_i, p_ras_camera);
-				Engine::rgb* pixels = Engine::mix(raster_pixels, raytrace_pixels);
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
-				if(pixels) delete[] pixels;
+				Engine::mix(raster_pixels, raytrace_pixels, prgb);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, prgb);
 			}
 			catch (Engine::RayTraceException& e)
 			{
@@ -213,6 +214,7 @@ void mixer()
 	if (ray_i.translator.pmatrix) delete[] ray_i.translator.pmatrix;
 	if (p_ray_camera) delete p_ray_camera;
 	if (p_ras_camera) delete p_ras_camera;
+	if (prgb) delete[] prgb;
 }
 
 void check_btn_press(GLFWwindow* window)
