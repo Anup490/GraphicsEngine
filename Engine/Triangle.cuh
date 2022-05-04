@@ -43,8 +43,8 @@ namespace Engine
 			double v = abp_area / t_raster.area;
 			double w = bcp_area / t_raster.area;
 			Base::vec3 texcoord;
-			texcoord.x = depth * (((u * ptriangle->a_tex.x) / t_view.a.z) + ((v * ptriangle->b_tex.x) / t_view.b.z) + ((w * ptriangle->c_tex.x) / t_view.c.z));
-			texcoord.y = depth * (((u * ptriangle->a_tex.y) / t_view.a.z) + ((v * ptriangle->b_tex.y) / t_view.b.z) + ((w * ptriangle->c_tex.y) / t_view.c.z));
+			texcoord.x = depth * (((w * ptriangle->a_tex.x) / t_view.a.z) + ((u * ptriangle->b_tex.x) / t_view.b.z) + ((v * ptriangle->c_tex.x) / t_view.c.z));
+			texcoord.y = depth * (((w * ptriangle->a_tex.y) / t_view.a.z) + ((u * ptriangle->b_tex.y) / t_view.b.z) + ((v * ptriangle->c_tex.y) / t_view.c.z));
 			return texcoord;
 		}
 
@@ -57,7 +57,7 @@ namespace Engine
 			double u = cap_area / t_raster.area;
 			double v = abp_area / t_raster.area;
 			double w = bcp_area / t_raster.area;
-			double invz = (u / t_view.a.z) + (v / t_view.b.z) + (w / t_view.c.z);
+			double invz = (w / t_view.a.z) + (u / t_view.b.z) + (v / t_view.c.z);
 			double z = 1 / invz;
 			return (z < 0.0) ? (z * -1.0) : z;
 		}
@@ -84,7 +84,7 @@ namespace Engine
 			double u = cap_area / t.area;
 			double v = abp_area / t.area;
 			double w = bcp_area / t.area;
-			return t.a_tex * u + t.b_tex * v + t.c_tex * w;
+			return t.a_tex * w + t.b_tex * u + t.c_tex * v;
 		}
 
 		RUN_ON_GPU
