@@ -36,9 +36,9 @@ namespace Engine
 		RUN_ON_GPU
 		static Base::vec3 interpolate_texcoord(const triangle& t_raster, const triangle& t_view, const triangle* ptriangle, const Base::vec3& raster_coord, const double& depth)
 		{
-			double cap_area = length(cross(t_raster.ca, raster_coord - t_raster.a));
-			double abp_area = length(cross(t_raster.ab, raster_coord - t_raster.b));
-			double bcp_area = length(cross(t_raster.bc, raster_coord - t_raster.c));
+			double cap_area = length(cross(t_raster.ca, raster_coord - t_raster.a)) / 2.0;
+			double abp_area = length(cross(t_raster.ab, raster_coord - t_raster.b)) / 2.0;
+			double bcp_area = length(cross(t_raster.bc, raster_coord - t_raster.c)) / 2.0;
 			double u = cap_area / t_raster.area;
 			double v = abp_area / t_raster.area;
 			double w = bcp_area / t_raster.area;
@@ -51,9 +51,9 @@ namespace Engine
 		RUN_ON_GPU
 		static double interpolate_depth(const triangle& t_raster, const triangle& t_view, const Base::vec3& raster_coord)
 		{
-			double cap_area = length(cross(t_raster.ca, raster_coord - t_raster.a));
-			double abp_area = length(cross(t_raster.ab, raster_coord - t_raster.b));
-			double bcp_area = length(cross(t_raster.bc, raster_coord - t_raster.c));
+			double cap_area = length(cross(t_raster.ca, raster_coord - t_raster.a)) / 2.0;
+			double abp_area = length(cross(t_raster.ab, raster_coord - t_raster.b)) / 2.0;
+			double bcp_area = length(cross(t_raster.bc, raster_coord - t_raster.c)) / 2.0;
 			double u = cap_area / t_raster.area;
 			double v = abp_area / t_raster.area;
 			double w = bcp_area / t_raster.area;
@@ -78,9 +78,9 @@ namespace Engine
 		RUN_ON_GPU
 		static Base::vec3 get_texcoord(const triangle& t, const Base::vec3& p)
 		{
-			double cap_area = length(cross(t.ca, p - t.a));
-			double abp_area = length(cross(t.ab, p - t.b));
-			double bcp_area = length(cross(t.bc, p - t.c));
+			double cap_area = length(cross(t.ca, p - t.a)) / 2.0;
+			double abp_area = length(cross(t.ab, p - t.b)) / 2.0;
+			double bcp_area = length(cross(t.bc, p - t.c)) / 2.0;
 			double u = cap_area / t.area;
 			double v = abp_area / t.area;
 			double w = bcp_area / t.area;
