@@ -13,7 +13,7 @@ namespace Engine
 	RUN_ON_GPU bool cull_back_face(const model* dcamera, const triangle* ptriangle);
 	RUN_ON_GPU bool is_visible(const Base::vec3& p);
 	RUN_ON_GPU Base::vec3 to_raster(const pixels& pixels, const Base::vec3& ndc);
-	RUN_ON_GPU Base::vec3 calculate_color(const triangle& t_raster, const triangle& t_view, const triangle* ptriangle, const Base::vec3& raster_coord, const Base::mat4& view_mat, const Base::vec3& p, model* pmodel, model* dlights, unsigned lights_count);
+	RUN_ON_GPU Base::vec3 calculate_color(const Base::vec3& texcoord, const triangle& t_view, const Base::mat4& view_mat, const Base::vec3& p, model* pmodel, model* dlights, unsigned lights_count);
 }
 
 void Engine::draw_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap* dcubemap)
@@ -84,7 +84,8 @@ void Engine::render_frame(pixels pixels, const raster_input input, model* dmodel
 					if (Triangle::is_inside(t_raster, raster_coord))
 					{
 						Base::vec3 p = Triangle::interpolate_point(t_raster, t_view, raster_coord);
-						Base::vec3 color = calculate_color(t_raster, t_view, ptriangle, raster_coord, input.view, p, dmodel, dlights, lights_count);
+						Base::vec3 texcoord = Triangle::interpolate_texcoord(t_raster, t_view, ptriangle, raster_coord, p.z);
+						Base::vec3 color = calculate_color(texcoord, t_view, input.view, p, dmodel, dlights, lights_count);
 						int index = j * pixels.width + i;
 						if (p.z < pixels.depth[index])
 						{
@@ -125,9 +126,8 @@ Base::vec3 Engine::to_raster(const pixels& pixels, const Base::vec3& ndc)
 }
 
 RUN_ON_GPU 
-Base::vec3 Engine::calculate_color(const triangle& t_raster, const triangle& t_view, const triangle* ptriangle, const Base::vec3& raster_coord, const Base::mat4& view_mat, const Base::vec3& p, model* pmodel, model* dlights, unsigned lights_count)
+Base::vec3 Engine::calculate_color(const Base::vec3& texcoord, const triangle& t_view, const Base::mat4& view_mat, const Base::vec3& p, model* pmodel, model* dlights, unsigned lights_count)
 {
-	Base::vec3 texcoord = Triangle::interpolate_texcoord(t_raster, t_view, ptriangle, raster_coord, p.z);
 	Base::vec3 color;
 	Base::vec3 diffuse_color = Texture::get_color(texcoord, pmodel->diffuse);
 	Base::vec3 specularity;
