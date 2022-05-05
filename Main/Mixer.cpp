@@ -77,7 +77,7 @@ void mixer()
 	{
 		std::cout << "Exception thrown :: " << e.what() << std::endl;
 	}
-	if (praytracer)
+	if (praytracer && prasterizer)
 	{
 		std::cout << "Opening window" << std::endl;
 		const char* window_title = "GraphicsEngine";
