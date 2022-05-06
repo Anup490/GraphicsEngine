@@ -7,6 +7,7 @@ namespace Engine
 	{
 		model *dmodel, *dcamera, *dlights;
 		unsigned lights_count, shape_count;
+		triangle *dtview, *dtndc, *dtraster;
 	};
 
 	void draw_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap* dcubemap);

@@ -21,14 +21,12 @@ namespace Engine
 		raster_input input = pcore->prepare_input(i);
 		pcore->update_camera(pcamera);
 		draw_background(*pcore->ppixels, dirmatrix, pcore->dcubemap);
-		cudaDeviceSynchronize();
 		model_data* ddata;
 		cudaMalloc(&ddata, sizeof(model_data));
 		for (model_data& data : *pcore->p_all_models)
 		{
 			cudaMemcpy(ddata, &data, sizeof(model_data), cudaMemcpyHostToDevice);
 			draw_frame(*pcore->ppixels, input, ddata, data.shape_count);
-			cudaDeviceSynchronize();
 		}
 		int size = (pcore->ppixels->width) * (pcore->ppixels->height);
 		cudaMemcpy(pcore->prgbs, pcore->ppixels->data, sizeof(rgb) * size, cudaMemcpyDeviceToHost);
@@ -59,6 +57,9 @@ namespace Engine
 			data.dcamera = dcamera;
 			data.dlights = dlights;
 			data.lights_count = lights_count;
+			cudaMalloc(&data.dtview, sizeof(triangle) * data.shape_count);
+			cudaMalloc(&data.dtndc, sizeof(triangle) * data.shape_count);
+			cudaMalloc(&data.dtraster, sizeof(triangle) * data.shape_count);
 		}
 		prepare_cubemap(pcubemap);
 		cudaMalloc(&pdirmatrix, sizeof(double) * 16);
@@ -294,7 +295,12 @@ namespace Engine
 		for (unsigned char* dtexture : *p_all_textures)
 			cudaFree(dtexture);
 		for (model_data data : *p_all_models)
+		{
 			cudaFree(data.dmodel);
+			cudaFree(data.dtview);
+			cudaFree(data.dtndc);
+			cudaFree(data.dtraster);
+		}
 		cudaFree(dcubemap);
 		cudaFree(pdirmatrix);
 		cudaFree(ppixels->data);

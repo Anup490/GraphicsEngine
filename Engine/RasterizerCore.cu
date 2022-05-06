@@ -9,11 +9,12 @@
 namespace Engine
 {
 	RUN_ON_GPU_CALL_FROM_CPU void render_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap* dcubemap);
+	RUN_ON_GPU_CALL_FROM_CPU void transform_triangles(pixels pixels, const raster_input input, model_data* ddata);
 	RUN_ON_GPU_CALL_FROM_CPU void render_frame(pixels pixels, const raster_input input, model_data* ddata);
 	RUN_ON_GPU bool cull_back_face(const model* dcamera, const triangle* ptriangle);
 	RUN_ON_GPU bool is_visible(const Base::vec3& p);
 	RUN_ON_GPU Base::vec3 to_raster(const pixels& pixels, const Base::vec3& ndc);
-	RUN_ON_GPU Base::vec3 calculate_color(const Base::vec3& texcoord, const triangle& t_view, const Base::mat4& view_mat, const Base::vec3& p, model_data* ddata);
+	RUN_ON_GPU Base::vec3 calculate_color(const Base::vec3& texcoord, const Base::mat4& view_mat, const Base::vec3& p, model_data* ddata);
 }
 
 void Engine::draw_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap* dcubemap)
@@ -21,6 +22,7 @@ void Engine::draw_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap*
 	dim3 block_size(32, 32, 1);
 	dim3 grid_size(pixels.width / 32, pixels.height / 32, 1);
 	render_background << < grid_size, block_size >> > (pixels, dirmatrix, dcubemap);
+	cudaDeviceSynchronize();
 }
 
 void Engine::draw_frame(pixels pixels, const raster_input& input, model_data* ddata, unsigned shape_count)
@@ -30,7 +32,10 @@ void Engine::draw_frame(pixels pixels, const raster_input& input, model_data* dd
 	unsigned blocks = threads/1024 + 1;
 	dim3 block_size(threads_per_block, 1, 1);
 	dim3 grid_size(blocks, 1, 1);
+	transform_triangles << < grid_size, block_size >> > (pixels, input, ddata);
+	cudaDeviceSynchronize();
 	render_frame << < grid_size, block_size >> > (pixels, input, ddata);
+	cudaDeviceSynchronize();
 }
 
 RUN_ON_GPU_CALL_FROM_CPU 
@@ -47,31 +52,37 @@ void Engine::render_background(pixels pixels, Base::mat4 dirmatrix, Base::cubema
 }
 
 RUN_ON_GPU_CALL_FROM_CPU 
+void Engine::transform_triangles(pixels pixels, const raster_input input, model_data* ddata)
+{
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	if (index >= (ddata->dmodel->shapes_size)) return;
+	triangle* ptriangles = (triangle*)ddata->dmodel->dshapes;
+	if (cull_back_face(ddata->dcamera, &ptriangles[index])) return;
+	ddata->dtview[index].a = input.view * ptriangles[index].a;
+	ddata->dtview[index].b = input.view * ptriangles[index].b;
+	ddata->dtview[index].c = input.view * ptriangles[index].c;
+	Triangle::make_triangle(ddata->dtview[index].a, ddata->dtview[index].b, ddata->dtview[index].c, ddata->dtview[index]);
+	ddata->dtndc[index].a = input.projection * ddata->dtview[index].a;
+	ddata->dtndc[index].b = input.projection * ddata->dtview[index].b;
+	ddata->dtndc[index].c = input.projection * ddata->dtview[index].c;
+	ddata->dtraster[index].a = to_raster(pixels, ddata->dtndc[index].a);
+	ddata->dtraster[index].b = to_raster(pixels, ddata->dtndc[index].b);
+	ddata->dtraster[index].c = to_raster(pixels, ddata->dtndc[index].c);
+	Triangle::make_triangle(ddata->dtraster[index].a, ddata->dtraster[index].b, ddata->dtraster[index].c, ddata->dtraster[index]);
+}
+
+RUN_ON_GPU_CALL_FROM_CPU 
 void Engine::render_frame(pixels pixels, const raster_input input, model_data* ddata)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= (ddata->dmodel->shapes_size)) return;
 	triangle* ptriangles = (triangle*)ddata->dmodel->dshapes;
-	triangle* ptriangle = ptriangles + index;
-	if (cull_back_face(ddata->dcamera, ptriangle)) return;
-	Base::vec3 a_view = input.view * ptriangle->a;
-	Base::vec3 b_view = input.view * ptriangle->b;
-	Base::vec3 c_view = input.view * ptriangle->c;
-	Base::vec3 a_ndc = input.projection * a_view;
-	Base::vec3 b_ndc = input.projection * b_view;
-	Base::vec3 c_ndc = input.projection * c_view;
-	if (!is_visible(a_ndc) && !is_visible(b_ndc) && !is_visible(c_ndc)) return;
-	triangle t_view;
-	Triangle::make_triangle(a_view, b_view, c_view, t_view);
-	Base::vec3 a_raster = to_raster(pixels, a_ndc);
-	Base::vec3 b_raster = to_raster(pixels, b_ndc);
-	Base::vec3 c_raster = to_raster(pixels, c_ndc);
-	triangle t_raster;
-	Triangle::make_triangle(a_raster, b_raster, c_raster, t_raster);
-	int min_raster_x = minimum(t_raster.a.x, t_raster.b.x, t_raster.c.x);
-	int min_raster_y = minimum(t_raster.a.y, t_raster.b.y, t_raster.c.y);
-	int max_raster_x = maximum(t_raster.a.x, t_raster.b.x, t_raster.c.x);
-	int max_raster_y = maximum(t_raster.a.y, t_raster.b.y, t_raster.c.y);
+	if (cull_back_face(ddata->dcamera, &ptriangles[index])) return;
+	if (!is_visible(ddata->dtndc[index].a) && !is_visible(ddata->dtndc[index].b) && !is_visible(ddata->dtndc[index].c)) return;
+	int min_raster_x = minimum(ddata->dtraster[index].a.x, ddata->dtraster[index].b.x, ddata->dtraster[index].c.x);
+	int min_raster_y = minimum(ddata->dtraster[index].a.y, ddata->dtraster[index].b.y, ddata->dtraster[index].c.y);
+	int max_raster_x = maximum(ddata->dtraster[index].a.x, ddata->dtraster[index].b.x, ddata->dtraster[index].c.x);
+	int max_raster_y = maximum(ddata->dtraster[index].a.y, ddata->dtraster[index].b.y, ddata->dtraster[index].c.y);
 	for (int j = min_raster_y; j <= max_raster_y; j++)
 	{
 		if (j >= 0 && j < pixels.height)
@@ -81,11 +92,11 @@ void Engine::render_frame(pixels pixels, const raster_input input, model_data* d
 				if (i >= 0 && i < pixels.width)
 				{
 					Base::vec3 raster_coord{ double(i), double(j) };
-					if (Triangle::is_inside(t_raster, raster_coord))
+					if (Triangle::is_inside(ddata->dtraster[index], raster_coord))
 					{
-						Base::vec3 p = Triangle::interpolate_point(t_raster, t_view, raster_coord);
-						Base::vec3 texcoord = Triangle::interpolate_texcoord(t_raster, t_view, ptriangle, raster_coord, p.z);
-						Base::vec3 color = calculate_color(texcoord, t_view, input.view, p, ddata);
+						Base::vec3 p = Triangle::interpolate_point(ddata->dtraster[index], ddata->dtview[index], raster_coord);
+						Base::vec3 texcoord = Triangle::interpolate_texcoord(ddata->dtraster[index], ddata->dtview[index], &ptriangles[index], raster_coord, p.z);
+						Base::vec3 color = calculate_color(texcoord, input.view, p, ddata);
 						int index = j * pixels.width + i;
 						if (p.z < pixels.depth[index])
 						{
@@ -126,8 +137,9 @@ Base::vec3 Engine::to_raster(const pixels& pixels, const Base::vec3& ndc)
 }
 
 RUN_ON_GPU 
-Base::vec3 Engine::calculate_color(const Base::vec3& texcoord, const triangle& t_view, const Base::mat4& view_mat, const Base::vec3& p, model_data* ddata)
+Base::vec3 Engine::calculate_color(const Base::vec3& texcoord, const Base::mat4& view_mat, const Base::vec3& p, model_data* ddata)
 {
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	Base::vec3 color;
 	Base::vec3 diffuse_color = Texture::get_color(texcoord, ddata->dmodel->diffuse);
 	Base::vec3 specularity;
@@ -140,9 +152,9 @@ Base::vec3 Engine::calculate_color(const Base::vec3& texcoord, const triangle& t
 		Base::vec3 view_light_pos = view_mat * ddata->dlights->position;
 		Base::vec3 light_dir = view_light_pos - p;
 		normalize(light_dir);
-		double light_triangle_dot = max_val(0, dot(light_dir, t_view.normal));
+		double light_triangle_dot = max_val(0, dot(light_dir, ddata->dtview[index].normal));
 		Base::vec3 diffuse = diffuse_color * light_triangle_dot;
-		Base::vec3 reflect_dir = get_reflect_dir(-light_dir, t_view.normal);
+		Base::vec3 reflect_dir = get_reflect_dir(-light_dir, ddata->dtview[index].normal);
 		normalize(reflect_dir);
 		Base::vec3 view_dir = -p;
 		normalize(view_dir);
