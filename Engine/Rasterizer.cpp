@@ -22,15 +22,19 @@ namespace Engine
 		pcore->update_camera(pcamera);
 		draw_background(*pcore->ppixels, dirmatrix, pcore->dcubemap);
 		cudaDeviceSynchronize();
-		for (model_data data : *pcore->p_all_models)
+		model_data* ddata;
+		cudaMalloc(&ddata, sizeof(model_data));
+		for (model_data& data : *pcore->p_all_models)
 		{
-			draw_frame(*pcore->ppixels, input, data, pcore->dcamera, pcore->dlights, pcore->lights_count);
+			cudaMemcpy(ddata, &data, sizeof(model_data), cudaMemcpyHostToDevice);
+			draw_frame(*pcore->ppixels, input, ddata, data.shape_count);
 			cudaDeviceSynchronize();
 		}
 		int size = (pcore->ppixels->width) * (pcore->ppixels->height);
 		cudaMemcpy(pcore->prgbs, pcore->ppixels->data, sizeof(rgb) * size, cudaMemcpyDeviceToHost);
 		cudaFree(input.view.pmatrix);
 		cudaFree(input.projection.pmatrix);
+		cudaFree(ddata);
 		pixels p(pcore->ppixels->width, pcore->ppixels->height);
 		p.data = pcore->prgbs;
 		p.depth = pcore->ppixels->depth;
@@ -50,6 +54,12 @@ namespace Engine
 		prepare_data(pmodels);
 		prepare_lights(pmodels);
 		prepare_camera(pmodels);
+		for (model_data& data : *p_all_models)
+		{
+			data.dcamera = dcamera;
+			data.dlights = dlights;
+			data.lights_count = lights_count;
+		}
 		prepare_cubemap(pcubemap);
 		cudaMalloc(&pdirmatrix, sizeof(double) * 16);
 		rgb* drgbs;
@@ -90,7 +100,10 @@ namespace Engine
 			model.m_type = pmodel->m_type;
 			cudaMalloc(&dmodel, sizeof(model));
 			cudaMemcpy(dmodel, &model, sizeof(model), cudaMemcpyHostToDevice);
-			p_all_models->push_back(model_data{ dmodel, unsigned(triangles.size()) });
+			model_data m;
+			m.dmodel = dmodel; 
+			m.shape_count = unsigned(triangles.size());
+			p_all_models->push_back(m);
 			p_all_shapes->push_back(model.dshapes);
 		}
 	}

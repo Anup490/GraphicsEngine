@@ -5,12 +5,12 @@ namespace Engine
 {
 	struct model_data
 	{
-		model *dmodel;
-		unsigned shape_count;
+		model *dmodel, *dcamera, *dlights;
+		unsigned lights_count, shape_count;
 	};
 
 	void draw_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap* dcubemap);
-	void draw_frame(pixels pixels, const raster_input& input, model_data data, model* dcamera, model* dlights, unsigned lights_count);
+	void draw_frame(pixels pixels, const raster_input& input, model_data* ddata, unsigned shape_count);
 
 	struct RasterizerCore
 	{
