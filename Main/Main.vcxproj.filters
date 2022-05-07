@@ -36,6 +36,9 @@
     <ClCompile Include="Rasterize.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Mixer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileReader.h">

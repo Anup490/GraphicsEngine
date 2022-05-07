@@ -187,6 +187,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <CudaCompile Include="Engine.cu" />
     <CudaCompile Include="RasterizerCore.cu" />
     <CudaCompile Include="RayTracerCore.cu" />
   </ItemGroup>

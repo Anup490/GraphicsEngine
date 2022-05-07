@@ -9,9 +9,12 @@
 namespace Engine
 {
 	RUN_ON_GPU_CALL_FROM_CPU void render_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap* dcubemap);
-	RUN_ON_GPU_CALL_FROM_CPU void render_frame(pixels pixels, const raster_input input, Engine::model* dmodel);
+	RUN_ON_GPU_CALL_FROM_CPU void transform_triangles(pixels pixels, const raster_input input, model_data* ddata);
+	RUN_ON_GPU_CALL_FROM_CPU void render_frame(pixels pixels, const raster_input input, model_data* ddata);
+	RUN_ON_GPU bool cull_back_face(const model* dcamera, const triangle* ptriangle);
 	RUN_ON_GPU bool is_visible(const Base::vec3& p);
 	RUN_ON_GPU Base::vec3 to_raster(const pixels& pixels, const Base::vec3& ndc);
+	RUN_ON_GPU Base::vec3 calculate_color(const Base::vec3& texcoord, const Base::mat4& view_mat, const Base::vec3& p, model_data* ddata);
 }
 
 void Engine::draw_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap* dcubemap)
@@ -19,16 +22,20 @@ void Engine::draw_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap*
 	dim3 block_size(32, 32, 1);
 	dim3 grid_size(pixels.width / 32, pixels.height / 32, 1);
 	render_background << < grid_size, block_size >> > (pixels, dirmatrix, dcubemap);
+	cudaDeviceSynchronize();
 }
 
-void Engine::draw_frame(pixels pixels, const raster_input& input, model_data data)
+void Engine::draw_frame(pixels pixels, const raster_input& input, model_data* ddata, unsigned shape_count)
 {
-	unsigned threads = nearest_high_multiple(data.shape_count, 32);
+	unsigned threads = nearest_high_multiple(shape_count, 32);
 	unsigned threads_per_block = (threads < 1024) ? threads : 1024;
 	unsigned blocks = threads/1024 + 1;
 	dim3 block_size(threads_per_block, 1, 1);
 	dim3 grid_size(blocks, 1, 1);
-	render_frame << < grid_size, block_size >> > (pixels, input, data.dmodel);
+	transform_triangles << < grid_size, block_size >> > (pixels, input, ddata);
+	cudaDeviceSynchronize();
+	render_frame << < grid_size, block_size >> > (pixels, input, ddata);
+	cudaDeviceSynchronize();
 }
 
 RUN_ON_GPU_CALL_FROM_CPU 
@@ -41,43 +48,74 @@ void Engine::render_background(pixels pixels, Base::mat4 dirmatrix, Base::cubema
 	Base::vec3 dir = dirmatrix * Base::vec3{ ndcx, ndcy, 1 };
 	Base::vec3 color = get_background_color(dcubemap, dir);
 	pixels.data[ty * pixels.width + tx] = rgb{ unsigned char(color.x * 255.0), unsigned char(color.y * 255.0), unsigned char(color.z * 255.0) };
+	pixels.depth[ty * pixels.width + tx] = get_infinity();
 }
 
 RUN_ON_GPU_CALL_FROM_CPU 
-void Engine::render_frame(pixels pixels, const raster_input input, Engine::model* dmodel)
+void Engine::transform_triangles(pixels pixels, const raster_input input, model_data* ddata)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	if (index >= (dmodel->shapes_size)) return;
-	triangle* ptriangles = (triangle*)dmodel->dshapes;
-	triangle* ptriangle = ptriangles + index;
-	Base::vec3 a_ndc = input.projection * (input.view * ptriangle->a);
-	Base::vec3 b_ndc = input.projection * (input.view * ptriangle->b);
-	Base::vec3 c_ndc = input.projection * (input.view * ptriangle->c);
-	if (!is_visible(a_ndc) && !is_visible(b_ndc) && !is_visible(c_ndc)) return;
-	double max_ndc_x = Engine::maximum(a_ndc.x, b_ndc.x, c_ndc.x);
-	double max_ndc_y = Engine::maximum(a_ndc.y, b_ndc.y, c_ndc.y);
-	double min_ndc_x = Engine::minimum(a_ndc.x, b_ndc.x, c_ndc.x);
-	double min_ndc_y = Engine::minimum(a_ndc.y, b_ndc.y, c_ndc.y);
-	Base::vec3 min_raster = to_raster(pixels, Base::vec3{ min_ndc_x, max_ndc_y });
-	Base::vec3 max_raster = to_raster(pixels, Base::vec3{ max_ndc_x, min_ndc_y });
-	Base::vec3 a_raster = to_raster(pixels, a_ndc);
-	Base::vec3 b_raster = to_raster(pixels, b_ndc);
-	Base::vec3 c_raster = to_raster(pixels, c_ndc);
-	triangle t_raster{ a_raster, b_raster, c_raster };
-	for (int j = min_raster.y; j <= max_raster.y; j++)
+	if (index >= (ddata->dmodel->shapes_size)) return;
+	triangle* ptriangles = (triangle*)ddata->dmodel->dshapes;
+	if (cull_back_face(ddata->dcamera, &ptriangles[index])) return;
+	ddata->dtview[index].a = input.view * ptriangles[index].a;
+	ddata->dtview[index].b = input.view * ptriangles[index].b;
+	ddata->dtview[index].c = input.view * ptriangles[index].c;
+	Triangle::make_triangle(ddata->dtview[index].a, ddata->dtview[index].b, ddata->dtview[index].c, ddata->dtview[index]);
+	ddata->dtndc[index].a = input.projection * ddata->dtview[index].a;
+	ddata->dtndc[index].b = input.projection * ddata->dtview[index].b;
+	ddata->dtndc[index].c = input.projection * ddata->dtview[index].c;
+	ddata->dtraster[index].a = to_raster(pixels, ddata->dtndc[index].a);
+	ddata->dtraster[index].b = to_raster(pixels, ddata->dtndc[index].b);
+	ddata->dtraster[index].c = to_raster(pixels, ddata->dtndc[index].c);
+	Triangle::make_triangle(ddata->dtraster[index].a, ddata->dtraster[index].b, ddata->dtraster[index].c, ddata->dtraster[index]);
+}
+
+RUN_ON_GPU_CALL_FROM_CPU 
+void Engine::render_frame(pixels pixels, const raster_input input, model_data* ddata)
+{
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	if (index >= (ddata->dmodel->shapes_size)) return;
+	triangle* ptriangles = (triangle*)ddata->dmodel->dshapes;
+	if (cull_back_face(ddata->dcamera, &ptriangles[index])) return;
+	if (!is_visible(ddata->dtndc[index].a) && !is_visible(ddata->dtndc[index].b) && !is_visible(ddata->dtndc[index].c)) return;
+	int min_raster_x = minimum(ddata->dtraster[index].a.x, ddata->dtraster[index].b.x, ddata->dtraster[index].c.x);
+	int min_raster_y = minimum(ddata->dtraster[index].a.y, ddata->dtraster[index].b.y, ddata->dtraster[index].c.y);
+	int max_raster_x = maximum(ddata->dtraster[index].a.x, ddata->dtraster[index].b.x, ddata->dtraster[index].c.x);
+	int max_raster_y = maximum(ddata->dtraster[index].a.y, ddata->dtraster[index].b.y, ddata->dtraster[index].c.y);
+	for (int j = min_raster_y; j <= max_raster_y; j++)
 	{
 		if (j >= 0 && j < pixels.height)
 		{
-			for (int i = min_raster.x; i <= max_raster.x; i++)
+			for (int i = min_raster_x; i <= max_raster_x; i++)
 			{
 				if (i >= 0 && i < pixels.width)
 				{
-					if (Triangle::is_inside(t_raster, Base::vec3{ double(i), double(j) }))
-						pixels.data[j * pixels.width + i] = rgb{ 127, 127, 127 };
+					Base::vec3 raster_coord{ double(i), double(j) };
+					if (Triangle::is_inside(ddata->dtraster[index], raster_coord))
+					{
+						Base::vec3 p = Triangle::interpolate_point(ddata->dtraster[index], ddata->dtview[index], raster_coord);
+						Base::vec3 texcoord = Triangle::interpolate_texcoord(ddata->dtraster[index], ddata->dtview[index], &ptriangles[index], raster_coord, p.z);
+						Base::vec3 color = calculate_color(texcoord, input.view, p, ddata);
+						int index = j * pixels.width + i;
+						if (p.z < pixels.depth[index])
+						{
+							pixels.data[index] = rgb{ unsigned char(color.x * 255), unsigned char(color.y * 255), unsigned char(color.z * 255) };
+							pixels.depth[index] = p.z;
+						}
+					}
 				}
 			}
 		}
 	}
+}
+
+RUN_ON_GPU 
+bool Engine::cull_back_face(const model* dcamera, const triangle* ptriangle)
+{
+	Base::vec3 view_dir = dcamera->position - ptriangle->a;
+	normalize(view_dir);
+	return dot(view_dir, ptriangle->normal) < 0.0;
 }
 
 RUN_ON_GPU 
@@ -96,4 +134,32 @@ Base::vec3 Engine::to_raster(const pixels& pixels, const Base::vec3& ndc)
 	raster.x = (pixels.width * (ndc.x + 1)) / 2;
 	raster.y = (pixels.height * (1 - ndc.y)) / 2;
 	return raster;
+}
+
+RUN_ON_GPU 
+Base::vec3 Engine::calculate_color(const Base::vec3& texcoord, const Base::mat4& view_mat, const Base::vec3& p, model_data* ddata)
+{
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	Base::vec3 color;
+	Base::vec3 diffuse_color = Texture::get_color(texcoord, ddata->dmodel->diffuse);
+	Base::vec3 specularity;
+	Base::vec3 ambient_color{ 0.25, 0.25, 0.25 };
+	Base::vec3 ambient = diffuse_color * ambient_color;
+	if (!ddata->dmodel->specular.ptextures) specularity = Base::vec3{ ddata->dmodel->smoothness, ddata->dmodel->smoothness, ddata->dmodel->smoothness };
+	else specularity = Texture::get_color(texcoord, ddata->dmodel->specular);
+	for (unsigned i = 0; i < ddata->lights_count; i++)
+	{
+		Base::vec3 view_light_pos = view_mat * ddata->dlights->position;
+		Base::vec3 light_dir = view_light_pos - p;
+		normalize(light_dir);
+		double light_triangle_dot = max_val(0, dot(light_dir, ddata->dtview[index].normal));
+		Base::vec3 diffuse = diffuse_color * light_triangle_dot;
+		Base::vec3 reflect_dir = get_reflect_dir(-light_dir, ddata->dtview[index].normal);
+		normalize(reflect_dir);
+		Base::vec3 view_dir = -p;
+		normalize(view_dir);
+		Base::vec3 specular = specularity * light_triangle_dot * pow(max_val(0.0, dot(view_dir, reflect_dir)), to_1_to_256(specularity.x));
+		color += diffuse + specular;
+	}
+	return get_clamped(color + ambient);
 }

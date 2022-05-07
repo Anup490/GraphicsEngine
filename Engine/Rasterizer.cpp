@@ -14,23 +14,29 @@ namespace Engine
 		pcore = new RasterizerCore(pmodels, pcubemap, width, height);
 	}
 
-	Engine::rgb* Rasterizer::render(const raster_input& i)
+	pixels Rasterizer::render(const raster_input& i, const Base::model* pcamera)
 	{
 		if (!pcore->ppixels) throw RasterizeException("init function not called");
 		Base::mat4 dirmatrix = pcore->prepare_dirmatrix(i);
 		raster_input input = pcore->prepare_input(i);
+		pcore->update_camera(pcamera);
 		draw_background(*pcore->ppixels, dirmatrix, pcore->dcubemap);
-		cudaDeviceSynchronize();
-		for (model_data data : *pcore->p_all_models)
+		model_data* ddata;
+		cudaMalloc(&ddata, sizeof(model_data));
+		for (model_data& data : *pcore->p_all_models)
 		{
-			draw_frame(*pcore->ppixels, input, data);
-			cudaDeviceSynchronize();
+			cudaMemcpy(ddata, &data, sizeof(model_data), cudaMemcpyHostToDevice);
+			draw_frame(*pcore->ppixels, input, ddata, data.shape_count);
 		}
 		int size = (pcore->ppixels->width) * (pcore->ppixels->height);
 		cudaMemcpy(pcore->prgbs, pcore->ppixels->data, sizeof(rgb) * size, cudaMemcpyDeviceToHost);
 		cudaFree(input.view.pmatrix);
 		cudaFree(input.projection.pmatrix);
-		return pcore->prgbs;
+		cudaFree(ddata);
+		pixels p(pcore->ppixels->width, pcore->ppixels->height);
+		p.data = pcore->prgbs;
+		p.depth = pcore->ppixels->depth;
+		return p;
 	}
 
 	Rasterizer::~Rasterizer()
@@ -44,12 +50,26 @@ namespace Engine
 		p_all_shapes = new std::vector<void*>;
 		p_all_textures = new std::vector<unsigned char*>();
 		prepare_data(pmodels);
+		prepare_lights(pmodels);
+		prepare_camera(pmodels);
+		for (model_data& data : *p_all_models)
+		{
+			data.dcamera = dcamera;
+			data.dlights = dlights;
+			data.lights_count = lights_count;
+			cudaMalloc(&data.dtview, sizeof(triangle) * data.shape_count);
+			cudaMalloc(&data.dtndc, sizeof(triangle) * data.shape_count);
+			cudaMalloc(&data.dtraster, sizeof(triangle) * data.shape_count);
+		}
 		prepare_cubemap(pcubemap);
 		cudaMalloc(&pdirmatrix, sizeof(double) * 16);
 		rgb* drgbs;
 		cudaMalloc(&drgbs, sizeof(rgb) * width * height);
+		double* ddepth;
+		cudaMalloc(&ddepth, sizeof(double) * width * height);
 		ppixels = new pixels(width, height);
 		ppixels->data = drgbs;
+		ppixels->depth = ddepth;
 		int size = width * height;
 		prgbs = new rgb[size];
 	}
@@ -59,20 +79,21 @@ namespace Engine
 		for (unsigned i = 0; i < pmodels->size(); i++)
 		{
 			Base::model* pmodel = (*pmodels)[i];
+			if (pmodel->m_type != Base::model_type::OBJECT) continue;
 			model model, * dmodel;
+			std::vector<triangle> triangles;
 			if (pmodel->s_type == Base::shape_type::TRIANGLE)
 			{
-				std::vector<triangle> triangles;
 				prepare_triangles(pmodel, &triangles);
-				cudaMalloc(&model.dshapes, sizeof(triangle) * pmodel->shapes_size);
-				cudaMemcpy(model.dshapes, triangles.data(), sizeof(triangle) * pmodel->shapes_size, cudaMemcpyHostToDevice);
+				cudaMalloc(&model.dshapes, sizeof(triangle) * triangles.size());
+				cudaMemcpy(model.dshapes, triangles.data(), sizeof(triangle) * triangles.size(), cudaMemcpyHostToDevice);
 			}
 			model.emissive_color = pmodel->emissive_color;
 			model.position = pmodel->position;
 			model.smoothness = pmodel->smoothness;
 			model.transparency = pmodel->transparency;
 			model.metallicity = pmodel->metallicity;
-			model.shapes_size = pmodel->shapes_size;
+			model.shapes_size = triangles.size();
 			model.s_type = pmodel->s_type;
 			model.diffuse = get_texture(pmodel->diffuse);
 			model.specular = get_texture(pmodel->specular);
@@ -80,8 +101,48 @@ namespace Engine
 			model.m_type = pmodel->m_type;
 			cudaMalloc(&dmodel, sizeof(model));
 			cudaMemcpy(dmodel, &model, sizeof(model), cudaMemcpyHostToDevice);
-			p_all_models->push_back(model_data{ dmodel, model.shapes_size });
+			model_data m;
+			m.dmodel = dmodel; 
+			m.shape_count = unsigned(triangles.size());
+			p_all_models->push_back(m);
 			p_all_shapes->push_back(model.dshapes);
+		}
+	}
+
+	void RasterizerCore::prepare_lights(const std::shared_ptr<std::vector<Base::model*>> pmodels)
+	{
+		if (pmodels->size() == 0) return;
+		std::vector<model> lights;
+		for (unsigned i = 0; i < pmodels->size(); i++)
+		{
+			Base::model* pmodel = (*pmodels)[i];
+			if (pmodel->m_type != Base::model_type::LIGHT) continue;
+			model model;
+			model.emissive_color = pmodel->emissive_color;
+			model.position = pmodel->position;
+			model.surface_color = pmodel->surface_color;
+			model.m_type = pmodel->m_type;
+			lights.push_back(model);
+		}
+		cudaMalloc(&dlights, sizeof(model) * lights.size());
+		cudaMemcpy(dlights, lights.data(), sizeof(model) * lights.size(), cudaMemcpyHostToDevice);
+		lights_count = lights.size();
+	}
+
+
+	void RasterizerCore::prepare_camera(const std::shared_ptr<std::vector<Base::model*>> pmodels)
+	{
+		for (Base::model* pmodel : *pmodels)
+		{
+			if (pmodel->m_type == Base::model_type::CAMERA)
+			{
+				model camera;
+				camera.position = pmodel->position;
+				camera.m_type = pmodel->m_type;
+				cudaMalloc(&dcamera, sizeof(model));
+				cudaMemcpy(dcamera, &camera, sizeof(model), cudaMemcpyHostToDevice);
+				break;
+			}
 		}
 	}
 
@@ -97,7 +158,56 @@ namespace Engine
 			p_vertex_b->position += pmodel->position;
 			Base::vertex* p_vertex_c = &c_triangles[i].c;
 			p_vertex_c->position += pmodel->position;
-			ptriangles->push_back(make_triangle(*p_vertex_a, *p_vertex_b, *p_vertex_c));
+			triangle t = make_triangle(*p_vertex_a, *p_vertex_b, *p_vertex_c);
+			split_and_store_triangle(t, ptriangles);
+		}
+	}
+
+	void RasterizerCore::split_and_store_triangle(triangle& t, std::vector<triangle>* ptriangles)
+	{
+		if (t.area > triangle_min_area)
+		{
+			double ab_length = length(t.ab);
+			double bc_length = length(t.bc);
+			double ca_length = length(t.ca);
+			double max_length = maximum(ab_length, bc_length, ca_length);
+			Base::vertex a_vertex{ t.a, t.normal, t.a_tex };
+			Base::vertex b_vertex{ t.b, t.normal, t.b_tex };
+			Base::vertex c_vertex{ t.c, t.normal, t.c_tex };
+			if (equal(ab_length, max_length))
+			{
+				Base::vec3 m{ (t.a.x + t.b.x) / 2.0, (t.a.y + t.b.y) / 2.0, (t.a.z + t.b.z) / 2.0, };
+				Base::vec3 m_tex{ (t.a_tex.x + t.b_tex.x) / 2.0, (t.a_tex.y + t.b_tex.y) / 2.0, (t.a_tex.z + t.b_tex.z) / 2.0, };
+				Base::vertex m_vertex{ m, t.normal, m_tex };
+				triangle t1 = make_triangle(a_vertex, m_vertex, c_vertex);
+				split_and_store_triangle(t1, ptriangles);
+				triangle t2 = make_triangle(m_vertex, b_vertex, c_vertex);
+				split_and_store_triangle(t2, ptriangles);
+			}
+			else if (equal(bc_length, max_length))
+			{
+				Base::vec3 m{ (t.b.x + t.c.x) / 2.0, (t.b.y + t.c.y) / 2.0, (t.b.z + t.c.z) / 2.0, };
+				Base::vec3 m_tex{ (t.b_tex.x + t.c_tex.x) / 2.0, (t.b_tex.y + t.c_tex.y) / 2.0, (t.b_tex.z + t.c_tex.z) / 2.0, };
+				Base::vertex m_vertex{ m, t.normal, m_tex };
+				triangle t1 = make_triangle(a_vertex, b_vertex, m_vertex);
+				split_and_store_triangle(t1, ptriangles);
+				triangle t2 = make_triangle(a_vertex, m_vertex, c_vertex);
+				split_and_store_triangle(t2, ptriangles);
+			}
+			else
+			{
+				Base::vec3 m{ (t.c.x + t.a.x) / 2.0, (t.c.y + t.a.y) / 2.0, (t.c.z + t.a.z) / 2.0, };
+				Base::vec3 m_tex{ (t.c_tex.x + t.a_tex.x) / 2.0, (t.c_tex.y + t.a_tex.y) / 2.0, (t.c_tex.z + t.a_tex.z) / 2.0, };
+				Base::vertex m_vertex{ m, t.normal, m_tex };
+				triangle t1 = make_triangle(a_vertex, b_vertex, m_vertex);
+				split_and_store_triangle(t1, ptriangles);
+				triangle t2 = make_triangle(m_vertex, b_vertex, c_vertex);
+				split_and_store_triangle(t2, ptriangles);
+			}
+		}
+		else
+		{
+			ptriangles->push_back(t);
 		}
 	}
 
@@ -108,7 +218,6 @@ namespace Engine
 		Base::vec3 ca = a.position - c.position;
 		Base::vec3 normal = cross(ab, bc);
 		double area = length(normal) / 2.0;
-		Base::vec3 emission{ 0.0, 0.0, 0.0 };
 		normalize(normal);
 		double plane_distance = dot(-normal, a.position);
 		return triangle{ a.position,b.position,c.position,ab,bc,ca,a.texcoord,b.texcoord,c.texcoord,normal,plane_distance,area };
@@ -168,6 +277,17 @@ namespace Engine
 		return dirmatrix;
 	}
 
+	void RasterizerCore::update_camera(const Base::model* pcamera)
+	{
+		if (dcamera)
+		{
+			model camera;
+			camera.position = pcamera->position;
+			camera.m_type = pcamera->m_type;
+			cudaMemcpy(dcamera, &camera, sizeof(model), cudaMemcpyHostToDevice);
+		}
+	}
+
 	RasterizerCore::~RasterizerCore()
 	{
 		for (void* dshape : *p_all_shapes)
@@ -175,10 +295,18 @@ namespace Engine
 		for (unsigned char* dtexture : *p_all_textures)
 			cudaFree(dtexture);
 		for (model_data data : *p_all_models)
+		{
 			cudaFree(data.dmodel);
+			cudaFree(data.dtview);
+			cudaFree(data.dtndc);
+			cudaFree(data.dtraster);
+		}
 		cudaFree(dcubemap);
 		cudaFree(pdirmatrix);
 		cudaFree(ppixels->data);
+		cudaFree(ppixels->depth);
+		cudaFree(dlights);
+		cudaFree(dcamera);
 		delete p_all_shapes;
 		delete p_all_textures;
 		delete p_all_models;

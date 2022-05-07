@@ -6,19 +6,67 @@ namespace Engine
 {
 	namespace Triangle
 	{
-		RUN_ON_CPU_AND_GPU
+		RUN_ON_GPU
 		static double edge_function(const Base::vec3& a, const Base::vec3& b, const Base::vec3& c)
 		{
 			return ((a.x - b.x) * (c.y - a.y)) - ((a.y - b.y) * (c.x - a.x));
 		}
 
-		RUN_ON_CPU_AND_GPU
+		RUN_ON_GPU
 		static bool is_inside(const triangle& t, const Base::vec3& p)
 		{
 			return (edge_function(t.c, t.a, p) <= 0.0) && (edge_function(p, t.a, t.b) <= 0.0) && (edge_function(t.c, p, t.b) <= 0.0);
 		}
 
-		RUN_ON_CPU_AND_GPU
+		RUN_ON_GPU
+		static void make_triangle(const Base::vec3& a, const Base::vec3& b, const Base::vec3& c, triangle& t)
+		{
+			t.ab = b - a;
+			t.bc = c - b;
+			t.ca = a - c;
+			t.normal = cross(t.ab, t.bc);
+			t.area = length(t.normal) / 2.0;
+			normalize(t.normal);
+			t.plane_distance = dot(-t.normal, a);
+			t.a = a;
+			t.b = b;
+			t.c = c;
+		}
+
+		RUN_ON_GPU
+		static Base::vec3 interpolate_point(const triangle& t_raster, const triangle& t_view, const Base::vec3& raster_coord)
+		{
+			double cap_area = length(cross(t_raster.ca, raster_coord - t_raster.a)) / 2.0;
+			double abp_area = length(cross(t_raster.ab, raster_coord - t_raster.b)) / 2.0;
+			double bcp_area = length(cross(t_raster.bc, raster_coord - t_raster.c)) / 2.0;
+			double u = cap_area / t_raster.area;
+			double v = abp_area / t_raster.area;
+			double w = bcp_area / t_raster.area;
+			Base::vec3 point;
+			point.x = t_view.a.x * w + t_view.b.x * u + t_view.c.x * v;
+			point.y = t_view.a.y * w + t_view.b.y * u + t_view.c.y * v;
+			double invz = (w / t_view.a.z) + (u / t_view.b.z) + (v / t_view.c.z);
+			double z = 1 / invz;
+			point.z = (z < 0.0) ? (z * -1.0) : z;
+			return point;
+		}
+
+		RUN_ON_GPU
+		static Base::vec3 interpolate_texcoord(const triangle& t_raster, const triangle& t_view, const triangle* ptriangle, const Base::vec3& raster_coord, const double& depth)
+		{
+			double cap_area = length(cross(t_raster.ca, raster_coord - t_raster.a)) / 2.0;
+			double abp_area = length(cross(t_raster.ab, raster_coord - t_raster.b)) / 2.0;
+			double bcp_area = length(cross(t_raster.bc, raster_coord - t_raster.c)) / 2.0;
+			double u = cap_area / t_raster.area;
+			double v = abp_area / t_raster.area;
+			double w = bcp_area / t_raster.area;
+			Base::vec3 texcoord;
+			texcoord.x = depth * (((w * ptriangle->a_tex.x) / t_view.a.z) + ((u * ptriangle->b_tex.x) / t_view.b.z) + ((v * ptriangle->c_tex.x) / t_view.c.z));
+			texcoord.y = depth * (((w * ptriangle->a_tex.y) / t_view.a.z) + ((u * ptriangle->b_tex.y) / t_view.b.z) + ((v * ptriangle->c_tex.y) / t_view.c.z));
+			return texcoord;
+		}
+
+		RUN_ON_GPU
 		static bool does_intersect(const triangle& t, const ray& r, double& distance)
 		{
 			double dir_normal_dot = dot(r.dir, t.normal);
@@ -31,19 +79,19 @@ namespace Engine
 			return true;
 		}
 
-		RUN_ON_CPU_AND_GPU
+		RUN_ON_GPU
 		static Base::vec3 get_texcoord(const triangle& t, const Base::vec3& p)
 		{
-			double cap_area = length(cross(t.ca, p - t.a));
-			double abp_area = length(cross(t.ab, p - t.b));
-			double bcp_area = length(cross(t.bc, p - t.c));
+			double cap_area = length(cross(t.ca, p - t.a)) / 2.0;
+			double abp_area = length(cross(t.ab, p - t.b)) / 2.0;
+			double bcp_area = length(cross(t.bc, p - t.c)) / 2.0;
 			double u = cap_area / t.area;
 			double v = abp_area / t.area;
 			double w = bcp_area / t.area;
-			return t.a_tex * u + t.b_tex * v + t.c_tex * w;
+			return t.a_tex * w + t.b_tex * u + t.c_tex * v;
 		}
 
-		RUN_ON_CPU_AND_GPU
+		RUN_ON_GPU
 		static bool detect_hit(model& model, ray& ray, hit& hit_item, double& tnear)
 		{
 			double t0 = INFINITY;

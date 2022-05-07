@@ -9,7 +9,7 @@ namespace std
 	template <class _Ty>
 	class shared_ptr;
 
-	template <class _Ty, class _Dx = std::default_delete<_Ty>>
+	template <class _Ty, class _Dx = default_delete<_Ty>>
 	class unique_ptr;
 }
 
@@ -23,6 +23,7 @@ namespace Engine
 	struct pixels
 	{
 		rgb* data = 0;
+		double* depth = 0;
 		int width = 0, height = 0;
 		pixels(int width, int height) : width(width), height(height) {}
 	};
@@ -45,4 +46,5 @@ namespace Engine
 		Base::mat4 projection;
 	};
 	
+	void mix(const pixels& pixels1, const pixels& pixels2, rgb* prgb);
 }
