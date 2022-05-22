@@ -11,7 +11,7 @@ namespace Engine
 	RUN_ON_GPU_CALL_FROM_CPU void render_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap* dcubemap);
 	RUN_ON_GPU_CALL_FROM_CPU void transform_triangles(pixels pixels, const raster_input input, model_data* ddata);
 	RUN_ON_GPU_CALL_FROM_CPU void render_frame(pixels pixels, const raster_input input, model_data* ddata);
-	RUN_ON_GPU bool cull_back_face(const model* dcamera, const triangle* ptriangle);
+	RUN_ON_GPU bool cull_back_face(const triangle* ptriangle);
 	RUN_ON_GPU bool is_visible(const Base::vec3& p);
 	RUN_ON_GPU Base::vec3 to_raster(const pixels& pixels, const Base::vec3& ndc);
 	RUN_ON_GPU Base::vec3 calculate_color(const Base::vec3& texcoord, const Base::mat4& view_mat, const Base::vec3& p, model_data* ddata);
@@ -38,7 +38,7 @@ void Engine::draw_frame(pixels pixels, const raster_input& input, model_data* dd
 	cudaDeviceSynchronize();
 }
 
-RUN_ON_GPU_CALL_FROM_CPU 
+RUN_ON_GPU_CALL_FROM_CPU
 void Engine::render_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap* dcubemap)
 {
 	int tx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -51,13 +51,12 @@ void Engine::render_background(pixels pixels, Base::mat4 dirmatrix, Base::cubema
 	pixels.depth[ty * pixels.width + tx] = get_infinity();
 }
 
-RUN_ON_GPU_CALL_FROM_CPU 
+RUN_ON_GPU_CALL_FROM_CPU
 void Engine::transform_triangles(pixels pixels, const raster_input input, model_data* ddata)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= (ddata->dmodel->shapes_size)) return;
 	triangle* ptriangles = (triangle*)ddata->dmodel->dshapes;
-	if (cull_back_face(ddata->dcamera, &ptriangles[index])) return;
 	ddata->dtview[index].a = input.view * ptriangles[index].a;
 	ddata->dtview[index].b = input.view * ptriangles[index].b;
 	ddata->dtview[index].c = input.view * ptriangles[index].c;
@@ -71,13 +70,13 @@ void Engine::transform_triangles(pixels pixels, const raster_input input, model_
 	Triangle::make_triangle(ddata->dtraster[index].a, ddata->dtraster[index].b, ddata->dtraster[index].c, ddata->dtraster[index]);
 }
 
-RUN_ON_GPU_CALL_FROM_CPU 
+RUN_ON_GPU_CALL_FROM_CPU
 void Engine::render_frame(pixels pixels, const raster_input input, model_data* ddata)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= (ddata->dmodel->shapes_size)) return;
 	triangle* ptriangles = (triangle*)ddata->dmodel->dshapes;
-	if (cull_back_face(ddata->dcamera, &ptriangles[index])) return;
+	if (cull_back_face(ddata->dtview + index)) return;
 	if (!is_visible(ddata->dtndc[index].a) && !is_visible(ddata->dtndc[index].b) && !is_visible(ddata->dtndc[index].c)) return;
 	int min_raster_x = minimum(ddata->dtraster[index].a.x, ddata->dtraster[index].b.x, ddata->dtraster[index].c.x);
 	int min_raster_y = minimum(ddata->dtraster[index].a.y, ddata->dtraster[index].b.y, ddata->dtraster[index].c.y);
@@ -110,15 +109,15 @@ void Engine::render_frame(pixels pixels, const raster_input input, model_data* d
 	}
 }
 
-RUN_ON_GPU 
-bool Engine::cull_back_face(const model* dcamera, const triangle* ptriangle)
+RUN_ON_GPU
+bool Engine::cull_back_face(const triangle* ptriangle)
 {
-	Base::vec3 view_dir = dcamera->position - ptriangle->a;
+	Base::vec3 view_dir = ptriangle->a;
 	normalize(view_dir);
-	return dot(view_dir, ptriangle->normal) < 0.0;
+	return dot(view_dir, ptriangle->normal) >= 0.0;
 }
 
-RUN_ON_GPU 
+RUN_ON_GPU
 bool Engine::is_visible(const Base::vec3& p)
 {
 	if (p.x < -1.0 || p.x > 1.0) return false;
@@ -127,7 +126,7 @@ bool Engine::is_visible(const Base::vec3& p)
 	return true;
 }
 
-RUN_ON_GPU 
+RUN_ON_GPU
 Base::vec3 Engine::to_raster(const pixels& pixels, const Base::vec3& ndc)
 {
 	Base::vec3 raster;
@@ -136,7 +135,7 @@ Base::vec3 Engine::to_raster(const pixels& pixels, const Base::vec3& ndc)
 	return raster;
 }
 
-RUN_ON_GPU 
+RUN_ON_GPU
 Base::vec3 Engine::calculate_color(const Base::vec3& texcoord, const Base::mat4& view_mat, const Base::vec3& p, model_data* ddata)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
