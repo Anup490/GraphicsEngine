@@ -31,6 +31,7 @@ namespace EngineTest
 			s.append(", ");
 			s.append(std::to_string(v.z));
 			s.append(" )");
+			s.append("\n");
 			return s;
 		}
 
@@ -90,6 +91,89 @@ namespace EngineTest
 			Base::vec3 c{ 3, 4 };
 			Base::vec3 p{ 3, 2 };
 			Assert::AreEqual(true, Triangle::is_inside(triangle{ a,b,c }, p));
+		}
+
+		TEST_METHOD(TesellationTest)
+		{
+			Base::vec3 a{ 4, 100 };
+			Base::vec3 b{ 0, 0 };
+			Base::vec3 c{ 300, 600 };
+			double n = 4;
+			double n_half = n / 2;
+			double inc_c = 1, inc_a = 1;
+			int it = 2 * n - 2;
+			Base::vec3 t_a, t_b, t_c;
+			bool swap = false;
+			t_a = a * ((n_half - inc_a) / n_half) + b * (inc_a / n_half);
+			t_b = b;
+			t_c = b * ((n - inc_c) / n) + c * (inc_c / n);
+			inc_a++;
+			inc_c++;
+			Logger::WriteMessage("Triangle\n");
+			Logger::WriteMessage(to_string(t_a).c_str());
+			Logger::WriteMessage(to_string(t_b).c_str());
+			Logger::WriteMessage(to_string(t_c).c_str());
+			Logger::WriteMessage("\n\n");
+			for (int i = 1; i < it; i++)
+			{
+				if (i > (it/2))
+				{
+					if (i % 2 == 0)
+					{
+						t_b = t_a;
+						t_a = a * (inc_a / n_half) + c * ((n_half - inc_a) / n_half);
+						inc_a++;
+						if (inc_a > n_half) inc_a = 1;
+
+						Logger::WriteMessage("Triangle\n");
+						Logger::WriteMessage(to_string(t_a).c_str());
+						Logger::WriteMessage(to_string(t_b).c_str());
+						Logger::WriteMessage(to_string(t_c).c_str());
+						Logger::WriteMessage("\n\n");
+					}
+					else
+					{
+						t_b = t_c;
+						t_c = b * ((n - inc_c) / n) + c * (inc_c / n);
+						inc_c++;
+
+						Logger::WriteMessage("Triangle\n");
+						Logger::WriteMessage(to_string(t_a).c_str());
+						Logger::WriteMessage(to_string(t_b).c_str());
+						Logger::WriteMessage(to_string(t_c).c_str());
+						Logger::WriteMessage("\n\n");
+					}
+				}
+				else
+				{
+					if (i % 2 == 0)
+					{
+						t_b = t_a;
+						t_a = a * (inc_a / n_half) + c * ((n_half - inc_a) / n_half);
+						inc_a++;
+						if (inc_a > n_half) inc_a = 1;
+
+						Logger::WriteMessage("Triangle\n");
+						Logger::WriteMessage(to_string(t_a).c_str());
+						Logger::WriteMessage(to_string(t_b).c_str());
+						Logger::WriteMessage(to_string(t_c).c_str());
+						Logger::WriteMessage("\n\n");
+					}
+					else
+					{
+						t_b = t_c;
+						t_c = b * ((n - inc_c) / n) + c * (inc_c / n);
+						inc_c++;
+
+						Logger::WriteMessage("Triangle\n");
+						Logger::WriteMessage(to_string(t_a).c_str());
+						Logger::WriteMessage(to_string(t_b).c_str());
+						Logger::WriteMessage(to_string(t_c).c_str());
+						Logger::WriteMessage("\n\n");
+					}
+				}
+				
+			}
 		}
 	};
 }
