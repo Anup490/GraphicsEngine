@@ -95,9 +95,34 @@ namespace EngineTest
 
 		TEST_METHOD(TesellationTest)
 		{
-			Base::vec3 a{ 4, 100 };
-			Base::vec3 b{ 0, 0 };
-			Base::vec3 c{ 300, 600 };
+			Base::vec3 x{ 300, 600 };
+			Base::vec3 y{ 4, 100 };
+			Base::vec3 z{ 0, 0 };
+			triangle t;
+			Triangle::make_triangle(x, y, z, t);
+			double ab_len = length(t.ab);
+			double bc_len = length(t.bc);
+			double ca_len = length(t.ca);
+			double longest = maximum(ab_len, bc_len, ca_len);
+			Base::vec3 a, b, c;
+			if (equal(longest, ab_len))
+			{
+				a = t.c;
+				b = t.a;
+				c = t.b;
+			}
+			else if (equal(longest, ca_len))
+			{
+				a = t.b;
+				b = t.c;
+				c = t.a;
+			}
+			else
+			{
+				a = t.a;
+				b = t.b;
+				c = t.c;
+			}
 			double n = 6;
 			double n_half = n / 2;
 			double inc_c = 1, inc_a = 1;
