@@ -52,6 +52,15 @@ namespace Engine
 		}
 
 		RUN_ON_GPU
+		static Base::vec3 get_interpolated_texcoord(const triangle& t_view, const triangle* ptriangle, const Base::vec3 uvw, const double& depth)
+		{
+			Base::vec3 texcoord;
+			texcoord.x = depth * (((uvw.z * ptriangle->a_tex.x) / t_view.a.z) + ((uvw.x * ptriangle->b_tex.x) / t_view.b.z) + ((uvw.y * ptriangle->c_tex.x) / t_view.c.z));
+			texcoord.y = depth * (((uvw.z * ptriangle->a_tex.y) / t_view.a.z) + ((uvw.x * ptriangle->b_tex.y) / t_view.b.z) + ((uvw.y * ptriangle->c_tex.y) / t_view.c.z));
+			return texcoord;
+		}
+
+		RUN_ON_GPU
 		static Base::vec3 interpolate_texcoord(const triangle& t_raster, const triangle& t_view, const triangle* ptriangle, const Base::vec3& raster_coord, const double& depth)
 		{
 			double cap_area = length(cross(t_raster.ca, raster_coord - t_raster.a)) / 2.0;
@@ -60,10 +69,7 @@ namespace Engine
 			double u = cap_area / t_raster.area;
 			double v = abp_area / t_raster.area;
 			double w = bcp_area / t_raster.area;
-			Base::vec3 texcoord;
-			texcoord.x = depth * (((w * ptriangle->a_tex.x) / t_view.a.z) + ((u * ptriangle->b_tex.x) / t_view.b.z) + ((v * ptriangle->c_tex.x) / t_view.c.z));
-			texcoord.y = depth * (((w * ptriangle->a_tex.y) / t_view.a.z) + ((u * ptriangle->b_tex.y) / t_view.b.z) + ((v * ptriangle->c_tex.y) / t_view.c.z));
-			return texcoord;
+			return get_interpolated_texcoord(t_view, ptriangle, Base::vec3{ u,v,w }, depth);
 		}
 
 		RUN_ON_GPU
