@@ -1,13 +1,5 @@
 #pragma once
-
-namespace std
-{
-	template <class _Ty>
-	class allocator;
-
-	template <class _Ty, class _Alloc = allocator<_Ty>>
-	class vector;
-}
+#include <vector>
 namespace Base
 {
 	enum class shape_type { TRIANGLE, SPHERE, BOX };

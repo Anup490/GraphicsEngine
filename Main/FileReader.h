@@ -1,22 +1,7 @@
 #pragma once
 #include "Base.h"
-
 #include <exception>
 
-namespace std
-{
-	template <class _Ty, class _Dx>
-	class unique_ptr;
-
-	template <class _Ty>
-	class shared_ptr;
-
-	template <class _Ty>
-	class allocator;
-
-	template <class _Ty, class _Alloc = allocator<_Ty>>
-	class vector;
-}
 
 struct FileReadException : std::exception
 {
