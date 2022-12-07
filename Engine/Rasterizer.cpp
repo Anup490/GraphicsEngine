@@ -159,54 +159,6 @@ namespace Engine
 			Base::vertex* p_vertex_c = &c_triangles[i].c;
 			p_vertex_c->position += pmodel->position;
 			triangle t = make_triangle(*p_vertex_a, *p_vertex_b, *p_vertex_c);
-			split_and_store_triangle(t, ptriangles);
-		}
-	}
-
-	void RasterizerCore::split_and_store_triangle(triangle& t, std::vector<triangle>* ptriangles)
-	{
-		if (t.area > triangle_min_area)
-		{
-			double ab_length = length(t.ab);
-			double bc_length = length(t.bc);
-			double ca_length = length(t.ca);
-			double max_length = maximum(ab_length, bc_length, ca_length);
-			Base::vertex a_vertex{ t.a, t.normal, t.a_tex };
-			Base::vertex b_vertex{ t.b, t.normal, t.b_tex };
-			Base::vertex c_vertex{ t.c, t.normal, t.c_tex };
-			if (equal(ab_length, max_length))
-			{
-				Base::vec3 m{ (t.a.x + t.b.x) / 2.0, (t.a.y + t.b.y) / 2.0, (t.a.z + t.b.z) / 2.0, };
-				Base::vec3 m_tex{ (t.a_tex.x + t.b_tex.x) / 2.0, (t.a_tex.y + t.b_tex.y) / 2.0, (t.a_tex.z + t.b_tex.z) / 2.0, };
-				Base::vertex m_vertex{ m, t.normal, m_tex };
-				triangle t1 = make_triangle(a_vertex, m_vertex, c_vertex);
-				split_and_store_triangle(t1, ptriangles);
-				triangle t2 = make_triangle(m_vertex, b_vertex, c_vertex);
-				split_and_store_triangle(t2, ptriangles);
-			}
-			else if (equal(bc_length, max_length))
-			{
-				Base::vec3 m{ (t.b.x + t.c.x) / 2.0, (t.b.y + t.c.y) / 2.0, (t.b.z + t.c.z) / 2.0, };
-				Base::vec3 m_tex{ (t.b_tex.x + t.c_tex.x) / 2.0, (t.b_tex.y + t.c_tex.y) / 2.0, (t.b_tex.z + t.c_tex.z) / 2.0, };
-				Base::vertex m_vertex{ m, t.normal, m_tex };
-				triangle t1 = make_triangle(a_vertex, b_vertex, m_vertex);
-				split_and_store_triangle(t1, ptriangles);
-				triangle t2 = make_triangle(a_vertex, m_vertex, c_vertex);
-				split_and_store_triangle(t2, ptriangles);
-			}
-			else
-			{
-				Base::vec3 m{ (t.c.x + t.a.x) / 2.0, (t.c.y + t.a.y) / 2.0, (t.c.z + t.a.z) / 2.0, };
-				Base::vec3 m_tex{ (t.c_tex.x + t.a_tex.x) / 2.0, (t.c_tex.y + t.a_tex.y) / 2.0, (t.c_tex.z + t.a_tex.z) / 2.0, };
-				Base::vertex m_vertex{ m, t.normal, m_tex };
-				triangle t1 = make_triangle(a_vertex, b_vertex, m_vertex);
-				split_and_store_triangle(t1, ptriangles);
-				triangle t2 = make_triangle(m_vertex, b_vertex, c_vertex);
-				split_and_store_triangle(t2, ptriangles);
-			}
-		}
-		else
-		{
 			ptriangles->push_back(t);
 		}
 	}
