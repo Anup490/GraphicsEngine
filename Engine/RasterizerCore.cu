@@ -5,17 +5,17 @@
 #include "Triangle.cuh"
 #include "Background.cuh"
 #include <device_launch_parameters.h>
-#define THREADS_PER_TRIANGLE 200.0f
+#define THREADS_PER_TRIANGLE 900.0f
 
 namespace Engine
 {
 	RUN_ON_GPU_CALL_FROM_CPU void render_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap* dcubemap);
 	RUN_ON_GPU_CALL_FROM_CPU void transform_triangles(pixels pixels, const raster_input input, model_data* ddata);
-	RUN_ON_GPU_CALL_FROM_CPU void render_frame(pixels pixels, const raster_input input, model_data* ddata);
+	RUN_ON_GPU_CALL_FROM_CPU void render_frame(pixels pixels, const raster_input input, model_data* ddata, int rows, int columns);
 	RUN_ON_GPU bool cull_back_face(const triangle* ptriangle);
 	RUN_ON_GPU bool is_visible(const Base::vec3& p);
 	RUN_ON_GPU Base::vec3 to_raster(const pixels& pixels, const Base::vec3& ndc);
-	RUN_ON_GPU Base::vec3 calculate_color(const Base::vec3& texcoord, const Base::mat4& view_mat, const Base::vec3& p, model_data* ddata);
+	RUN_ON_GPU Base::vec3 calculate_color(const Base::vec3& texcoord, const Base::mat4& view_mat, const Base::vec3& p, model_data* ddata, int& index);
 }
 
 void Engine::draw_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap* dcubemap)
@@ -28,19 +28,22 @@ void Engine::draw_background(pixels pixels, Base::mat4 dirmatrix, Base::cubemap*
 
 void Engine::draw_frame(pixels pixels, const raster_input& input, model_data* ddata, unsigned shape_count)
 {
+	const int max_thread_per_block = 1024;
 	unsigned threads = nearest_high_multiple(shape_count, 32);
-	unsigned threads_per_block = (threads < 1024) ? threads : 1024;
-	unsigned blocks = threads/1024 + 1;
+	unsigned threads_per_block = (threads < max_thread_per_block) ? threads : max_thread_per_block;
+	unsigned blocks = threads/ max_thread_per_block + 1;
 	dim3 block_size(threads_per_block, 1, 1);
 	dim3 grid_size(blocks, 1, 1);
 	transform_triangles << < grid_size, block_size >> > (pixels, input, ddata);
 	cudaDeviceSynchronize();
 	unsigned threads_render = nearest_high_multiple(shape_count, 32) * THREADS_PER_TRIANGLE;
-	unsigned threads_per_block_render = (threads_render < 1024) ? threads_render : 1024;
-	unsigned blocks_render = threads_render / 1024 + 1;
+	unsigned threads_per_block_render = (threads_render < max_thread_per_block) ? threads_render : max_thread_per_block;
+	unsigned blocks_render = threads_render / max_thread_per_block + 1;
 	dim3 block_size_render(threads_per_block_render, 1, 1);
 	dim3 grid_size_render(blocks_render, 1, 1);
-	render_frame << < grid_size_render, block_size_render >> > (pixels, input, ddata);
+	int rows = square_root(THREADS_PER_TRIANGLE);
+	int columns = square_root(THREADS_PER_TRIANGLE);
+	render_frame << < grid_size_render, block_size_render >> > (pixels, input, ddata, rows, columns);
 	cudaDeviceSynchronize();
 }
 
@@ -77,7 +80,7 @@ void Engine::transform_triangles(pixels pixels, const raster_input input, model_
 }
 
 RUN_ON_GPU_CALL_FROM_CPU
-void Engine::render_frame(pixels pixels, const raster_input input, model_data* ddata)
+void Engine::render_frame(pixels pixels, const raster_input input, model_data* ddata, int rows, int columns)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int triangle_index = index / THREADS_PER_TRIANGLE;
@@ -89,17 +92,26 @@ void Engine::render_frame(pixels pixels, const raster_input input, model_data* d
 	int max_raster_y = maximum(ddata->dtraster[triangle_index].a.y, ddata->dtraster[triangle_index].b.y, ddata->dtraster[triangle_index].c.y);
 	int min_raster_x = minimum(ddata->dtraster[triangle_index].a.x, ddata->dtraster[triangle_index].b.x, ddata->dtraster[triangle_index].c.x);
 	int max_raster_x = maximum(ddata->dtraster[triangle_index].a.x, ddata->dtraster[triangle_index].b.x, ddata->dtraster[triangle_index].c.x);
+	int piece_index = index - (triangle_index * THREADS_PER_TRIANGLE);
 
 	int lenx = max_raster_x - min_raster_x;
-	float diffx = float(lenx) / THREADS_PER_TRIANGLE;
+	float diffx = float(lenx) / float(columns);
+	int leny = max_raster_y - min_raster_y;
+	float diffy = float(leny) / float(rows);		
 
-	int group_value = index / THREADS_PER_TRIANGLE;
-	int clamped_index = index - (group_value * THREADS_PER_TRIANGLE);
-
-	int actual_min_x = min_raster_x +(clamped_index * diffx);
+	int row_index = piece_index / rows;
+	int column_index = piece_index - (row_index * columns);
+	int actual_min_y = min_raster_y + (row_index * diffy);
+	int actual_max_y = actual_min_y + diffy;
+	int actual_min_x = min_raster_x + (column_index * diffx);
 	int actual_max_x = actual_min_x + diffx;
-
-	for (int j = min_raster_y; j <= max_raster_y; j++)
+	
+	Base::vec3 raster_coord{};
+	int pixel_index = 0;
+	Base::vec3 p{};
+	Base::vec3 texcoord{};
+	Base::vec3 color{};
+	for (int j = actual_min_y; j <= actual_max_y; j++)
 	{
 		if (j >= 0 && j < pixels.height)
 		{
@@ -107,13 +119,14 @@ void Engine::render_frame(pixels pixels, const raster_input input, model_data* d
 			{
 				if (i >= 0 && i < pixels.width)
 				{
-					Base::vec3 raster_coord{ double(i), double(j) };
+					raster_coord.x = i; 
+					raster_coord.y = j;
 					if (Triangle::is_inside(ddata->dtraster[triangle_index], raster_coord))
 					{
-						Base::vec3 p = Triangle::interpolate_point(ddata->dtraster[triangle_index], ddata->dtview[triangle_index], raster_coord);
-						Base::vec3 texcoord = Triangle::interpolate_texcoord(ddata->dtraster[triangle_index], ddata->dtview[triangle_index], &ptriangles[triangle_index], raster_coord, p.z);
-						Base::vec3 color = calculate_color(texcoord, input.view, p, ddata);
-						int pixel_index = j * pixels.width + i;
+						p = Triangle::interpolate_point(ddata->dtraster[triangle_index], ddata->dtview[triangle_index], raster_coord);
+						texcoord = Triangle::interpolate_texcoord(ddata->dtraster[triangle_index], ddata->dtview[triangle_index], &ptriangles[triangle_index], raster_coord, p.z);
+						color = calculate_color(texcoord, input.view, p, ddata, triangle_index);
+						pixel_index = j * pixels.width + i;
 						if (p.z < pixels.depth[pixel_index])
 						{
 							pixels.data[pixel_index] = rgb{ unsigned char(color.x * 255), unsigned char(color.y * 255), unsigned char(color.z * 255) };
@@ -153,10 +166,8 @@ Base::vec3 Engine::to_raster(const pixels& pixels, const Base::vec3& ndc)
 }
 
 RUN_ON_GPU
-Base::vec3 Engine::calculate_color(const Base::vec3& texcoord, const Base::mat4& view_mat, const Base::vec3& p, model_data* ddata)
+Base::vec3 Engine::calculate_color(const Base::vec3& texcoord, const Base::mat4& view_mat, const Base::vec3& p, model_data* ddata, int& index)
 {
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	int triangle_index = index / THREADS_PER_TRIANGLE;
 	Base::vec3 color;
 	Base::vec3 diffuse_color = Texture::get_color(texcoord, ddata->dmodel->diffuse);
 	Base::vec3 specularity;
@@ -169,9 +180,9 @@ Base::vec3 Engine::calculate_color(const Base::vec3& texcoord, const Base::mat4&
 		Base::vec3 view_light_pos = view_mat * ddata->dlights->position;
 		Base::vec3 light_dir = view_light_pos - p;
 		normalize(light_dir);
-		double light_triangle_dot = max_val(0, dot(light_dir, ddata->dtview[triangle_index].normal));
+		double light_triangle_dot = max_val(0, dot(light_dir, ddata->dtview[index].normal));
 		Base::vec3 diffuse = diffuse_color * light_triangle_dot;
-		Base::vec3 reflect_dir = get_reflect_dir(-light_dir, ddata->dtview[triangle_index].normal);
+		Base::vec3 reflect_dir = get_reflect_dir(-light_dir, ddata->dtview[index].normal);
 		normalize(reflect_dir);
 		Base::vec3 view_dir = -p;
 		normalize(view_dir);
